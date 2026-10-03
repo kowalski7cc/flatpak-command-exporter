@@ -1,0 +1,15 @@
+[core]
+automatic-export-new=true
+
+[blocklist]
+uk.org.greenend.chiark.sgtatham.putty
+
+[allowlist]
+uk.org.greenend.chiark.sgtatham.putty
+
+[app."uk.org.greenend.chiark.sgtatham.putty"]
+pytty=true
+puttygen=false
+
+[app."uk.org.greenend.chiark.sgtatham.putty".custom]
+myputty=pytty
