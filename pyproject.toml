@@ -8,6 +8,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gui = [
+    "PyGObject"
+]
 dev = [
     "PyGObject"
 ]
@@ -21,3 +24,4 @@ where = ["src"]
 
 [project.scripts]
 flatpak-command-exporter = "flatpak_command_exporter.__main__:main"
+flatpak-command-exporter-gui = "flatpak_command_exporter.gui:main"

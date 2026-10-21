@@ -1,4 +1,5 @@
 import argparse
+from dataclasses import dataclass
 
 from .defaults import DEFAULT_EXPORT_COMMANDS, COMMAND_TEMPLATE
 import gi
@@ -7,6 +8,7 @@ from gi.repository import Flatpak, GLib
 import json
 import os
 import logging
+import xml.etree.ElementTree as ET
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 """
@@ -24,6 +26,18 @@ EXPORT_SCHEMA_NAMES = [
 ]
 
 
+@dataclass(frozen=True)
+class ExportedAlias:
+    alias: str
+    command: str
+    app_id: str
+    app_name: str
+    arch: str
+    branch: str
+    installation_path: str
+    desktop_id: str
+
+
 def find_user_packages():
     ...
 
@@ -39,7 +53,6 @@ def load_metainfo(base_path, app_id, arch, branch):
         logging.warning(f"Metainfo file not found for {app_id} at {metainfo_path}.")
         return None
     try:
-        import xml.etree.ElementTree as ET
         tree = ET.parse(metainfo_path)
         return tree.getroot()
     except ET.ParseError as e:
@@ -60,6 +73,15 @@ def get_pretty_name_from_metainfo(metainfo):
     if name_element is not None and name_element.text:
         return name_element.text.strip()
     return None
+
+
+def get_desktop_id_from_metainfo(metainfo, app_id):
+    if metainfo is None:
+        return f"{app_id}.desktop"
+    launchable = _find_metainfo_child(metainfo, "launchable")
+    if launchable is not None and launchable.get("type") == "desktop-id" and launchable.text:
+        return launchable.text.strip()
+    return f"{app_id}.desktop"
 
 
 def get_version_from_metainfo(metainfo):
@@ -90,7 +112,7 @@ def find_refs(installation):
     """
     try:
         if installation is None:
-            yield from []
+            return
         yield from installation.list_installed_refs_by_kind(Flatpak.RefKind.APP, None)
     except GLib.Error as e:
         logging.error(f"Error accessing Flatpak API: {e}")
@@ -138,6 +160,61 @@ def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
         # Fetch commands from defaults
         return DEFAULT_EXPORT_COMMANDS.get(app_id, {})
     return commands
+
+
+def get_exported_aliases() -> list[ExportedAlias]:
+    """Return aliases from effective user and system app refs, preferring user refs."""
+    aliases: list[ExportedAlias] = []
+    seen_refs: set[tuple[str, str, str]] = set()
+
+    for installation_factory in (Flatpak.Installation.new_user, Flatpak.Installation.new_system):
+        try:
+            installation = installation_factory()
+            if installation is None:
+                continue
+            installation_path = installation.get_path().get_path()
+        except GLib.Error as error:
+            logging.warning("Could not access a Flatpak installation: %s", error)
+            continue
+
+        for ref in find_refs(installation):
+            app_id = ref.get_name()
+            arch = ref.get_arch()
+            branch = ref.get_branch()
+            ref_identity = (app_id, arch, branch)
+            if ref_identity in seen_refs:
+                continue
+            seen_refs.add(ref_identity)
+
+            try:
+                manifest = load_manifest(installation_path, app_id, arch, branch)
+            except FileNotFoundError:
+                manifest = {}
+            except (OSError, json.JSONDecodeError) as error:
+                logging.warning("Could not load manifest for %s: %s", app_id, error)
+                continue
+
+            if not isinstance(manifest, dict):
+                logging.warning("Manifest for %s is not a dictionary. Ignoring.", app_id)
+                continue
+
+            metainfo = load_metainfo(installation_path, app_id, arch, branch)
+            app_name = get_pretty_name_from_metainfo(metainfo) or app_id
+            desktop_id = get_desktop_id_from_metainfo(metainfo, app_id)
+            commands = manifest_exported_commands(app_id, manifest)
+            for alias, command in commands.items():
+                aliases.append(ExportedAlias(
+                    alias=alias,
+                    command=command,
+                    app_id=app_id,
+                    app_name=app_name,
+                    arch=arch,
+                    branch=branch,
+                    installation_path=installation_path,
+                    desktop_id=desktop_id,
+                ))
+
+    return aliases
 
 def export_commands():
     """
