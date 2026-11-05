@@ -23,6 +23,8 @@ jobs:
             make \
             pybuild-plugin-pyproject \
             python3 \
+            python3-gi \
+            gir1.2-flatpak-1.0 \
             python3-setuptools
 
       - name: Check out repository
