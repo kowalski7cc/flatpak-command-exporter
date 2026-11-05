@@ -10,9 +10,31 @@ jobs:
     container:
       image: node:24-trixie
     steps:
-      - name: Install test dependencies
+      - name: Update package lists and determine apt cache key
+        id: apt-cache-key
         run: |
           apt-get update
+          install_plan="$(
+            apt-get --simulate install \
+              flatpak \
+              gir1.2-adw-1 \
+              gir1.2-flatpak-1.0 \
+              gir1.2-gtk-4.0 \
+              python3 \
+              python3-gi | sed -n '/^Inst /p'
+          )"
+          cache_key="$(printf '%s\n' "$install_plan" | sha256sum | cut -d' ' -f1)"
+          echo "hash=$cache_key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache apt archives
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-node24-trixie-${{ runner.arch }}-${{ steps.apt-cache-key.outputs.hash }}
+          restore-keys: apt-node24-trixie-${{ runner.arch }}-
+
+      - name: Install test dependencies
+        run: |
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
             flatpak \
             gir1.2-adw-1 \
