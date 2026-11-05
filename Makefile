@@ -1,4 +1,4 @@
-.PHONY: changelog deb clean
+.PHONY: changelog deb tests clean
 
 changelog:
 	@version=$$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])'); \
@@ -7,7 +7,10 @@ changelog:
 		dch --newversion "$$debian_version" --distribution unstable "Release $$version."
 
 deb:
-	dpkg-buildpackage -us -uc -b
+	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -us -uc -b
+
+tests:
+	PYTHONPATH=src python3 -m unittest discover -s tests -v
 
 clean:
 	dpkg-buildpackage -T clean

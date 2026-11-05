@@ -2,3 +2,10 @@
 
 %:
 	dh $@ --buildsystem=pybuild
+
+override_dh_auto_test:
+ifneq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+	@echo "Skipping tests (DEB_BUILD_OPTIONS=nocheck)."
+else
+	PYTHONPATH=src python3 -m unittest discover -s tests -v
+endif

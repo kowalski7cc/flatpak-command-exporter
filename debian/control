@@ -7,7 +7,9 @@ Build-Depends:
  dh-sequence-python3,
  pybuild-plugin-pyproject,
  python3 (>= 3.13),
- python3-setuptools
+ python3-setuptools,
+ python3-gi,
+ gir1.2-flatpak-1.0
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
 

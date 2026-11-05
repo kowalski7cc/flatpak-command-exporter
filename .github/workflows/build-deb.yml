@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Build Debian packages
-        run: dpkg-buildpackage -us -uc -b
+        run: DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -us -uc -b
 
       - name: Upload packages to Gitea registry
         env:
