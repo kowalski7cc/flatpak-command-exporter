@@ -90,6 +90,10 @@ def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):
 
 
 def main():
+	logging.basicConfig(
+		level=os.environ.get("LOGLEVEL", "INFO").upper(),
+		format="%(levelname)s: %(message)s",
+	)
 	try:
 		import gi
 
@@ -101,7 +105,9 @@ def main():
 			"The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
 		) from error
 
-	from . import __main__ as core
+	from . import FlatpakCommandExporter
+
+	exporter = FlatpakCommandExporter()
 
 	Adw.init()
 
@@ -115,7 +121,7 @@ def main():
 
 		def on_activate(self, _application):
 			records = sorted(
-				core.get_exported_aliases(),
+				exporter.get_exported_aliases(),
 				key=lambda record: (
 					record.app_name.casefold(),
 					record.app_id.casefold(),
@@ -137,7 +143,7 @@ def main():
 			header = Adw.HeaderBar()
 			header.set_title_widget(Adw.WindowTitle(title="Exported Commands", subtitle=None))
 			global_export_switch = Gtk.Switch()
-			global_export_switch.set_active(core.AliasConfig().default_policy() == "all")
+			global_export_switch.set_active(exporter.config.default_policy() == "all")
 			global_export_switch.set_valign(Gtk.Align.CENTER)
 			global_export_switch.set_tooltip_text("Export all aliases by default")
 			global_export_control = Gtk.Box(
@@ -264,7 +270,7 @@ def main():
 					saved_state=saved_state,
 				):
 					try:
-						core.AliasConfig().set_alias_enabled(
+						exporter.config.set_alias_enabled(
 							record.app_id, record.alias, toggle.get_active()
 						)
 					except (OSError, ValueError) as error:
@@ -276,7 +282,7 @@ def main():
 
 					saved_state[0] = toggle.get_active()
 					try:
-						core.export_commands()
+						exporter.export_commands()
 					except (OSError, ValueError, GLib.Error) as error:
 						report_error("Alias setting saved, but export failed", error)
 
@@ -290,7 +296,7 @@ def main():
 			def update_global_export(toggle, _property):
 				new_state = toggle.get_active()
 				try:
-					core.AliasConfig().set_default_policy(
+					exporter.config.set_default_policy(
 						"all" if new_state else "none"
 					)
 				except (OSError, ValueError) as error:
@@ -302,7 +308,7 @@ def main():
 
 				global_switch_state[0] = new_state
 				try:
-					core.export_commands()
+					exporter.export_commands()
 				except (OSError, ValueError, GLib.Error) as error:
 					report_error("Global setting saved, but export failed", error)
 

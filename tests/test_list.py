@@ -5,7 +5,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from flatpak_command_exporter import __main__ as core
+from flatpak_command_exporter import application as core
+from flatpak_command_exporter import cli
 
 
 class ListAllCommandsTests(unittest.TestCase):
@@ -53,7 +54,12 @@ class ListAllCommandsTests(unittest.TestCase):
             patch.object(core, "load_metainfo", return_value=None),
             contextlib.redirect_stdout(output),
         ):
-            core.list_all_commands(app_id=app_id, complete=True)
+            arguments = ["flatshell", "list", "--all"]
+            if app_id is not None:
+                arguments.append(app_id)
+            arguments.append("--complete")
+            with patch.object(sys, "argv", arguments):
+                cli.main()
         return output.getvalue()
 
     def test_lists_every_ref_from_user_and_system_installations(self):
@@ -76,20 +82,24 @@ class ListAllCommandsTests(unittest.TestCase):
     def test_cli_allows_app_id_to_be_omitted_only_with_all(self):
         with (
             patch.object(sys, "argv", ["flatpak-command-exporter", "list", "--all"]),
-            patch.object(core, "list_all_commands") as list_all,
+            patch.object(cli.FlatpakCommandExporter, "get_command_groups") as get_groups,
         ):
-            core.main()
+            get_groups.return_value = []
+            cli.main()
 
-        list_all.assert_called_once_with(None, complete=False)
+        get_groups.assert_called_once_with(None)
 
     def test_cli_preserves_existing_app_specific_mode(self):
         with (
             patch.object(sys, "argv", ["flatpak-command-exporter", "list", "app.test"]),
-            patch.object(core, "list_commands") as list_specific,
+            patch.object(cli.FlatpakCommandExporter, "get_command_groups") as get_groups,
         ):
-            core.main()
+            get_groups.return_value = []
+            cli.main()
 
-        list_specific.assert_called_once_with("app.test", complete=False)
+        get_groups.assert_called_once_with(
+            "app.test", include_system=False, first_only=True
+        )
 
     def test_cli_requires_app_id_without_all(self):
         error = io.StringIO()
@@ -98,7 +108,7 @@ class ListAllCommandsTests(unittest.TestCase):
             contextlib.redirect_stderr(error),
             self.assertRaises(SystemExit) as exit_info,
         ):
-            core.main()
+            cli.main()
 
         self.assertEqual(exit_info.exception.code, 2)
         self.assertIn("app_id is required unless --all is specified", error.getvalue())

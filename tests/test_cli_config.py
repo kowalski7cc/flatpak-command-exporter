@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from flatpak_command_exporter import __main__ as core
+from flatpak_command_exporter import FlatpakCommandExporter, application, cli
 from flatpak_command_exporter.config import AliasConfig
 
 
@@ -16,7 +16,7 @@ class ConfigurationCliTests(unittest.TestCase):
         )
         self.environment.start()
         self.addCleanup(self.environment.stop)
-        self.export = patch.object(core, "export_commands")
+        self.export = patch.object(application, "export_commands")
         self.export.start()
         self.addCleanup(self.export.stop)
 
@@ -25,13 +25,13 @@ class ConfigurationCliTests(unittest.TestCase):
 
     def run_cli(self, *arguments):
         with patch.object(sys, "argv", ["flatshell", *arguments]):
-            core.main()
+            cli.main()
 
     def test_config_command_updates_global_default_and_exports(self):
         self.run_cli("config", "default-export", "none")
 
         self.assertEqual(AliasConfig().default_policy(), "none")
-        core.export_commands.assert_called_once_with()
+        application.export_commands.assert_called_once()
 
     def test_add_command_creates_and_enables_custom_alias(self):
         self.run_cli("add", "org.example.App", "myapp", "/app/bin/app")
@@ -42,7 +42,7 @@ class ConfigurationCliTests(unittest.TestCase):
             {"myapp": "/app/bin/app"},
         )
         self.assertTrue(config.is_alias_enabled("org.example.App", "myapp"))
-        core.export_commands.assert_called_once_with()
+        application.export_commands.assert_called_once()
 
     def test_disable_without_alias_sets_app_override(self):
         self.run_cli("disable", "org.example.App", "--user")
@@ -50,7 +50,16 @@ class ConfigurationCliTests(unittest.TestCase):
         self.assertFalse(
             AliasConfig().is_alias_enabled("org.example.App", "example")
         )
-        core.export_commands.assert_called_once_with()
+        application.export_commands.assert_called_once()
+
+    def test_library_api_accepts_config_and_refreshes_after_updates(self):
+        config = AliasConfig(self.temporary_directory.name)
+        exporter = FlatpakCommandExporter(config)
+
+        exporter.set_default_policy("none")
+
+        self.assertEqual(config.default_policy(), "none")
+        application.export_commands.assert_called_once_with(config)
 
 
 if __name__ == "__main__":

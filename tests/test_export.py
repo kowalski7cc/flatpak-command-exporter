@@ -4,7 +4,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from flatpak_command_exporter import __main__ as core
+from flatpak_command_exporter import application as core
 
 
 class ExportCommandsTests(unittest.TestCase):

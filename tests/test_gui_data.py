@@ -6,7 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from flatpak_command_exporter import __main__ as core
+from flatpak_command_exporter import FlatpakCommandExporter
+from flatpak_command_exporter import application as core
 from flatpak_command_exporter.gui import get_exported_icon
 
 
@@ -62,7 +63,7 @@ class AliasDataTests(unittest.TestCase):
                 patch.object(core, "load_manifest", side_effect=load_manifest),
                 patch.object(core, "load_metainfo", return_value=None),
             ):
-                records = core.get_exported_aliases()
+                records = FlatpakCommandExporter().get_exported_aliases()
 
         self.assertEqual(
             [(record.app_id, record.branch, record.installation_path) for record in records],

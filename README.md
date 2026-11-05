@@ -211,6 +211,27 @@ run `flatshell export` after installing a Flatpak to generate its launchers.
 Flatlink and `flatshell` use the same configuration and export implementation,
 so changing a setting in either interface produces the same result.
 
+## Python library
+
+The package can also be used from Python. `FlatpakCommandExporter` provides
+methods to inspect aliases and command groups, refresh generated launchers, and
+update export settings:
+
+```python
+from flatpak_command_exporter import FlatpakCommandExporter
+
+exporter = FlatpakCommandExporter()
+aliases = exporter.get_exported_aliases()
+groups = exporter.get_command_groups(include_system=True)
+exporter.set_alias_enabled("org.gimp.GIMP", "gimp", True)
+```
+
+The `set_*` and `add_custom_alias` methods save settings and refresh generated
+launchers. `remove_custom_alias` removes the custom alias, disables it, and
+refreshes exports. A custom `AliasConfig` can be passed to the constructor to
+control the configuration location. The library requires Flatpak and
+PyGObject with Flatpak introspection bindings; GTK is only needed for Flatlink.
+
 ## Development
 
 Run the test suite from a source checkout:
@@ -220,8 +241,8 @@ python -m unittest discover -s tests -v
 ```
 
 Build the Debian packages with `make deb`. The test suite covers configuration
-precedence and persistence, CLI settings, launcher generation, and Flatpak
-alias discovery.
+precedence and persistence, CLI compatibility, launcher generation, library
+operations, and Flatpak alias discovery.
 
 ## Recent changes
 

@@ -11,6 +11,10 @@ intentional, and update this guide when the project conventions change.
 - The package provides the shared Flatpak discovery/export behavior, the
   `flatshell` CLI, and the Flatlink GTK/libadwaita GUI. Keep behavior consistent
   across these surfaces and avoid duplicating configuration or export rules.
+- `application.py` contains the reusable `FlatpakCommandExporter` API and
+  discovery/export operations. `cli.py` owns argument parsing and terminal
+  output; `__main__.py` is only the module launcher. Export public library
+  types from `__init__.py`.
 - CLI and GUI entry points are declared in `pyproject.toml`. Debian package
   contents are controlled by files in `debian/`; profile integration lives in
   `resources/`.
@@ -39,6 +43,8 @@ intentional, and update this guide when the project conventions change.
 - GUI-only imports should remain lazy so CLI and library use does not require
   GTK at import time. Follow the existing GTK 4/libadwaita patterns and surface
   save/export failures in the interface.
+- Keep library operations independent of terminal formatting; the CLI should
+  format data returned by the library API.
 - Keep Debian install manifests, Python entry points, desktop metadata, icons,
   and profile-script names in sync when changing commands or resources.
 
