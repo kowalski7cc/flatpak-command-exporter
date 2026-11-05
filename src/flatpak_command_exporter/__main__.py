@@ -188,7 +188,11 @@ def get_exported_aliases() -> list[ExportedAlias]:
     aliases: list[ExportedAlias] = []
     seen_app_ids: set[str] = set()
 
-    for installation_factory in (Flatpak.Installation.new_user, Flatpak.Installation.new_system):
+    installation_factories = (
+        Flatpak.Installation.new_user,
+        Flatpak.Installation.new_system,
+    )
+    for installation_factory in installation_factories:
         try:
             installation = installation_factory()
             if installation is None:
@@ -287,14 +291,81 @@ def list_commands(app_id, complete=False):
             return
     print(f"Flatpak application {app_id} not found.")
 
+
+def list_all_commands(app_id=None, complete=False):
+    """List exported commands for every installed ref, optionally filtered by app ID."""
+    found_ref = False
+
+    for installation_factory in (Flatpak.Installation.new_user, Flatpak.Installation.new_system):
+        try:
+            installation = installation_factory()
+            if installation is None:
+                continue
+            installation_path = installation.get_path().get_path()
+        except GLib.Error as error:
+            logging.warning("Could not access a Flatpak installation: %s", error)
+            continue
+
+        for ref in find_refs(installation):
+            ref_app_id = ref.get_name()
+            if app_id is not None and ref_app_id != app_id:
+                continue
+            found_ref = True
+
+            arch = ref.get_arch()
+            branch = ref.get_branch()
+            metainfo = load_metainfo(installation_path, ref_app_id, arch, branch)
+            pretty_name = get_pretty_name_from_metainfo(metainfo) or ref_app_id
+
+            try:
+                manifest = load_manifest(installation_path, ref_app_id, arch, branch)
+            except FileNotFoundError:
+                manifest = {}
+            except (OSError, json.JSONDecodeError) as error:
+                logging.warning("Could not load manifest for %s: %s", ref_app_id, error)
+                continue
+
+            if not isinstance(manifest, dict):
+                logging.warning("Manifest for %s is not a dictionary. Ignoring.", ref_app_id)
+                continue
+
+            exported_commands = manifest_exported_commands(ref_app_id, manifest)
+            print(
+                f"Exported commands for {pretty_name} "
+                f"({ref_app_id}, {branch}/{arch}, {installation_path}):"
+            )
+            if exported_commands:
+                for export, command in exported_commands.items():
+                    if complete:
+                        print(f"- {export} -> {command}")
+                    else:
+                        print(f"- {export}")
+            else:
+                print(f"No exported commands found for {ref_app_id}.")
+
+    if not found_ref:
+        if app_id is None:
+            print("No installed Flatpak application refs found.")
+        else:
+            print(f"Flatpak application {app_id} not found.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Export Flatpak commands to the user's PATH.", prog="flatpak-command-exporter")
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
     subparsers.add_parser("export", help="Export commands for all user-installed flatpak applications.")
 
-    list_parser = subparsers.add_parser("list", help="List exported commands for a specific flatpak application.")
-    list_parser.add_argument("app_id")
+    list_parser = subparsers.add_parser(
+        "list",
+        help="List exported commands for an application or all installed refs.",
+    )
+    list_parser.add_argument("app_id", nargs="?")
     list_parser.add_argument("--complete", action="store_true", help="Show complete command information.")
+    list_parser.add_argument(
+        "--all",
+        action="store_true",
+        help="List exports for all installed refs (optionally filtered by app_id).",
+    )
 
     add_parser = subparsers.add_parser("add", help="Add a new exported command for a specific flatpak application.")
     add_parser.add_argument("app_id")
@@ -334,7 +405,12 @@ def main():
     elif args.command == "export":
         export_commands()
     elif args.command == "list":
-        list_commands(args.app_id, complete=args.complete)
+        if args.all:
+            list_all_commands(args.app_id, complete=args.complete)
+        elif args.app_id is None:
+            list_parser.error("app_id is required unless --all is specified")
+        else:
+            list_commands(args.app_id, complete=args.complete)
     else:
         parser.error(f"the {args.command!r} command is not implemented yet")
 
