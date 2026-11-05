@@ -11,13 +11,43 @@ class AliasConfigError(ValueError):
 class AliasConfig:
     """Read and update the user's Flatpak command alias configuration."""
 
-    def __init__(self, data_home=None):
+    def __init__(self, data_home=None, *, scope="user"):
+        self.scope = scope
         if data_home is None:
-            data_home = os.environ.get(
-                "XDG_DATA_HOME",
-                os.path.join(os.path.expanduser("~"), ".local", "share"),
-            )
-        self.directory = Path(data_home) / "flatpak" / "aliases"
+            if scope == "system":
+                data_home = "/var/lib/flatpak"
+            else:
+                data_home = os.environ.get(
+                    "XDG_DATA_HOME",
+                    os.path.join(os.path.expanduser("~"), ".local", "share"),
+                )
+        self.data_home = Path(data_home)
+        self.directory = (
+            self.data_home / "aliases"
+            if scope == "system"
+            else self.data_home / "flatpak" / "aliases"
+        )
+
+    @property
+    def export_directory(self):
+        if self.scope == "system":
+            return Path("/usr/share/flatpak-commands")
+        return self.data_home / "flatpak-commands"
+
+    @property
+    def is_writable(self):
+        try:
+            directory = self.directory
+            candidate = directory
+            while not candidate.exists() and candidate.parent != candidate:
+                candidate = candidate.parent
+            return os.access(candidate, os.W_OK)
+        except OSError:
+            return False
+
+    def _ensure_writable(self):
+        if not self.is_writable:
+            raise PermissionError(f"{self.directory} is not writable for {self.scope} scope")
 
     @property
     def global_path(self):
@@ -47,6 +77,7 @@ class AliasConfig:
         return parser
 
     def _write(self, path, parser):
+        self._ensure_writable()
         self.directory.mkdir(parents=True, exist_ok=True)
         descriptor, temporary_path = tempfile.mkstemp(
             prefix=f".{path.name}.", dir=self.directory, text=True

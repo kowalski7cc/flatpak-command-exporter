@@ -8,10 +8,12 @@ applications and creates small launchers in your user data directory. Use
 **`flatshell`** to inspect and configure exports, or **Flatlink** to manage
 aliases in a graphical interface.
 
-> **Scope:** Configuration and generated launchers are user-scoped. The
-> exporter can discover commands from user and system installations, but
-> system-installed apps are currently read-only in Flatlink and cannot be
-> configured through the user alias files.
+> **Scope:** The exporter supports both user and system scopes. User
+> configuration and launchers live under `${XDG_DATA_HOME:-$HOME/.local/share}`
+> and the system scope uses the system Flatpak data directories, with system
+> launchers written to `/usr/share/flatpak-commands` when the process is
+> authorized to edit system state. Flatlink keeps system-installed aliases
+> read-only unless the current user can write to the system configuration.
 
 ## What you can do
 
@@ -89,6 +91,9 @@ flatshell list --all --complete
 
 # Generate or refresh enabled launchers for user-installed apps
 flatshell export
+
+# Target the system Flatpak installation when the caller is authorized
+flatshell export --system
 ```
 
 ### Configure defaults and apps
@@ -113,8 +118,10 @@ flatshell enable org.gimp.GIMP gimp
 flatshell disable org.gimp.GIMP gimp
 ```
 
-These settings affect the user installation. `--user` is accepted on
-configuration commands for clarity; system configuration is not implemented.
+These settings affect the selected installation. Use `--user` for the
+per-user config or `--system` for the system config when the current process
+can write to the system Flatpak directories; otherwise the system scope is
+shown as read-only.
 
 ### Add a custom alias
 
@@ -143,14 +150,23 @@ The window lists discovered aliases with their application, branch, and
 architecture. Use the search field to filter the list. Switches beside
 user-installed aliases enable or disable them; the switch in the title bar
 sets the global default. Each saved change refreshes the generated launchers.
-System-installed app aliases are displayed but cannot be changed here.
+System-installed app aliases are displayed and remain read-only unless the
+current process can write the system Flatpak configuration.
 
 ## Configuration and files
 
-Configuration is stored below:
+User configuration is stored below:
 
 ```text
 ${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/aliases/
+├── global
+└── <app_id>
+```
+
+System configuration uses the system Flatpak data directory:
+
+```text
+/var/lib/flatpak/aliases/
 ├── global
 └── <app_id>
 ```
@@ -189,11 +205,14 @@ Generated launcher scripts are stored in:
 
 ```text
 ${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/
+/usr/share/flatpak-commands/
 ```
 
-The profile script adds this directory to `PATH` when a login shell reads
-`/etc/profile.d/flatpak-exported-commands.sh`. The script only sets `PATH`;
-run `flatshell export` after installing a Flatpak to generate its launchers.
+The profile script adds the user exporter directory to `PATH` when a login shell
+reads `/etc/profile.d/flatpak-exported-commands.sh`. The system export path is
+used for system-scoped exports when the current process has the necessary
+privileges; the default user path remains the normal location for per-user
+launchers.
 
 ## How it works
 

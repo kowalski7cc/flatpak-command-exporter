@@ -29,10 +29,12 @@ intentional, and update this guide when the project conventions change.
   silently turn configuration or filesystem failures into success.
 - Preserve type hints where already used. Use standard-library facilities
   unless a dependency is needed for a clear project requirement.
-- Configuration and generated launchers are user-scoped. Resolve data paths
-  with `${XDG_DATA_HOME:-$HOME/.local/share}` and do not write user settings
-  into system installations. Treat system-installed aliases as read-only unless
-  the feature is explicitly expanded.
+- Configuration and generated launchers support both user and system scopes.
+  Resolve user paths with `${XDG_DATA_HOME:-$HOME/.local/share}` and system
+  paths with the Flatpak system directories (`/var/lib/flatpak` for config,
+  `/usr/share/flatpak-commands` for generated launchers). Treat system
+  installation aliases as read-only unless the current process can write to the
+  system configuration and export directories.
 - Alias settings live under `flatpak/aliases/` in INI/GKeyFile-style files.
   Keep global, app, and alias precedence consistent across the CLI, GUI, and
   export flow. Persist settings before refreshing exports, and report refresh

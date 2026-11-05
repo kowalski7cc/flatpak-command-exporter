@@ -31,10 +31,13 @@ def main():
         prog="flatshell",
     )
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
-    subparsers.add_parser(
+    export_parser = subparsers.add_parser(
         "export",
         help="Export commands for all user-installed flatpak applications.",
     )
+    export_scope = export_parser.add_mutually_exclusive_group()
+    export_scope.add_argument("--system", action="store_true")
+    export_scope.add_argument("--user", action="store_true")
 
     list_parser = subparsers.add_parser(
         "list",
@@ -49,6 +52,9 @@ def main():
         action="store_true",
         help="List exports for all installed refs (optionally filtered by app ID).",
     )
+    list_scope = list_parser.add_mutually_exclusive_group()
+    list_scope.add_argument("--system", action="store_true")
+    list_scope.add_argument("--user", action="store_true")
 
     add_parser = subparsers.add_parser(
         "add",
@@ -57,14 +63,18 @@ def main():
     add_parser.add_argument("app_id")
     add_parser.add_argument("export")
     add_parser.add_argument("alias_command")
-    add_parser.add_argument("--user", action="store_true")
+    add_scope = add_parser.add_mutually_exclusive_group()
+    add_scope.add_argument("--system", action="store_true")
+    add_scope.add_argument("--user", action="store_true")
 
     remove_parser = subparsers.add_parser(
         "remove", help="Disable an alias and remove any matching custom alias."
     )
     remove_parser.add_argument("app_id")
     remove_parser.add_argument("export")
-    remove_parser.add_argument("--user", action="store_true")
+    remove_scope = remove_parser.add_mutually_exclusive_group()
+    remove_scope.add_argument("--system", action="store_true")
+    remove_scope.add_argument("--user", action="store_true")
 
     for command_name in ("enable", "disable"):
         command_parser = subparsers.add_parser(
@@ -78,7 +88,9 @@ def main():
             action="store_true",
             help="Set the app-level override (same as omitting alias).",
         )
-        command_parser.add_argument("--user", action="store_true")
+        command_scope = command_parser.add_mutually_exclusive_group()
+        command_scope.add_argument("--system", action="store_true")
+        command_scope.add_argument("--user", action="store_true")
 
     profile_parser = subparsers.add_parser(
         "install-profile",
@@ -94,7 +106,9 @@ def main():
     )
     config_parser.add_argument("setting", choices=("default-export",))
     config_parser.add_argument("value", choices=("all", "none"))
-    config_parser.add_argument("--user", action="store_true")
+    config_scope = config_parser.add_mutually_exclusive_group()
+    config_scope.add_argument("--system", action="store_true")
+    config_scope.add_argument("--user", action="store_true")
 
     subparsers.add_parser("help", help="Show help message.")
 
@@ -103,12 +117,20 @@ def main():
         parser.print_help()
         return
     try:
-        exporter = FlatpakCommandExporter()
+        scope = "system" if getattr(args, "system", False) else "user"
+        exporter = FlatpakCommandExporter(scope=scope)
         if args.command == "export":
             exporter.export_commands()
         elif args.command == "list":
             if args.all:
-                groups = exporter.get_command_groups(args.app_id)
+                if args.system or args.user:
+                    groups = exporter.get_command_groups(
+                        args.app_id,
+                        include_system=False,
+                        scope="system" if args.system else "user",
+                    )
+                else:
+                    groups = exporter.get_command_groups(args.app_id)
                 if not groups:
                     if args.app_id is None:
                         print("No installed Flatpak application refs found.")
@@ -119,9 +141,17 @@ def main():
             elif args.app_id is None:
                 list_parser.error("app_id is required unless --all is specified")
             else:
-                groups = exporter.get_command_groups(
-                    args.app_id, include_system=False, first_only=True
-                )
+                if args.system or args.user:
+                    groups = exporter.get_command_groups(
+                        args.app_id,
+                        include_system=False,
+                        first_only=True,
+                        scope="system" if args.system else "user",
+                    )
+                else:
+                    groups = exporter.get_command_groups(
+                        args.app_id, include_system=False, first_only=True
+                    )
                 if not groups:
                     print(f"Flatpak application {args.app_id} not found.")
                 else:

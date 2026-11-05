@@ -111,11 +111,12 @@ except (OSError, ValueError) as error:
 
 ### Configuration location
 
-By default, configuration is stored in
-`${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/aliases/` and generated launchers
-are stored in `${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/`.
-`XDG_DATA_HOME` should be set before constructing the exporter if a different
-user data directory is needed.
+By default, user configuration is stored in
+`${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/aliases/` and generated user
+launchers are stored in `${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/`.
+System-scoped configuration uses `/var/lib/flatpak/aliases/` and system launchers
+use `/usr/share/flatpak-commands/` when the process has permission to modify
+system state.
 
 For configuration-only tests or tools that need a separate settings directory,
 pass an `AliasConfig`:
@@ -126,11 +127,15 @@ from flatpak_command_exporter.config import AliasConfig
 
 config = AliasConfig(data_home="/tmp/flatpak-exporter-data")
 exporter = FlatpakCommandExporter(config=config)
+
+system_config = AliasConfig(scope="system")
+exporter_for_system = FlatpakCommandExporter(config=system_config)
 ```
 
 Changing the configuration location does not change the launcher's location:
-launchers still use `XDG_DATA_HOME` (or the default user data directory).
-Set `XDG_DATA_HOME` if both locations should use a different data home.
+user launchers still use `XDG_DATA_HOME` (or the default user data directory),
+while system launchers use the system export path. Set `XDG_DATA_HOME` if a
+custom user data directory should be used.
 
 ## Shell CLI
 
@@ -148,6 +153,7 @@ flatshell disable org.gimp.GIMP
 flatshell add org.gimp.GIMP my-gimp gimp
 flatshell remove org.gimp.GIMP my-gimp
 flatshell export
+flatshell export --system
 ```
 
 Use `flatshell --help` and `flatshell COMMAND --help` for current command

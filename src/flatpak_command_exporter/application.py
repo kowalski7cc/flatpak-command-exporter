@@ -164,16 +164,14 @@ def get_current_ref(installation, app_id, fallback_ref):
     return ref
 
 
-def _launcher_path(alias):
+def _launcher_path(alias, *, scope="user"):
     AliasConfig._validate_alias(alias)
-    data_home = os.environ.get(
-        "XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")
-    )
-    return Path(data_home) / "flatpak-commands" / alias
+    config = AliasConfig(scope=scope)
+    return config.export_directory / alias
 
 
-def create_launcher(app_id, export, command, arch, branch):
-    path = _launcher_path(export)
+def create_launcher(app_id, export, command, arch, branch, *, scope="user"):
+    path = _launcher_path(export, scope=scope)
     path.parent.mkdir(parents=True, exist_ok=True)
     logging.debug(
         "Creating launcher for %s at %s with command: %s and arch: %s, branch: %s",
@@ -195,8 +193,8 @@ def create_launcher(app_id, export, command, arch, branch):
     path.chmod(0o755)
 
 
-def remove_launcher(export):
-    path = _launcher_path(export)
+def remove_launcher(export, *, scope="user"):
+    path = _launcher_path(export, scope=scope)
     try:
         path.unlink()
     except FileNotFoundError:
@@ -221,17 +219,33 @@ def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
     return commands
 
 
-def get_exported_aliases(config: AliasConfig | None = None) -> list[ExportedAlias]:
+def get_exported_aliases(
+    config: AliasConfig | None = None,
+    *,
+    include_system: bool = True,
+    scope: str | None = None,
+    system: bool = False,
+) -> list[ExportedAlias]:
     """Return aliases from current user and system app refs, preferring user refs."""
     aliases: list[ExportedAlias] = []
     seen_app_ids: set[str] = set()
     if config is None:
-        config = AliasConfig()
+        config = AliasConfig(scope=("system" if system else "user") if scope is None else scope)
 
-    installations = (
-        (True, Flatpak.Installation.new_user),
-        (False, Flatpak.Installation.new_system),
-    )
+    scope_name = getattr(config, "scope", "user")
+    if scope is not None:
+        scope_name = scope
+    if system:
+        scope_name = "system"
+
+    installations: list[tuple[bool, object]] = []
+    if scope_name == "system":
+        installations = [(False, Flatpak.Installation.new_system)]
+    else:
+        installations = [(True, Flatpak.Installation.new_user)]
+        if include_system:
+            installations.append((False, Flatpak.Installation.new_system))
+
     for is_user_installation, installation_factory in installations:
         try:
             installation = installation_factory()
@@ -292,23 +306,54 @@ def get_exported_aliases(config: AliasConfig | None = None) -> list[ExportedAlia
     return aliases
 
 
-def export_commands(config: AliasConfig | None = None) -> None:
-    """
-    Export commands for the current ref of each user-installed Flatpak app.
-    """
-    installation = Flatpak.Installation.new_user()
-    if installation is None:
-        return
-    installation_path = installation.get_path().get_path()
+def export_commands(
+    config: AliasConfig | None = None,
+    *,
+    include_system: bool = False,
+    scope: str | None = None,
+    system: bool = False,
+) -> None:
+    """Export commands for the current ref of each installed Flatpak app."""
     if config is None:
-        config = AliasConfig()
-    refs_by_app_id = {}
-    launchers = {}
-    disabled_aliases = set()
-    for ref in find_refs(installation):
-        refs_by_app_id[ref.get_name()] = ref
+        config = AliasConfig(
+            scope="system" if system or scope == "system" else "user"
+        )
+
+    scope_name = getattr(config, "scope", "user")
+    if scope is not None:
+        scope_name = scope
+    if system:
+        scope_name = "system"
+
+    installation_factories: list[object] = []
+    if scope_name == "system":
+        installation_factories = [Flatpak.Installation.new_system]
+    else:
+        installation_factories = [Flatpak.Installation.new_user]
+        if include_system:
+            installation_factories.append(Flatpak.Installation.new_system)
+
+    refs_by_app_id: dict[str, object] = {}
+    launchers: dict[str, tuple[str, str, str, str]] = {}
+    disabled_aliases: set[str] = set()
+
+    for installation_factory in installation_factories:
+        installation = installation_factory()
+        if installation is None:
+            continue
+        for ref in find_refs(installation):
+            refs_by_app_id[ref.get_name()] = ref
 
     for app_id, fallback_ref in refs_by_app_id.items():
+        install_factory = (
+            Flatpak.Installation.new_system
+            if scope_name == "system"
+            else Flatpak.Installation.new_user
+        )
+        installation = install_factory()
+        if installation is None:
+            continue
+        installation_path = installation.get_path().get_path()
         ref = get_current_ref(installation, app_id, fallback_ref)
 
         manifest = _read_manifest_or_empty(
@@ -316,36 +361,50 @@ def export_commands(config: AliasConfig | None = None) -> None:
         )
         if manifest is None:
             continue
+
         exported_commands = manifest_exported_commands(ref.get_name(), manifest)
-        exported_commands = {
-            **exported_commands,
-            **config.custom_aliases(app_id),
-        }
+        if scope_name == "user":
+            exported_commands = {
+                **exported_commands,
+                **config.custom_aliases(app_id),
+            }
         for export, command in exported_commands.items():
-            if config.is_alias_enabled(app_id, export):
-                launchers[export] = (
-                    ref.get_name(),
-                    command,
-                    ref.get_arch(),
-                    ref.get_branch(),
-                )
-            else:
+            if scope_name == "user" and not config.is_alias_enabled(app_id, export):
                 disabled_aliases.add(export)
+                continue
+            launchers[export] = (
+                ref.get_name(),
+                command,
+                ref.get_arch(),
+                ref.get_branch(),
+            )
 
     for export in disabled_aliases - launchers.keys():
-        remove_launcher(export)
+        if scope_name == "user":
+            remove_launcher(export)
+        else:
+            remove_launcher(export, scope=scope_name)
     for export, (app_id, command, arch, branch) in launchers.items():
-        create_launcher(app_id, export, command, arch, branch)
+        if scope_name == "user":
+            create_launcher(app_id, export, command, arch, branch)
+        else:
+            create_launcher(app_id, export, command, arch, branch, scope=scope_name)
 
 
 def get_command_groups(
     app_id: str | None = None,
     include_system: bool = True,
     first_only: bool = False,
+    *,
+    scope: str | None = None,
+    system: bool = False,
 ) -> list[CommandGroup]:
     """Return exported commands grouped by installed application ref."""
+    scope_name = "system" if system else (scope or "user")
     installation_factories = [Flatpak.Installation.new_user]
-    if include_system:
+    if scope_name == "system":
+        installation_factories = [Flatpak.Installation.new_system]
+    elif include_system:
         installation_factories.append(Flatpak.Installation.new_system)
 
     groups = []
@@ -392,11 +451,13 @@ def get_command_groups(
 class FlatpakCommandExporter:
     """Manage and inspect Flatpak command exports for the current user."""
 
-    def __init__(self, config: AliasConfig | None = None) -> None:
-        self.config = config if config is not None else AliasConfig()
+    def __init__(self, config: AliasConfig | None = None, *, scope: str | None = None, system: bool = False) -> None:
+        if config is None:
+            config = AliasConfig(scope=("system" if system else "user") if scope is None else scope)
+        self.config = config
 
-    def get_exported_aliases(self) -> list[ExportedAlias]:
-        return get_exported_aliases(self.config)
+    def get_exported_aliases(self, *, include_system: bool = True) -> list[ExportedAlias]:
+        return get_exported_aliases(self.config, include_system=include_system)
 
     def get_command_groups(
         self,
@@ -404,9 +465,17 @@ class FlatpakCommandExporter:
         *,
         include_system: bool = True,
         first_only: bool = False,
+        scope: str | None = None,
+        system: bool = False,
     ) -> list[CommandGroup]:
+        if scope is None and not system:
+            return get_command_groups(app_id, include_system=include_system, first_only=first_only)
         return get_command_groups(
-            app_id, include_system=include_system, first_only=first_only
+            app_id,
+            include_system=include_system,
+            first_only=first_only,
+            scope=scope,
+            system=system,
         )
 
     def export_commands(self) -> None:
@@ -431,6 +500,9 @@ class FlatpakCommandExporter:
     def remove_custom_alias(self, app_id: str, alias: str) -> bool:
         removed = self.config.remove_custom_alias(app_id, alias)
         self.config.set_alias_enabled(app_id, alias, False)
-        remove_launcher(alias)
+        if self.config.scope == "user":
+            remove_launcher(alias)
+        else:
+            remove_launcher(alias, scope=self.config.scope)
         self.export_commands()
         return removed

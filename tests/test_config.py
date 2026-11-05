@@ -1,6 +1,7 @@
 import os
 import tempfile
 import unittest
+from pathlib import Path
 
 from flatpak_command_exporter.config import AliasConfig, AliasConfigError
 
@@ -63,6 +64,13 @@ class AliasConfigTests(unittest.TestCase):
             os.stat(self.config.global_path).st_mode & 0o777,
             0o600,
         )
+
+    def test_system_scope_uses_system_flatpak_paths(self):
+        config = AliasConfig(self.temporary_directory.name, scope="system")
+
+        self.assertEqual(config.directory, Path(self.temporary_directory.name) / "aliases")
+        self.assertEqual(str(config.export_directory), "/usr/share/flatpak-commands")
+        self.assertEqual(config.scope, "system")
 
 
 if __name__ == "__main__":
