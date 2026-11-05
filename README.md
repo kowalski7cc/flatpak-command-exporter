@@ -155,10 +155,11 @@ Launch the GUI with:
 Flatlink
 ```
 
-The window lists discovered aliases with their application, branch, and
-architecture. Use the search field and the All/User/System filter to narrow
-the list. Switches enable or disable aliases; changing a system-installed
-alias requests PolicyKit authorization. The switch in the title bar sets the
+The window lists discovered apps in expandable rows, grouped by app and
+installation scope. Expand an app to see each exported alias, the command it
+runs, and its individual enable/disable switch. Use the search field and the
+All/User/System filter to narrow the list. Changing a system-installed alias
+requests PolicyKit authorization. The switch in the title bar sets the
 user-scope global default. Each saved change refreshes the generated
 launchers. The core package installs the PolicyKit action and system-bus helper.
 

@@ -176,7 +176,7 @@ def main():
 			global_export_control.append(global_export_switch)
 			header.pack_end(global_export_control)
 			search_entry = Gtk.SearchEntry()
-			search_entry.set_placeholder_text("Search aliases")
+			search_entry.set_placeholder_text("Search apps and commands")
 			search_entry.set_hexpand(True)
 			scope_filter = Gtk.DropDown.new_from_strings(
 				["All apps", "User apps", "System apps"]
@@ -194,24 +194,33 @@ def main():
 
 			rows = []
 			alias_switches = []
+			app_groups = {}
 			for key, record in records:
+				group_key = (record.app_id, record.installation_scope)
+				if group_key not in app_groups:
+					app_groups[group_key] = {
+						"record": record,
+						"records": [],
+						"scopes": set(),
+					}
+				app_groups[group_key]["records"].append((key, record))
+				app_groups[group_key]["scopes"].update(row_scopes[key])
+
+			for group in app_groups.values():
+				record = group["record"]
 				row = Gtk.ListBoxRow()
 				row.set_selectable(False)
 				row.set_activatable(False)
-				row_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-				row_content.set_margin_top(8)
-				row_content.set_margin_bottom(8)
-				row_content.set_margin_start(8)
-				row_content.set_margin_end(8)
+				expander = Gtk.Expander()
+				expander.set_expanded(False)
 
 				app_icon = _make_app_icon(record, Gtk, Gdk, GLib, icon_theme)
 				app_icon.set_pixel_size(48)
-				row_content.append(app_icon)
 
 				labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
 				labels.set_valign(Gtk.Align.CENTER)
 				labels.set_hexpand(True)
-				title = Gtk.Label(label=f"{record.app_name} - {record.alias}")
+				title = Gtk.Label(label=record.app_name)
 				title.set_xalign(0)
 				title.add_css_class("heading")
 				subtitle_text = (
@@ -223,27 +232,78 @@ def main():
 				subtitle.add_css_class("dim-label")
 				labels.append(title)
 				labels.append(subtitle)
-				row_content.append(labels)
-
-				alias_switch = Gtk.Switch()
-				alias_switch.set_active(record.enabled)
-				alias_switch.set_valign(Gtk.Align.CENTER)
-				alias_switch.set_sensitive(
-					record.configurable or record.installation_scope == "system"
+				header = Gtk.Box(
+					orientation=Gtk.Orientation.HORIZONTAL, spacing=12
 				)
-				row_content.append(alias_switch)
-				alias_switches.append((alias_switch, record))
-				row.set_child(row_content)
+				header.set_margin_top(8)
+				header.set_margin_bottom(8)
+				header.set_margin_start(8)
+				header.set_margin_end(8)
+				header.append(app_icon)
+				header.append(labels)
+				expander.set_label_widget(header)
 
-				row._search_text = " ".join((
+				command_list = Gtk.Box(
+					orientation=Gtk.Orientation.VERTICAL, spacing=0
+				)
+				command_list.set_margin_start(64)
+				row._command_rows = []
+				for _, command_record in group["records"]:
+					command_row = Gtk.Box(
+						orientation=Gtk.Orientation.HORIZONTAL, spacing=12
+					)
+					command_row.set_margin_top(6)
+					command_row.set_margin_bottom(6)
+					command_row.set_margin_start(8)
+					command_row.set_margin_end(8)
+
+					command_labels = Gtk.Box(
+						orientation=Gtk.Orientation.VERTICAL, spacing=4
+					)
+					command_labels.set_valign(Gtk.Align.CENTER)
+					command_labels.set_hexpand(True)
+					alias_label = Gtk.Label(label=command_record.alias)
+					alias_label.set_xalign(0)
+					alias_label.add_css_class("heading")
+					command_label = Gtk.Label(label=command_record.command)
+					command_label.set_xalign(0)
+					command_label.set_wrap(True)
+					command_label.set_selectable(True)
+					command_label.add_css_class("dim-label")
+					command_labels.append(alias_label)
+					command_labels.append(command_label)
+					command_row.append(command_labels)
+
+					alias_switch = Gtk.Switch()
+					alias_switch.set_active(command_record.enabled)
+					alias_switch.set_valign(Gtk.Align.CENTER)
+					alias_switch.set_sensitive(
+						command_record.configurable
+						or command_record.installation_scope == "system"
+					)
+					command_row.append(alias_switch)
+					alias_switches.append((alias_switch, command_record))
+					command_list.append(command_row)
+
+					row._command_rows.append((
+						command_row,
+						" ".join((
+							command_record.alias,
+							command_record.command,
+						)).casefold(),
+					))
+
+				expander.set_child(command_list)
+				row.set_child(expander)
+
+				row._search_metadata = " ".join((
 					record.app_name,
 					record.app_id,
-					record.alias,
 					record.branch,
 					record.arch,
 					record.installation_scope,
 				)).casefold()
-				row._view_scopes = row_scopes[key]
+				row._view_scopes = group["scopes"]
 				rows.append(row)
 				list_box.append(row)
 
@@ -282,12 +342,26 @@ def main():
 				]
 				visible_count = 0
 				for row in rows:
-					visible = (
-						selected_scope in row._view_scopes
-						and (not query or query in row._search_text)
+					scope_visible = selected_scope in row._view_scopes
+					metadata_matches = not query or query in row._search_metadata
+					command_matches = []
+					for command_row, command_search_text in row._command_rows:
+						command_visible = (
+							scope_visible
+							and (
+								not query
+								or metadata_matches
+								or query in command_search_text
+							)
+						)
+						command_row.set_visible(command_visible)
+						command_matches.append(command_visible)
+
+					group_visible = scope_visible and (
+						metadata_matches or any(command_matches)
 					)
-					row.set_visible(visible)
-					visible_count += visible
+					row.set_visible(group_visible)
+					visible_count += group_visible
 
 				if visible_count:
 					stack.set_visible_child_name("list")
