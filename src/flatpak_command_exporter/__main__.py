@@ -2,6 +2,7 @@ import argparse
 from dataclasses import dataclass
 
 from .defaults import DEFAULT_EXPORT_COMMANDS, COMMAND_TEMPLATE
+from .config import AliasConfig
 import gi
 gi.require_version("Flatpak", "1.0")
 from gi.repository import Flatpak, GLib
@@ -36,6 +37,9 @@ class ExportedAlias:
     branch: str
     installation_path: str
     desktop_id: str
+    enabled: bool = True
+    configurable: bool = True
+    custom: bool = False
 
 
 def find_user_packages():
@@ -155,6 +159,7 @@ def get_current_ref(installation, app_id, fallback_ref):
 
 def create_launcher(app_id, export, command, arch, branch):
     # Store launcher in XDG_DATA_HOME/flatpak-commands/{export} or $HOME/.local/share/flatpak-commands/{export}
+    AliasConfig._validate_alias(export)
     base_path = os.path.join(os.environ.get("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")), "flatpak-commands")
     if not os.path.exists(base_path):
         os.makedirs(base_path)
@@ -167,6 +172,20 @@ def create_launcher(app_id, export, command, arch, branch):
             APP_ID=app_id
         ))
     os.chmod(os.path.join(base_path, export), 0o755)
+
+
+def remove_launcher(export):
+    AliasConfig._validate_alias(export)
+    base_path = os.path.join(
+        os.environ.get(
+            "XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")
+        ),
+        "flatpak-commands",
+    )
+    try:
+        os.unlink(os.path.join(base_path, export))
+    except FileNotFoundError:
+        pass
 
 
 def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
@@ -187,12 +206,13 @@ def get_exported_aliases() -> list[ExportedAlias]:
     """Return aliases from current user and system app refs, preferring user refs."""
     aliases: list[ExportedAlias] = []
     seen_app_ids: set[str] = set()
+    config = AliasConfig()
 
-    installation_factories = (
-        Flatpak.Installation.new_user,
-        Flatpak.Installation.new_system,
+    installations = (
+        (True, Flatpak.Installation.new_user),
+        (False, Flatpak.Installation.new_system),
     )
-    for installation_factory in installation_factories:
+    for is_user_installation, installation_factory in installations:
         try:
             installation = installation_factory()
             if installation is None:
@@ -230,6 +250,10 @@ def get_exported_aliases() -> list[ExportedAlias]:
             app_name = get_pretty_name_from_metainfo(metainfo) or app_id
             desktop_id = get_desktop_id_from_metainfo(metainfo, app_id)
             commands = manifest_exported_commands(app_id, manifest)
+            custom_aliases = {}
+            if is_user_installation:
+                custom_aliases = config.custom_aliases(app_id)
+                commands = {**commands, **custom_aliases}
             for alias, command in commands.items():
                 aliases.append(ExportedAlias(
                     alias=alias,
@@ -240,6 +264,13 @@ def get_exported_aliases() -> list[ExportedAlias]:
                     branch=branch,
                     installation_path=installation_path,
                     desktop_id=desktop_id,
+                    enabled=(
+                        config.is_alias_enabled(app_id, alias)
+                        if is_user_installation
+                        else True
+                    ),
+                    configurable=is_user_installation,
+                    custom=is_user_installation and alias in custom_aliases,
                 ))
 
     return aliases
@@ -252,20 +283,48 @@ def export_commands():
     if installation is None:
         return
     installation_path = installation.get_path().get_path()
+    config = AliasConfig()
     refs_by_app_id = {}
+    launchers = {}
+    disabled_aliases = set()
     for ref in find_refs(installation):
         refs_by_app_id[ref.get_name()] = ref
 
     for app_id, fallback_ref in refs_by_app_id.items():
         ref = get_current_ref(installation, app_id, fallback_ref)
 
-        manifest = load_manifest(
-            installation_path, ref.get_name(), ref.get_arch(), ref.get_branch()
-        )
+        try:
+            manifest = load_manifest(
+                installation_path, ref.get_name(), ref.get_arch(), ref.get_branch()
+            )
+        except FileNotFoundError:
+            manifest = {}
+        except (OSError, json.JSONDecodeError) as error:
+            logging.warning("Could not load manifest for %s: %s", app_id, error)
+            continue
+        if not isinstance(manifest, dict):
+            logging.warning("Manifest for %s is not a dictionary. Ignoring.", app_id)
+            continue
         exported_commands = manifest_exported_commands(ref.get_name(), manifest)
-        if exported_commands:
-            for export, command in exported_commands.items():
-                create_launcher(ref.get_name(), export, command, ref.get_arch(), ref.get_branch())
+        exported_commands = {
+            **exported_commands,
+            **config.custom_aliases(app_id),
+        }
+        for export, command in exported_commands.items():
+            if config.is_alias_enabled(app_id, export):
+                launchers[export] = (
+                    ref.get_name(),
+                    command,
+                    ref.get_arch(),
+                    ref.get_branch(),
+                )
+            else:
+                disabled_aliases.add(export)
+
+    for export in disabled_aliases - launchers.keys():
+        remove_launcher(export)
+    for export, (app_id, command, arch, branch) in launchers.items():
+        create_launcher(app_id, export, command, arch, branch)
 
 def list_commands(app_id, complete=False):
     """
@@ -351,7 +410,10 @@ def list_all_commands(app_id=None, complete=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Export Flatpak commands to the user's PATH.", prog="flatpak-command-exporter")
+    parser = argparse.ArgumentParser(
+        description="Export Flatpak commands to the user's PATH.",
+        prog="flatshell",
+    )
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
     subparsers.add_parser("export", help="Export commands for all user-installed flatpak applications.")
 
@@ -367,23 +429,36 @@ def main():
         help="List exports for all installed refs (optionally filtered by app_id).",
     )
 
-    add_parser = subparsers.add_parser("add", help="Add a new exported command for a specific flatpak application.")
+    add_parser = subparsers.add_parser(
+        "add",
+        help="Add or replace a custom command alias for a user-installed Flatpak app.",
+    )
     add_parser.add_argument("app_id")
     add_parser.add_argument("export")
-    add_parser.add_argument("command")
+    add_parser.add_argument("alias_command")
+    add_parser.add_argument("--user", action="store_true", help="Configure the user installation (default).")
 
-    remove_parser = subparsers.add_parser("remove", help="Remove an exported command for a specific flatpak application.")
+    remove_parser = subparsers.add_parser(
+        "remove",
+        help="Disable an alias and remove any matching custom alias.",
+    )
     remove_parser.add_argument("app_id")
     remove_parser.add_argument("export")
+    remove_parser.add_argument("--user", action="store_true", help="Configure the user installation (default).")
 
     for command_name in ("enable", "disable"):
         command_parser = subparsers.add_parser(
             command_name,
-            help=f"{command_name.capitalize()} exported commands for a specific flatpak application.",
+            help=f"{command_name.capitalize()} an app or alias for the user installation.",
         )
         command_parser.add_argument("app_id")
         command_parser.add_argument("export", nargs="?")
-        command_parser.add_argument("--all", action="store_true")
+        command_parser.add_argument(
+            "--all",
+            action="store_true",
+            help="Set the app-level override (same as omitting alias).",
+        )
+        command_parser.add_argument("--user", action="store_true", help="Configure the user installation (default).")
 
     profile_parser = subparsers.add_parser(
         "install-profile",
@@ -393,26 +468,58 @@ def main():
     profile_scope.add_argument("--system", action="store_true")
     profile_scope.add_argument("--user", action="store_true")
 
-    config_parser = subparsers.add_parser("config", help="Configure settings for the exporter.")
-    config_parser.add_argument("setting")
-    config_parser.add_argument("value")
+    config_parser = subparsers.add_parser(
+        "config",
+        help="Configure global export behavior for the user installation.",
+    )
+    config_parser.add_argument("setting", choices=("default-export",))
+    config_parser.add_argument("value", choices=("all", "none"))
+    config_parser.add_argument("--user", action="store_true", help="Configure the user installation (default).")
 
     subparsers.add_parser("help", help="Show help message.")
 
     args = parser.parse_args()
     if args.command in (None, "help"):
         parser.print_help()
-    elif args.command == "export":
-        export_commands()
-    elif args.command == "list":
-        if args.all:
-            list_all_commands(args.app_id, complete=args.complete)
-        elif args.app_id is None:
-            list_parser.error("app_id is required unless --all is specified")
-        else:
-            list_commands(args.app_id, complete=args.complete)
-    else:
-        parser.error(f"the {args.command!r} command is not implemented yet")
+        return
+    try:
+        if args.command == "export":
+            export_commands()
+        elif args.command == "list":
+            if args.all:
+                list_all_commands(args.app_id, complete=args.complete)
+            elif args.app_id is None:
+                list_parser.error("app_id is required unless --all is specified")
+            else:
+                list_commands(args.app_id, complete=args.complete)
+        elif args.command in {"enable", "disable"}:
+            if args.all and args.export is not None:
+                parser.error("--all cannot be combined with an alias")
+            enabled = args.command == "enable"
+            config = AliasConfig()
+            if args.export is None or args.all:
+                config.set_app_enabled(args.app_id, enabled)
+            else:
+                config.set_alias_enabled(args.app_id, args.export, enabled)
+            export_commands()
+        elif args.command == "add":
+            config = AliasConfig()
+            config.set_custom_alias(args.app_id, args.export, args.alias_command)
+            export_commands()
+        elif args.command == "remove":
+            config = AliasConfig()
+            config.remove_custom_alias(args.app_id, args.export)
+            config.set_alias_enabled(args.app_id, args.export, False)
+            remove_launcher(args.export)
+            export_commands()
+        elif args.command == "config":
+            AliasConfig().set_default_policy(args.value)
+            export_commands()
+        elif args.command == "install-profile":
+            parser.error("install-profile is managed by the Debian package.")
+    except (OSError, ValueError, GLib.Error) as error:
+        logging.error("%s", error)
+        raise SystemExit(1) from error
 
 if __name__ == "__main__":
     main()

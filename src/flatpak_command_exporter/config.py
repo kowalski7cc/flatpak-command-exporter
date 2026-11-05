@@ -1,0 +1,181 @@
+import configparser
+import os
+from pathlib import Path
+import tempfile
+
+
+class AliasConfigError(ValueError):
+    """Raised when alias configuration is invalid or cannot be read."""
+
+
+class AliasConfig:
+    """Read and update the user's Flatpak command alias configuration."""
+
+    def __init__(self, data_home=None):
+        if data_home is None:
+            data_home = os.environ.get(
+                "XDG_DATA_HOME",
+                os.path.join(os.path.expanduser("~"), ".local", "share"),
+            )
+        self.directory = Path(data_home) / "flatpak" / "aliases"
+
+    @property
+    def global_path(self):
+        return self.directory / "global"
+
+    def app_path(self, app_id):
+        if (
+            not isinstance(app_id, str)
+            or not app_id
+            or app_id in {".", ".."}
+            or "/" in app_id
+            or "\\" in app_id
+            or "\0" in app_id
+        ):
+            raise AliasConfigError(f"Invalid Flatpak app ID: {app_id!r}")
+        return self.directory / app_id
+
+    def _read(self, path):
+        parser = configparser.ConfigParser(interpolation=None, strict=False)
+        parser.optionxform = str
+        if path.exists():
+            try:
+                with path.open(encoding="utf-8") as config_file:
+                    parser.read_file(config_file)
+            except (OSError, UnicodeError, configparser.Error) as error:
+                raise AliasConfigError(f"Could not read {path}: {error}") from error
+        return parser
+
+    def _write(self, path, parser):
+        self.directory.mkdir(parents=True, exist_ok=True)
+        descriptor, temporary_path = tempfile.mkstemp(
+            prefix=f".{path.name}.", dir=self.directory, text=True
+        )
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8") as config_file:
+                parser.write(config_file)
+            os.chmod(temporary_path, 0o600)
+            os.replace(temporary_path, path)
+        finally:
+            if os.path.exists(temporary_path):
+                os.unlink(temporary_path)
+
+    def default_policy(self):
+        parser = self._read(self.global_path)
+        policy = parser.get("core", "default-export", fallback="all")
+        if policy not in {"all", "none"}:
+            raise AliasConfigError(
+                f"Invalid default-export value in {self.global_path}: {policy!r}"
+            )
+        return policy
+
+    def set_default_policy(self, policy):
+        if policy not in {"all", "none"}:
+            raise AliasConfigError("Default export policy must be 'all' or 'none'")
+        parser = self._read(self.global_path)
+        if not parser.has_section("core"):
+            parser.add_section("core")
+        parser.set("core", "default-export", policy)
+        self._write(self.global_path, parser)
+
+    def _app_config(self, app_id):
+        return self._read(self.app_path(app_id))
+
+    def app_enabled(self, app_id):
+        parser = self._app_config(app_id)
+        if not parser.has_option("app", "enabled"):
+            return None
+        try:
+            return parser.getboolean("app", "enabled")
+        except ValueError as error:
+            raise AliasConfigError(
+                f"Invalid app enabled value for {app_id}: {error}"
+            ) from error
+
+    def set_app_enabled(self, app_id, enabled):
+        if enabled is not None and not isinstance(enabled, bool):
+            raise AliasConfigError("App enabled setting must be true, false, or None")
+        parser = self._app_config(app_id)
+        if enabled is None:
+            if parser.has_option("app", "enabled"):
+                parser.remove_option("app", "enabled")
+        else:
+            if not parser.has_section("app"):
+                parser.add_section("app")
+            parser.set("app", "enabled", str(bool(enabled)).lower())
+        self._write(self.app_path(app_id), parser)
+
+    def alias_enabled(self, app_id, alias):
+        parser = self._app_config(app_id)
+        if not parser.has_option("aliases", alias):
+            return None
+        try:
+            return parser.getboolean("aliases", alias)
+        except ValueError as error:
+            raise AliasConfigError(
+                f"Invalid enabled value for alias {alias!r} in {app_id}: {error}"
+            ) from error
+
+    def set_alias_enabled(self, app_id, alias, enabled):
+        self._validate_alias(alias)
+        if not isinstance(enabled, bool):
+            raise AliasConfigError("Alias enabled setting must be true or false")
+        parser = self._app_config(app_id)
+        if not parser.has_section("aliases"):
+            parser.add_section("aliases")
+        parser.set("aliases", alias, str(bool(enabled)).lower())
+        self._write(self.app_path(app_id), parser)
+
+    def custom_aliases(self, app_id):
+        parser = self._app_config(app_id)
+        if parser.has_section("custom-aliases"):
+            return dict(parser.items("custom-aliases"))
+        return {}
+
+    def set_custom_alias(self, app_id, alias, command):
+        self._validate_alias(alias)
+        if (
+            not isinstance(command, str)
+            or not command
+            or "\n" in command
+            or "\r" in command
+        ):
+            raise AliasConfigError("Custom alias command must be a non-empty single line")
+        parser = self._app_config(app_id)
+        if not parser.has_section("custom-aliases"):
+            parser.add_section("custom-aliases")
+        parser.set("custom-aliases", alias, command)
+        if not parser.has_section("aliases"):
+            parser.add_section("aliases")
+        parser.set("aliases", alias, "true")
+        self._write(self.app_path(app_id), parser)
+
+    def remove_custom_alias(self, app_id, alias):
+        parser = self._app_config(app_id)
+        removed = parser.remove_option("custom-aliases", alias)
+        self._write(self.app_path(app_id), parser)
+        return removed
+
+    def is_alias_enabled(self, app_id, alias):
+        alias_setting = self.alias_enabled(app_id, alias)
+        if alias_setting is not None:
+            return alias_setting
+        app_setting = self.app_enabled(app_id)
+        if app_setting is not None:
+            return app_setting
+        return self.default_policy() == "all"
+
+    @staticmethod
+    def _validate_alias(alias):
+        if (
+            not isinstance(alias, str)
+            or not alias
+            or alias in {".", ".."}
+            or any(character.isspace() for character in alias)
+            or "/" in alias
+            or "\\" in alias
+            or "\0" in alias
+            or "=" in alias
+            or ":" in alias
+        ):
+            raise AliasConfigError(f"Invalid command alias: {alias!r}")

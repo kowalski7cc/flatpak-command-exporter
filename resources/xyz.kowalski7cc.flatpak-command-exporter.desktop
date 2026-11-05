@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=Flatpak Command Exporter
+Name=Flatlink
 Comment=Inspect exported Flatpak commands
-Exec=flatpak-command-exporter-gui
+Exec=Flatlink
 Icon=xyz.kowalski7cc.flatpak-command-exporter
 Terminal=false
 Categories=Utility;
-StartupWMClass=flatpak-command-exporter-gui
+StartupWMClass=flatlink

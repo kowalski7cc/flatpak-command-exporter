@@ -1,4 +1,5 @@
 import configparser
+import logging
 import os
 import sys
 
@@ -128,13 +129,23 @@ def main():
 			icon_theme = Gtk.IconTheme.get_for_display(display)
 			icon_theme.add_search_path(os.path.join(sys.prefix, "share", "icons"))
 
-			window = Adw.ApplicationWindow(application=self, title="Flatpak Command Exporter")
+			window = Adw.ApplicationWindow(application=self, title="Flatlink")
 			window.set_default_size(720, 640)
 			window.set_icon_name("xyz.kowalski7cc.flatpak-command-exporter")
 
 			toolbar = Adw.ToolbarView()
 			header = Adw.HeaderBar()
 			header.set_title_widget(Adw.WindowTitle(title="Exported Commands", subtitle=None))
+			global_export_switch = Gtk.Switch()
+			global_export_switch.set_active(core.AliasConfig().default_policy() == "all")
+			global_export_switch.set_valign(Gtk.Align.CENTER)
+			global_export_switch.set_tooltip_text("Export all aliases by default")
+			global_export_control = Gtk.Box(
+				orientation=Gtk.Orientation.HORIZONTAL, spacing=8
+			)
+			global_export_control.append(Gtk.Label(label="Export by default"))
+			global_export_control.append(global_export_switch)
+			header.pack_end(global_export_control)
 			search_entry = Gtk.SearchEntry()
 			search_entry.set_placeholder_text("Search aliases")
 			search_entry.set_size_request(220, -1)
@@ -149,6 +160,7 @@ def main():
 			list_box.set_margin_end(12)
 
 			rows = []
+			alias_switches = []
 			for record in records:
 				row = Gtk.ListBoxRow()
 				row.set_selectable(False)
@@ -178,9 +190,11 @@ def main():
 				row_content.append(labels)
 
 				alias_switch = Gtk.Switch()
-				alias_switch.set_active(True)
+				alias_switch.set_active(record.enabled)
 				alias_switch.set_valign(Gtk.Align.CENTER)
+				alias_switch.set_sensitive(record.configurable)
 				row_content.append(alias_switch)
+				alias_switches.append((alias_switch, record))
 				row.set_child(row_content)
 
 				row._search_text = " ".join((
@@ -229,7 +243,72 @@ def main():
 
 			search_entry.connect("search-changed", update_search)
 			update_search(search_entry)
-			window.set_content(toolbar)
+
+			toast_overlay = Adw.ToastOverlay()
+			toast_overlay.set_child(toolbar)
+			window.set_content(toast_overlay)
+
+			def report_error(message, error):
+				logging.error("%s: %s", message, error)
+				toast_overlay.add_toast(Adw.Toast.new(f"{message}: {error}"))
+
+			for alias_switch, record in alias_switches:
+				handler_id = [None]
+				saved_state = [record.enabled]
+
+				def update_alias(
+					toggle,
+					_property,
+					record=record,
+					handler_id=handler_id,
+					saved_state=saved_state,
+				):
+					try:
+						core.AliasConfig().set_alias_enabled(
+							record.app_id, record.alias, toggle.get_active()
+						)
+					except (OSError, ValueError) as error:
+						toggle.handler_block(handler_id[0])
+						toggle.set_active(saved_state[0])
+						toggle.handler_unblock(handler_id[0])
+						report_error("Could not save alias setting", error)
+						return
+
+					saved_state[0] = toggle.get_active()
+					try:
+						core.export_commands()
+					except (OSError, ValueError, GLib.Error) as error:
+						report_error("Alias setting saved, but export failed", error)
+
+				handler_id[0] = alias_switch.connect(
+					"notify::active", update_alias
+				)
+
+			global_switch_state = [global_export_switch.get_active()]
+			global_switch_handler = [None]
+
+			def update_global_export(toggle, _property):
+				new_state = toggle.get_active()
+				try:
+					core.AliasConfig().set_default_policy(
+						"all" if new_state else "none"
+					)
+				except (OSError, ValueError) as error:
+					toggle.handler_block(global_switch_handler[0])
+					toggle.set_active(global_switch_state[0])
+					toggle.handler_unblock(global_switch_handler[0])
+					report_error("Could not save global export setting", error)
+					return
+
+				global_switch_state[0] = new_state
+				try:
+					core.export_commands()
+				except (OSError, ValueError, GLib.Error) as error:
+					report_error("Global setting saved, but export failed", error)
+
+			global_switch_handler[0] = global_export_switch.connect(
+				"notify::active", update_global_export
+			)
 			window.present()
 
 	AliasApplication().run(sys.argv)

@@ -1,4 +1,6 @@
 import tempfile
+import os
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -48,17 +50,19 @@ class AliasDataTests(unittest.TestCase):
         def load_manifest(path, app_id, _arch, branch):
             return {"x-export-commands": {f"{app_id}-{path}-{branch}": "command"}}
 
-        with (
-            patch.object(core, "Flatpak", SimpleNamespace(Installation=installation_api)),
-            patch.object(
-                core,
-                "find_refs",
-                side_effect=lambda installation: user_refs if installation is user_installation else system_refs,
-            ),
-            patch.object(core, "load_manifest", side_effect=load_manifest),
-            patch.object(core, "load_metainfo", return_value=None),
-        ):
-            records = core.get_exported_aliases()
+        with tempfile.TemporaryDirectory() as data_home:
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "Flatpak", SimpleNamespace(Installation=installation_api)),
+                patch.object(
+                    core,
+                    "find_refs",
+                    side_effect=lambda installation: user_refs if installation is user_installation else system_refs,
+                ),
+                patch.object(core, "load_manifest", side_effect=load_manifest),
+                patch.object(core, "load_metainfo", return_value=None),
+            ):
+                records = core.get_exported_aliases()
 
         self.assertEqual(
             [(record.app_id, record.branch, record.installation_path) for record in records],
