@@ -1,0 +1,30 @@
+name: Run unit tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    container:
+      image: node:24-trixie
+    steps:
+      - name: Install test dependencies
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            flatpak \
+            gir1.2-adw-1 \
+            gir1.2-flatpak-1.0 \
+            gir1.2-gtk-4.0 \
+            python3 \
+            python3-gi
+
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Run unit tests
+        env:
+          PYTHONPATH: src
+        run: python3 -m unittest discover -s tests -v
