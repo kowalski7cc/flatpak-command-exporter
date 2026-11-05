@@ -1,2 +1,3 @@
 usr/bin/flatpak-command-exporter-gui
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/gui.py
+usr/share/applications/io.github.flatpakcommandexporter.desktop

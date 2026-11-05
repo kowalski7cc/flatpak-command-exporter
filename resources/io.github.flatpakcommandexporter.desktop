@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Flatpak Command Exporter
+Comment=Inspect exported Flatpak commands
+Exec=flatpak-command-exporter-gui
+Icon=application-x-executable-symbolic
+Terminal=false
+Categories=Utility;
