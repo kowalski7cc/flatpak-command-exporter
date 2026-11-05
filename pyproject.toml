@@ -29,6 +29,9 @@ where = ["src"]
 "share/icons/hicolor/scalable/apps" = ["resources/xyz.kowalski7cc.flatpak-command-exporter.svg"]
 "share/icons/hicolor/symbolic/apps" = ["resources/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg"]
 
+[tool.setuptools.package-data]
+flatpak_command_exporter = ["flatpak-exported-commands.sh"]
+
 [project.scripts]
 flatshell = "flatpak_command_exporter.__main__:main"
 flatpak-command-exporter = "flatpak_command_exporter.__main__:main"

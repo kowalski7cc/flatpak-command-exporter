@@ -44,7 +44,7 @@ exporter = FlatpakCommandExporter()
 
 # Includes aliases for user-installed and system-installed apps.
 for alias in exporter.get_exported_aliases():
-    scope = "user" if alias.configurable else "system (read-only)"
+    scope = "user" if alias.configurable else "system"
     state = "enabled" if alias.enabled else "disabled"
     print(f"{alias.app_name}: {alias.alias} -> {alias.command} [{scope}, {state}]")
 
@@ -114,9 +114,9 @@ except (OSError, ValueError) as error:
 By default, user configuration is stored in
 `${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/aliases/` and generated user
 launchers are stored in `${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/`.
-System-scoped configuration uses `/var/lib/flatpak/aliases/` and system launchers
-use `/usr/share/flatpak-commands/` when the process has permission to modify
-system state.
+System-scoped configuration uses `/usr/lib/flatpak/aliases/` and system
+launchers use `/usr/share/flatpak-commands/`. System mutations go through the
+root-owned system-bus helper, which authorizes each operation through PolicyKit.
 
 For configuration-only tests or tools that need a separate settings directory,
 pass an `AliasConfig`:
@@ -139,7 +139,7 @@ custom user data directory should be used.
 
 ## Shell CLI
 
-Commands that update settings also regenerate user launchers:
+Commands that update settings also regenerate launchers for the selected scope:
 
 ```bash
 flatshell list --all
@@ -151,9 +151,12 @@ flatshell enable org.gimp.GIMP gimp
 flatshell disable org.gimp.GIMP
 
 flatshell add org.gimp.GIMP my-gimp gimp
+flatshell add --system org.example.App my-command command
 flatshell remove org.gimp.GIMP my-gimp
 flatshell export
 flatshell export --system
+flatshell install-profile --user
+flatshell install-profile --system
 ```
 
 Use `flatshell --help` and `flatshell COMMAND --help` for current command

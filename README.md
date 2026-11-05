@@ -10,10 +10,10 @@ aliases in a graphical interface.
 
 > **Scope:** The exporter supports both user and system scopes. User
 > configuration and launchers live under `${XDG_DATA_HOME:-$HOME/.local/share}`
-> and the system scope uses the system Flatpak data directories, with system
-> launchers written to `/usr/share/flatpak-commands` when the process is
-> authorized to edit system state. Flatlink can request PolicyKit authorization
-> when changing settings for system-installed aliases.
+> and system alias configuration lives under `/usr/lib/flatpak/aliases/`.
+> System launchers are written to `/usr/share/flatpak-commands` when authorized.
+> Flatlink and `flatshell` use a root-owned system-bus helper with PolicyKit
+> authorization for system changes.
 
 ## What you can do
 
@@ -21,15 +21,15 @@ aliases in a graphical interface.
   `x-export-commands` and `export-commands`.
 - Choose whether aliases are exported by default, then override that choice for
   individual apps or aliases.
-- Add your own aliases for commands inside a user-installed Flatpak.
+- Add your own aliases for commands inside user- or system-installed Flatpaks.
 - Search and toggle aliases in Flatlink.
 - Keep generated launchers on your `PATH` using the included profile script.
 
 ## Quick start
 
 After installing the Debian packages, open a new login session so the profile
-script can add the launcher directory to `PATH`. Then list available aliases
-and export them:
+script can add user and system launcher directories to `PATH`. Then list
+available aliases and export them:
 
 ```console
 flatshell list --all
@@ -43,7 +43,8 @@ gimp
 ```
 
 Use `Flatlink` to browse and toggle aliases with the GUI. Settings changed in
-either the GUI or the CLI are saved and the user exports are refreshed.
+either the GUI or the CLI are saved and the corresponding export scope is
+refreshed.
 
 ## Install
 
@@ -61,14 +62,20 @@ make deb
 The resulting `.deb` files are written to the parent directory. Install the
 core package and, if desired, the GUI package with your package manager. The
 core package installs `flatpak-exported-commands.sh` into `/etc/profile.d/`;
-start a new login session after installation for the PATH change to take
-effect.
+start a new login session after installation for the `PATH` change to take
+effect. Non-Debian installations can run `flatshell install-profile --user` to
+set up shell integration for the current user, or `flatshell install-profile
+--system` to install it in `/etc/profile.d/`. The system command is authorized
+by the PolicyKit-backed system-bus helper. The user installation updates
+`~/.profile` and applies to login shells that read that file.
 
 ### Requirements
 
 - Flatpak and Python 3.13 or newer.
 - PyGObject and the Flatpak GObject introspection bindings for the CLI and
   exporter.
+- System-scope operations use the system D-Bus and Polkit; the Debian core
+  package installs the service and its authorization policy.
 - GTK 4, libadwaita, and their introspection data to run Flatlink.
 
 ## CLI
@@ -89,10 +96,10 @@ flatshell list --all
 # Include the Flatpak command behind each alias
 flatshell list --all --complete
 
-# Generate or refresh enabled launchers for user-installed apps
+# Generate or refresh enabled user launchers
 flatshell export
 
-# Target the system Flatpak installation when the caller is authorized
+# Generate or refresh system launchers (requests PolicyKit if needed)
 flatshell export --system
 ```
 
@@ -118,24 +125,26 @@ flatshell enable org.gimp.GIMP gimp
 flatshell disable org.gimp.GIMP gimp
 ```
 
-These settings affect the selected installation. Use `--user` for the
-per-user config or `--system` for the system config when the current process
-can write to the system Flatpak directories; otherwise the system scope is
-shown as read-only.
+These settings affect the selected installation. Use `--user` for per-user
+settings or `--system` for system settings; the system-bus helper requests
+PolicyKit authorization.
 
 ### Add a custom alias
 
-Custom aliases map a new command name to a command available inside the
-user-installed Flatpak:
+Custom aliases map a new command name to a command available inside an
+installed Flatpak. Use `--system` to add an alias for a system-installed app;
+system changes are handled by the system-bus helper with PolicyKit:
 
 ```console
 flatshell add org.gimp.GIMP my-gimp gimp
+flatshell add --system org.example.App my-command command
 ```
 
 Remove a custom alias and disable that alias:
 
 ```console
 flatshell remove org.gimp.GIMP my-gimp
+flatshell remove --system org.example.App my-command
 ```
 
 ## Flatlink
@@ -151,8 +160,7 @@ architecture. Use the search field and the All/User/System filter to narrow
 the list. Switches enable or disable aliases; changing a system-installed
 alias requests PolicyKit authorization. The switch in the title bar sets the
 user-scope global default. Each saved change refreshes the generated
-launchers. The Debian GUI package installs `pkexec`; the PolicyKit action for
-system changes is provided by the core package.
+launchers. The core package installs the PolicyKit action and system-bus helper.
 
 ## Configuration and files
 
@@ -164,10 +172,10 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/aliases/
 └── <app_id>
 ```
 
-System configuration uses the system Flatpak data directory:
+System configuration is stored at:
 
 ```text
-/var/lib/flatpak/aliases/
+/usr/lib/flatpak/aliases/
 ├── global
 └── <app_id>
 ```
@@ -209,19 +217,18 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/
 /usr/share/flatpak-commands/
 ```
 
-The profile script adds the user exporter directory to `PATH` when a login shell
-reads `/etc/profile.d/flatpak-exported-commands.sh`. The system export path is
-used for system-scoped exports when the current process has the necessary
-privileges; the default user path remains the normal location for per-user
-launchers.
+The profile script adds both user and system launcher directories to `PATH`.
+Debian installs it in `/etc/profile.d/`; `flatshell install-profile --user`
+installs a user copy and sources it from `~/.profile`.
 
 ## How it works
 
 1. The exporter enumerates installed Flatpak app refs and reads their
    `files/manifest.json` command declarations. A built-in command map supplies
    aliases for known apps whose manifests do not declare them.
-2. For each user-installed app, it combines the declared commands with custom
-   aliases and applies the global, app, and alias settings.
+2. For each app, it combines the declared commands with custom aliases from
+   that installation's configuration and applies the global, app, and alias
+   settings.
 3. For enabled aliases, it writes an executable launcher that invokes
    `flatpak run` with the app ID, branch, architecture, and command. Disabled
    launchers are removed from the export directory.

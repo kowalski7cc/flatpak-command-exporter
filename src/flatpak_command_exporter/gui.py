@@ -55,17 +55,6 @@ def get_exported_icon(record, data_dirs=None):
 		return None
 
 
-def _system_alias_toggle_command(record, enabled):
-	return [
-		"pkexec",
-		"/usr/bin/flatshell",
-		"enable" if enabled else "disable",
-		record.app_id,
-		record.alias,
-		"--system",
-	]
-
-
 def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):
 	icon_name = get_exported_icon(record)
 	installation_path = getattr(record, "installation_path", None)
@@ -340,9 +329,26 @@ def main():
 						requested_state = toggle.get_active()
 						toggle.set_sensitive(False)
 						try:
-							process = Gio.Subprocess.new(
-								_system_alias_toggle_command(record, requested_state),
-								Gio.SubprocessFlags.NONE,
+							from .system_bus import call_system_method_async
+
+							def finish_system_update(connection, result, _user_data=None):
+								try:
+									connection.call_finish(result)
+								except GLib.Error as error:
+									toggle.handler_block(handler_id[0])
+									toggle.set_active(saved_state[0])
+									toggle.handler_unblock(handler_id[0])
+									report_error(
+										"Could not save system alias setting", error
+									)
+								else:
+									saved_state[0] = requested_state
+								toggle.set_sensitive(True)
+
+							call_system_method_async(
+								"SetAliasEnabled",
+								(record.app_id, record.alias, requested_state),
+								finish_system_update,
 							)
 						except GLib.Error as error:
 							toggle.handler_block(handler_id[0])
@@ -350,21 +356,6 @@ def main():
 							toggle.handler_unblock(handler_id[0])
 							toggle.set_sensitive(True)
 							report_error("Could not start system alias update", error)
-							return
-
-						def finish_system_update(process, result, _user_data=None):
-							try:
-								process.wait_check_finish(result)
-							except GLib.Error as error:
-								toggle.handler_block(handler_id[0])
-								toggle.set_active(saved_state[0])
-								toggle.handler_unblock(handler_id[0])
-								report_error("Could not save system alias setting", error)
-							else:
-								saved_state[0] = requested_state
-							toggle.set_sensitive(True)
-
-						process.wait_check_async(None, finish_system_update)
 						return
 
 					try:

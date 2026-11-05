@@ -15,7 +15,7 @@ class AliasConfig:
         self.scope = scope
         if data_home is None:
             if scope == "system":
-                data_home = "/var/lib/flatpak"
+                data_home = "/usr/lib/flatpak"
             else:
                 data_home = os.environ.get(
                     "XDG_DATA_HOME",

@@ -5,6 +5,8 @@ import os
 from gi.repository import GLib
 
 from .application import FlatpakCommandExporter
+from .profile import install_profile
+from .system_bus import call_system_method
 
 logging.basicConfig(
     level=os.environ.get("LOGLEVEL", "INFO").upper(),
@@ -25,15 +27,40 @@ def _print_command_groups(groups, complete):
             print(f"- {alias} -> {command}" if complete else f"- {alias}")
 
 
+def _run_system_command(args):
+    if args.command == "export":
+        call_system_method("Export")
+    elif args.command == "add":
+        call_system_method(
+            "AddCustomAlias", args.app_id, args.export, args.alias_command
+        )
+    elif args.command == "remove":
+        call_system_method("RemoveCustomAlias", args.app_id, args.export)
+    elif args.command in {"enable", "disable"}:
+        if args.all and args.export is not None:
+            raise ValueError("--all cannot be combined with an alias")
+        enabled = args.command == "enable"
+        if args.export is None or args.all:
+            call_system_method("SetAppEnabled", args.app_id, enabled)
+        else:
+            call_system_method(
+                "SetAliasEnabled", args.app_id, args.export, enabled
+            )
+    elif args.command == "config":
+        call_system_method("SetDefaultPolicy", args.value)
+    elif args.command == "install-profile":
+        call_system_method("InstallProfile")
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Export Flatpak commands to the user's PATH.",
+        description="Export Flatpak commands to PATH-accessible directories.",
         prog="flatshell",
     )
     subparsers = parser.add_subparsers(dest="command", help="Subcommands")
     export_parser = subparsers.add_parser(
         "export",
-        help="Export commands for all user-installed flatpak applications.",
+        help="Export commands for the selected Flatpak installation.",
     )
     export_scope = export_parser.add_mutually_exclusive_group()
     export_scope.add_argument("--system", action="store_true")
@@ -58,7 +85,7 @@ def main():
 
     add_parser = subparsers.add_parser(
         "add",
-        help="Add or replace a custom command alias for a user-installed Flatpak app.",
+        help="Add or replace a custom alias for an app in the selected installation.",
     )
     add_parser.add_argument("app_id")
     add_parser.add_argument("export")
@@ -94,7 +121,7 @@ def main():
 
     profile_parser = subparsers.add_parser(
         "install-profile",
-        help="Install the profile.d script to enable exported commands in the user's shell.",
+        help="Install shell integration for exported commands.",
     )
     profile_scope = profile_parser.add_mutually_exclusive_group()
     profile_scope.add_argument("--system", action="store_true")
@@ -102,7 +129,7 @@ def main():
 
     config_parser = subparsers.add_parser(
         "config",
-        help="Configure global export behavior for the user installation.",
+        help="Configure global export behavior for the selected installation.",
     )
     config_parser.add_argument("setting", choices=("default-export",))
     config_parser.add_argument("value", choices=("all", "none"))
@@ -117,6 +144,19 @@ def main():
         parser.print_help()
         return
     try:
+        system_mutation = args.command in {
+            "export",
+            "add",
+            "remove",
+            "enable",
+            "disable",
+            "config",
+            "install-profile",
+        } and getattr(args, "system", False)
+        if system_mutation:
+            _run_system_command(args)
+            return
+
         scope = "system" if getattr(args, "system", False) else "user"
         exporter = FlatpakCommandExporter(scope=scope)
         if args.command == "export":
@@ -177,7 +217,7 @@ def main():
         elif args.command == "config":
             exporter.set_default_policy(args.value)
         elif args.command == "install-profile":
-            parser.error("install-profile is managed by the Debian package.")
+            install_profile(scope)
     except (OSError, ValueError, GLib.Error) as error:
         logging.error("%s", error)
         raise SystemExit(1) from error

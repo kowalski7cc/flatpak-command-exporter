@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import shlex
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -184,10 +185,10 @@ def create_launcher(app_id, export, command, arch, branch, *, scope="user"):
     )
     path.write_text(
         COMMAND_TEMPLATE.format(
-            BRANCH=branch,
-            ARCH=arch,
-            COMMAND=command,
-            APP_ID=app_id,
+            BRANCH=shlex.quote(branch),
+            ARCH=shlex.quote(arch),
+            COMMAND=shlex.quote(command),
+            APP_ID=shlex.quote(app_id),
         ),
         encoding="utf-8",
     )
@@ -284,10 +285,8 @@ def get_exported_aliases(
             app_name = get_pretty_name_from_metainfo(metainfo) or app_id
             desktop_id = get_desktop_id_from_metainfo(metainfo, app_id)
             commands = manifest_exported_commands(app_id, manifest)
-            custom_aliases = {}
-            if is_user_installation:
-                custom_aliases = config.custom_aliases(app_id)
-                commands = {**commands, **custom_aliases}
+            custom_aliases = installation_config.custom_aliases(app_id)
+            commands = {**commands, **custom_aliases}
             for alias, command in commands.items():
                 aliases.append(
                     ExportedAlias(
@@ -304,7 +303,7 @@ def get_exported_aliases(
                         ),
                         enabled=installation_config.is_alias_enabled(app_id, alias),
                         configurable=is_user_installation,
-                        custom=is_user_installation and alias in custom_aliases,
+                        custom=alias in custom_aliases,
                     )
                 )
 
@@ -368,11 +367,7 @@ def export_commands(
             continue
 
         exported_commands = manifest_exported_commands(ref.get_name(), manifest)
-        if scope_name == "user":
-            exported_commands = {
-                **exported_commands,
-                **config.custom_aliases(app_id),
-            }
+        exported_commands = {**exported_commands, **config.custom_aliases(app_id)}
         for export, command in exported_commands.items():
             if not config.is_alias_enabled(app_id, export):
                 disabled_aliases.add(export)

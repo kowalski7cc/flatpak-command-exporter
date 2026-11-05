@@ -40,6 +40,21 @@ class LauncherTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             create_launcher("org.example.App", "../unsafe", "command", "x86_64", "stable")
 
+    def test_launcher_quotes_command_values_for_the_shell(self):
+        with tempfile.TemporaryDirectory() as data_home:
+            path = Path(data_home) / "flatpak-commands" / "example"
+            command = 'tool"; touch /tmp/unexpected; echo "'
+            with patch.dict(os.environ, {"XDG_DATA_HOME": data_home}):
+                create_launcher(
+                    "org.example.App",
+                    "example",
+                    command,
+                    "x86_64",
+                    "stable",
+                )
+
+            self.assertIn("--command='tool\"; touch /tmp/unexpected; echo \"'", path.read_text())
+
 
 if __name__ == "__main__":
     unittest.main()

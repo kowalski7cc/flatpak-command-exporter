@@ -147,5 +147,5 @@ COMMAND_TEMPLATE = textwrap.dedent("""\
             set -- "$@" "$arg"
         fi
     done
-    exec /usr/bin/flatpak run --branch={BRANCH} --arch={ARCH} --command="{COMMAND}" --file-forwarding {APP_ID} "$@"
+    exec /usr/bin/flatpak run --branch={BRANCH} --arch={ARCH} --command={COMMAND} --file-forwarding {APP_ID} "$@"
     """)

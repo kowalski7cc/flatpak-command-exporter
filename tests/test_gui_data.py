@@ -9,7 +9,6 @@ from unittest.mock import patch
 from flatpak_command_exporter import FlatpakCommandExporter
 from flatpak_command_exporter import application as core
 from flatpak_command_exporter.gui import (
-    _system_alias_toggle_command,
     get_exported_icon,
 )
 
@@ -115,6 +114,7 @@ class AliasDataTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as data_home:
             config = core.AliasConfig(data_home, scope="system")
             config.set_default_policy("none")
+            config.set_custom_alias("app.system", "custom", "custom-command")
             with (
                 patch.object(
                     core,
@@ -131,31 +131,19 @@ class AliasDataTests(unittest.TestCase):
             ):
                 records = core.get_exported_aliases(config, scope="system")
 
-        self.assertEqual(len(records), 1)
-        self.assertEqual(records[0].installation_scope, "system")
-        self.assertFalse(records[0].enabled)
+        self.assertEqual(len(records), 2)
+        custom_record = next(record for record in records if record.alias == "custom")
+        self.assertEqual(custom_record.installation_scope, "system")
+        self.assertTrue(custom_record.enabled)
+        self.assertEqual(custom_record.command, "custom-command")
+        self.assertTrue(custom_record.custom)
+        manifest_record = next(
+            record for record in records if record.alias == "alias"
+        )
+        self.assertFalse(manifest_record.enabled)
 
 
 class DesktopIconTests(unittest.TestCase):
-    def test_system_alias_toggle_uses_policykit_with_argument_separation(self):
-        record = SimpleNamespace(app_id="org.example.App", alias="example")
-
-        self.assertEqual(
-            _system_alias_toggle_command(record, True),
-            [
-                "pkexec",
-                "/usr/bin/flatshell",
-                "enable",
-                "org.example.App",
-                "example",
-                "--system",
-            ],
-        )
-        self.assertEqual(
-            _system_alias_toggle_command(record, False)[2],
-            "disable",
-        )
-
     def test_reads_icon_from_flatpak_exported_desktop_file(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             share_directory = Path(temporary_directory) / "share"

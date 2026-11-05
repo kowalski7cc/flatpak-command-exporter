@@ -72,6 +72,11 @@ class AliasConfigTests(unittest.TestCase):
         self.assertEqual(str(config.export_directory), "/usr/share/flatpak-commands")
         self.assertEqual(config.scope, "system")
 
+    def test_default_system_scope_uses_usr_lib_flatpak(self):
+        config = AliasConfig(scope="system")
+
+        self.assertEqual(config.directory, Path("/usr/lib/flatpak/aliases"))
+
 
 if __name__ == "__main__":
     unittest.main()

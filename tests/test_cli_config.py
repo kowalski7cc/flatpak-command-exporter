@@ -61,6 +61,86 @@ class ConfigurationCliTests(unittest.TestCase):
         self.assertEqual(config.default_policy(), "none")
         application.export_commands.assert_called_once_with(config)
 
+    def test_system_add_uses_the_system_bus(self):
+        with (
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "flatshell",
+                    "add",
+                    "org.example.App",
+                    "myapp",
+                    "app",
+                    "--system",
+                ],
+            ),
+            patch.object(cli, "call_system_method") as call,
+        ):
+            cli.main()
+
+        call.assert_called_once_with(
+            "AddCustomAlias", "org.example.App", "myapp", "app"
+        )
+
+    def test_user_profile_install_runs_without_escalation(self):
+        with (
+            patch.object(sys, "argv", ["flatshell", "install-profile", "--user"]),
+            patch.object(cli, "install_profile") as install,
+        ):
+            cli.main()
+
+        install.assert_called_once_with("user")
+
+    def test_system_profile_install_uses_system_bus(self):
+        with (
+            patch.object(
+                sys, "argv", ["flatshell", "install-profile", "--system"]
+            ),
+            patch.object(cli, "call_system_method") as call,
+        ):
+            cli.main()
+
+        call.assert_called_once_with("InstallProfile")
+
+    def test_system_operations_use_fixed_dbus_methods(self):
+        cases = (
+            (
+                ["export", "--system"],
+                ("Export",),
+            ),
+            (
+                ["enable", "org.example.App", "example", "--system"],
+                ("SetAliasEnabled", "org.example.App", "example", True),
+            ),
+            (
+                ["disable", "org.example.App", "--system"],
+                ("SetAppEnabled", "org.example.App", False),
+            ),
+            (
+                ["config", "default-export", "none", "--system"],
+                ("SetDefaultPolicy", "none"),
+            ),
+            (
+                [
+                    "remove",
+                    "org.example.App",
+                    "example",
+                    "--system",
+                ],
+                ("RemoveCustomAlias", "org.example.App", "example"),
+            ),
+        )
+        for arguments, expected_call in cases:
+            with (
+                self.subTest(arguments=arguments),
+                patch.object(sys, "argv", ["flatshell", *arguments]),
+                patch.object(cli, "call_system_method") as call,
+            ):
+                cli.main()
+
+            call.assert_called_once_with(*expected_call)
+
 
 if __name__ == "__main__":
     unittest.main()

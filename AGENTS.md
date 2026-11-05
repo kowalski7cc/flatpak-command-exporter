@@ -17,7 +17,7 @@ intentional, and update this guide when the project conventions change.
   types from `__init__.py`.
 - CLI and GUI entry points are declared in `pyproject.toml`. Debian package
   contents are controlled by files in `debian/`; profile integration lives in
-  `resources/`.
+  the Python package resources.
 - The established application ID and icon prefix is
   `xyz.kowalski7cc`. Preserve it for application identity and installed
   resource names.
@@ -31,11 +31,12 @@ intentional, and update this guide when the project conventions change.
   unless a dependency is needed for a clear project requirement.
 - Configuration and generated launchers support both user and system scopes.
   Resolve user paths with `${XDG_DATA_HOME:-$HOME/.local/share}` and system
-  paths with the Flatpak system directories (`/var/lib/flatpak` for config,
-  `/usr/share/flatpak-commands` for generated launchers). Treat system
-  installation aliases as read-only unless the current process can write to the
-  system configuration and export directories.
-- Alias settings live under `flatpak/aliases/` in INI/GKeyFile-style files.
+  paths with `/usr/lib/flatpak/aliases` for system configuration and
+  `/usr/share/flatpak-commands` for generated launchers. Route system mutations
+  through the root-owned system-bus helper and authorize each operation with
+  PolicyKit.
+- User alias settings live under `flatpak/aliases/`; system settings live under
+  `/usr/lib/flatpak/aliases/`. Both use INI/GKeyFile-style files.
   Keep global, app, and alias precedence consistent across the CLI, GUI, and
   export flow. Persist settings before refreshing exports, and report refresh
   failures to the caller.

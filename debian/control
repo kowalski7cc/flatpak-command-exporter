@@ -9,7 +9,8 @@ Build-Depends:
  python3 (>= 3.13),
  python3-setuptools,
  python3-gi,
- gir1.2-flatpak-1.0
+ gir1.2-flatpak-1.0,
+ gir1.2-polkit-1.0
 Standards-Version: 4.7.0
 Rules-Requires-Root: no
 
@@ -21,7 +22,10 @@ Depends:
  python3 (>= 3.13),
  python3-gi,
  flatpak,
- gir1.2-flatpak-1.0
+ gir1.2-flatpak-1.0,
+ gir1.2-polkit-1.0,
+ polkitd,
+ dbus
 Description: Export commands provided by installed Flatpak applications
  Discover command aliases exported by installed Flatpak applications and
  generate launchers for them.
@@ -33,7 +37,6 @@ Depends:
  ${python3:Depends},
  flatpak-command-exporter (= ${binary:Version}),
  gir1.2-gtk-4.0,
- gir1.2-adw-1,
- pkexec
+ gir1.2-adw-1
 Description: Graphical interface for Flatpak Command Exporter
  GTK 4 and libadwaita interface for inspecting exported Flatpak commands.
