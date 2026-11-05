@@ -9,7 +9,7 @@ import json
 import os
 import logging
 import xml.etree.ElementTree as ET
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO').upper(), format="%(levelname)s: %(message)s")
 
 """
 x-export-commands:
@@ -138,6 +138,7 @@ def create_launcher(app_id, export, command, arch, branch):
     base_path = os.path.join(os.environ.get("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")), "flatpak-commands")
     if not os.path.exists(base_path):
         os.makedirs(base_path)
+    logging.debug(f"Creating launcher for {app_id} at {os.path.join(base_path, export)} with command: {command} and arch: {arch}, branch: {branch}")
     with open(os.path.join(base_path, export), "w") as f:
         f.write(COMMAND_TEMPLATE.format(
             BRANCH=branch,
