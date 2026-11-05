@@ -133,6 +133,26 @@ def find_system_refs():
     yield from find_refs(Flatpak.Installation.new_system())
 
 
+def get_current_ref(installation, app_id, fallback_ref):
+    try:
+        ref = installation.get_current_installed_app(app_id, None)
+    except GLib.Error as error:
+        logging.warning(
+            "Could not find current ref for %s: %s; using last enumerated ref.",
+            app_id,
+            error,
+        )
+        return fallback_ref
+
+    if ref is None:
+        logging.warning(
+            "No current ref found for %s; using last enumerated ref.",
+            app_id,
+        )
+        return fallback_ref
+    return ref
+
+
 def create_launcher(app_id, export, command, arch, branch):
     # Store launcher in XDG_DATA_HOME/flatpak-commands/{export} or $HOME/.local/share/flatpak-commands/{export}
     base_path = os.path.join(os.environ.get("XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")), "flatpak-commands")
@@ -164,9 +184,9 @@ def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
 
 
 def get_exported_aliases() -> list[ExportedAlias]:
-    """Return aliases from effective user and system app refs, preferring user refs."""
+    """Return aliases from current user and system app refs, preferring user refs."""
     aliases: list[ExportedAlias] = []
-    seen_refs: set[tuple[str, str, str]] = set()
+    seen_app_ids: set[str] = set()
 
     for installation_factory in (Flatpak.Installation.new_user, Flatpak.Installation.new_system):
         try:
@@ -178,14 +198,17 @@ def get_exported_aliases() -> list[ExportedAlias]:
             logging.warning("Could not access a Flatpak installation: %s", error)
             continue
 
+        refs_by_app_id = {}
         for ref in find_refs(installation):
-            app_id = ref.get_name()
+            refs_by_app_id[ref.get_name()] = ref
+
+        for app_id, fallback_ref in refs_by_app_id.items():
+            if app_id in seen_app_ids:
+                continue
+            seen_app_ids.add(app_id)
+            ref = get_current_ref(installation, app_id, fallback_ref)
             arch = ref.get_arch()
             branch = ref.get_branch()
-            ref_identity = (app_id, arch, branch)
-            if ref_identity in seen_refs:
-                continue
-            seen_refs.add(ref_identity)
 
             try:
                 manifest = load_manifest(installation_path, app_id, arch, branch)
@@ -230,22 +253,7 @@ def export_commands():
         refs_by_app_id[ref.get_name()] = ref
 
     for app_id, fallback_ref in refs_by_app_id.items():
-        try:
-            ref = installation.get_current_installed_app(app_id, None)
-        except GLib.Error as error:
-            logging.warning(
-                "Could not find current ref for %s: %s; using last enumerated ref.",
-                app_id,
-                error,
-            )
-            ref = fallback_ref
-
-        if ref is None:
-            logging.warning(
-                "No current ref found for %s; using last enumerated ref.",
-                app_id,
-            )
-            ref = fallback_ref
+        ref = get_current_ref(installation, app_id, fallback_ref)
 
         manifest = load_manifest(
             installation_path, ref.get_name(), ref.get_arch(), ref.get_branch()

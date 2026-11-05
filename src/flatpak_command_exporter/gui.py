@@ -127,9 +127,6 @@ def main():
 			display = Gdk.Display.get_default()
 			icon_theme = Gtk.IconTheme.get_for_display(display)
 			icon_theme.add_search_path(os.path.join(sys.prefix, "share", "icons"))
-			ref_variants = {}
-			for record in records:
-				ref_variants.setdefault(record.app_id, set()).add((record.arch, record.branch))
 
 			window = Adw.ApplicationWindow(application=self, title="Flatpak Command Exporter")
 			window.set_default_size(720, 640)
@@ -172,9 +169,7 @@ def main():
 				title = Gtk.Label(label=f"{record.app_name} - {record.alias}")
 				title.set_xalign(0)
 				title.add_css_class("heading")
-				subtitle_text = record.app_id
-				if len(ref_variants[record.app_id]) > 1:
-					subtitle_text = f"{subtitle_text} - {record.branch} ({record.arch})"
+				subtitle_text = f"{record.app_id} - {record.branch} ({record.arch})"
 				subtitle = Gtk.Label(label=subtitle_text)
 				subtitle.set_xalign(0)
 				subtitle.add_css_class("dim-label")

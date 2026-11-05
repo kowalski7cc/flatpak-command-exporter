@@ -9,7 +9,7 @@ from flatpak_command_exporter.gui import get_exported_icon
 
 
 class AliasDataTests(unittest.TestCase):
-    def test_user_ref_overrides_system_and_distinct_refs_remain(self):
+    def test_current_user_ref_overrides_system_and_system_only_app_remains(self):
         class Ref:
             def __init__(self, app_id, branch="stable"):
                 self.app_id = app_id
@@ -24,18 +24,22 @@ class AliasDataTests(unittest.TestCase):
             def get_branch(self):
                 return self.branch
 
-        user_installation = SimpleNamespace(
-            get_path=lambda: SimpleNamespace(get_path=lambda: "/user")
-        )
-        system_installation = SimpleNamespace(
-            get_path=lambda: SimpleNamespace(get_path=lambda: "/system")
-        )
-        user_refs = [Ref("app.override")]
+        user_refs = [Ref("app.override"), Ref("app.override", "beta")]
         system_refs = [
             Ref("app.override"),
             Ref("app.override", "beta"),
             Ref("app.system-only"),
         ]
+        user_installation = SimpleNamespace(
+            get_path=lambda: SimpleNamespace(get_path=lambda: "/user"),
+            get_current_installed_app=lambda app_id, _cancellable: user_refs[-1],
+        )
+        system_installation = SimpleNamespace(
+            get_path=lambda: SimpleNamespace(get_path=lambda: "/system"),
+            get_current_installed_app=lambda app_id, _cancellable: next(
+                ref for ref in system_refs if ref.get_name() == app_id
+            ),
+        )
         installation_api = SimpleNamespace(
             new_user=lambda: user_installation,
             new_system=lambda: system_installation,
@@ -59,8 +63,7 @@ class AliasDataTests(unittest.TestCase):
         self.assertEqual(
             [(record.app_id, record.branch, record.installation_path) for record in records],
             [
-                ("app.override", "stable", "/user"),
-                ("app.override", "beta", "/system"),
+                ("app.override", "beta", "/user"),
                 ("app.system-only", "stable", "/system"),
             ],
         )
