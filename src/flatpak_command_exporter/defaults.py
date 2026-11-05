@@ -117,6 +117,21 @@ DEFAULT_EXPORT_COMMANDS = {
     "com.github.tchx84.Flatseal": {
         "flatseal": "com.github.tchx84.Flatseal"
     },
+    "com.valvesoftware.Steam": {
+        "steam": "steam"
+    },
+    "org.cockpit_project.CockpitClient": {
+        "cockpit-client": "cockpit-client"
+    },
+    "org.filezillaproject.Filezilla": {
+        "filezilla": "filezilla"
+    },
+    "org.virt_manager.virt-manager": {
+        "virt-manager": "virt-manager"
+    },
+    "org.virt_manager.virt-viewer": {
+        "remote-viewer": "remote-viewer"
+    },
 }
 
 COMMAND_TEMPLATE = textwrap.dedent("""\
