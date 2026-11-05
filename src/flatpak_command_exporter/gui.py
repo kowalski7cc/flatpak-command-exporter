@@ -107,7 +107,7 @@ def main():
 	class AliasApplication(Adw.Application):
 		def __init__(self):
 			super().__init__(
-				application_id="io.github.flatpakcommandexporter",
+				application_id="xyz.kowalski7cc.flatpak-command-exporter",
 				flags=Gio.ApplicationFlags.FLAGS_NONE,
 			)
 			self.connect("activate", self.on_activate)
@@ -126,12 +126,14 @@ def main():
 
 			display = Gdk.Display.get_default()
 			icon_theme = Gtk.IconTheme.get_for_display(display)
+			icon_theme.add_search_path(os.path.join(sys.prefix, "share", "icons"))
 			ref_variants = {}
 			for record in records:
 				ref_variants.setdefault(record.app_id, set()).add((record.arch, record.branch))
 
 			window = Adw.ApplicationWindow(application=self, title="Flatpak Command Exporter")
 			window.set_default_size(720, 640)
+			window.set_icon_name("xyz.kowalski7cc.flatpak-command-exporter")
 
 			toolbar = Adw.ToolbarView()
 			header = Adw.HeaderBar()

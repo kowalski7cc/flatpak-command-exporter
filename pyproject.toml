@@ -1,7 +1,7 @@
 [project]
 name = "flatpak-command-exporter"
 authors = [{name = "Kowalski Dragon (kowalski7cc)"}]
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.13"
 dependencies = [
     'importlib-metadata; python_version<"3.10"',
@@ -25,7 +25,9 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.setuptools.data-files]
-"share/applications" = ["resources/io.github.flatpakcommandexporter.desktop"]
+"share/applications" = ["resources/xyz.kowalski7cc.flatpak-command-exporter.desktop"]
+"share/icons/hicolor/scalable/apps" = ["resources/xyz.kowalski7cc.flatpak-command-exporter.svg"]
+"share/icons/hicolor/symbolic/apps" = ["resources/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg"]
 
 [project.scripts]
 flatpak-command-exporter = "flatpak_command_exporter.__main__:main"
