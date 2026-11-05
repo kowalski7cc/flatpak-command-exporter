@@ -132,6 +132,9 @@ DEFAULT_EXPORT_COMMANDS = {
     "org.virt_manager.virt-viewer": {
         "remote-viewer": "remote-viewer"
     },
+    "net.awalter.SuperHaxagon": {
+        "SuperHaxagon": "/app/SuperHaxagon"
+    }
 }
 
 COMMAND_TEMPLATE = textwrap.dedent("""\

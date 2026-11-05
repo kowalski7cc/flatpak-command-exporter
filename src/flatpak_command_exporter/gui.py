@@ -55,6 +55,17 @@ def get_exported_icon(record, data_dirs=None):
 		return None
 
 
+def _system_alias_toggle_command(record, enabled):
+	return [
+		"pkexec",
+		"/usr/bin/flatshell",
+		"enable" if enabled else "disable",
+		record.app_id,
+		record.alias,
+		"--system",
+	]
+
+
 def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):
 	icon_name = get_exported_icon(record)
 	installation_path = getattr(record, "installation_path", None)
@@ -120,14 +131,37 @@ def main():
 			self.connect("activate", self.on_activate)
 
 		def on_activate(self, _application):
+			all_records = exporter.get_exported_aliases()
+			system_records = exporter.get_exported_aliases(scope="system")
+			row_records = {}
+			row_scopes = {}
+			for record in all_records:
+				key = (
+					record.installation_scope,
+					record.app_id,
+					record.alias,
+				)
+				row_records[key] = record
+				row_scopes.setdefault(key, set()).add("all")
+				if record.installation_scope == "user":
+					row_scopes[key].add("user")
+			for record in system_records:
+				key = (
+					record.installation_scope,
+					record.app_id,
+					record.alias,
+				)
+				row_records.setdefault(key, record)
+				row_scopes.setdefault(key, set()).add("system")
 			records = sorted(
-				exporter.get_exported_aliases(),
-				key=lambda record: (
-					record.app_name.casefold(),
-					record.app_id.casefold(),
-					record.alias.casefold(),
-					record.branch.casefold(),
-					record.arch.casefold(),
+				row_records.items(),
+				key=lambda item: (
+					item[1].app_name.casefold(),
+					item[1].app_id.casefold(),
+					item[1].alias.casefold(),
+					item[1].branch.casefold(),
+					item[1].arch.casefold(),
+					item[1].installation_scope,
 				),
 			)
 
@@ -154,7 +188,11 @@ def main():
 			header.pack_end(global_export_control)
 			search_entry = Gtk.SearchEntry()
 			search_entry.set_placeholder_text("Search aliases")
-			search_entry.set_size_request(220, -1)
+			search_entry.set_hexpand(True)
+			scope_filter = Gtk.DropDown.new_from_strings(
+				["All apps", "User apps", "System apps"]
+			)
+			scope_filter.set_tooltip_text("Filter by Flatpak installation")
 			toolbar.add_top_bar(header)
 
 			list_box = Gtk.ListBox()
@@ -167,7 +205,7 @@ def main():
 
 			rows = []
 			alias_switches = []
-			for record in records:
+			for key, record in records:
 				row = Gtk.ListBoxRow()
 				row.set_selectable(False)
 				row.set_activatable(False)
@@ -187,7 +225,10 @@ def main():
 				title = Gtk.Label(label=f"{record.app_name} - {record.alias}")
 				title.set_xalign(0)
 				title.add_css_class("heading")
-				subtitle_text = f"{record.app_id} - {record.branch} ({record.arch})"
+				subtitle_text = (
+					f"{record.app_id} - {record.branch} ({record.arch}) - "
+					f"{record.installation_scope.capitalize()} installation"
+				)
 				subtitle = Gtk.Label(label=subtitle_text)
 				subtitle.set_xalign(0)
 				subtitle.add_css_class("dim-label")
@@ -198,7 +239,9 @@ def main():
 				alias_switch = Gtk.Switch()
 				alias_switch.set_active(record.enabled)
 				alias_switch.set_valign(Gtk.Align.CENTER)
-				alias_switch.set_sensitive(record.configurable)
+				alias_switch.set_sensitive(
+					record.configurable or record.installation_scope == "system"
+				)
 				row_content.append(alias_switch)
 				alias_switches.append((alias_switch, record))
 				row.set_child(row_content)
@@ -209,7 +252,9 @@ def main():
 					record.alias,
 					record.branch,
 					record.arch,
+					record.installation_scope,
 				)).casefold()
+				row._view_scopes = row_scopes[key]
 				rows.append(row)
 				list_box.append(row)
 
@@ -229,25 +274,47 @@ def main():
 			search_entry.set_margin_start(12)
 			search_entry.set_margin_end(12)
 			search_entry.set_margin_bottom(4)
-			content.append(search_entry)
+			filter_row = Gtk.Box(
+				orientation=Gtk.Orientation.HORIZONTAL, spacing=8
+			)
+			filter_row.set_margin_start(12)
+			filter_row.set_margin_end(12)
+			filter_row.set_margin_bottom(4)
+			filter_row.append(search_entry)
+			filter_row.append(scope_filter)
+			content.append(filter_row)
 			content.append(stack)
 			toolbar.set_content(content)
 
-			def update_search(entry):
-				query = entry.get_text().strip().casefold()
+			def update_search(*_args):
+				query = search_entry.get_text().strip().casefold()
+				selected_scope = ("all", "user", "system")[
+					scope_filter.get_selected()
+				]
 				visible_count = 0
 				for row in rows:
-					visible = not query or query in row._search_text
+					visible = (
+						selected_scope in row._view_scopes
+						and (not query or query in row._search_text)
+					)
 					row.set_visible(visible)
 					visible_count += visible
 
 				if visible_count:
 					stack.set_visible_child_name("list")
 				else:
-					empty_page.set_title("No aliases found" if query else "No exported aliases")
+					if query:
+						empty_page.set_title("No aliases found")
+					else:
+						empty_page.set_title({
+							"all": "No exported aliases",
+							"user": "No user aliases",
+							"system": "No system aliases",
+						}[selected_scope])
 					stack.set_visible_child_name("empty")
 
 			search_entry.connect("search-changed", update_search)
+			scope_filter.connect("notify::selected", update_search)
 			update_search(search_entry)
 
 			toast_overlay = Adw.ToastOverlay()
@@ -269,6 +336,37 @@ def main():
 					handler_id=handler_id,
 					saved_state=saved_state,
 				):
+					if record.installation_scope == "system":
+						requested_state = toggle.get_active()
+						toggle.set_sensitive(False)
+						try:
+							process = Gio.Subprocess.new(
+								_system_alias_toggle_command(record, requested_state),
+								Gio.SubprocessFlags.NONE,
+							)
+						except GLib.Error as error:
+							toggle.handler_block(handler_id[0])
+							toggle.set_active(saved_state[0])
+							toggle.handler_unblock(handler_id[0])
+							toggle.set_sensitive(True)
+							report_error("Could not start system alias update", error)
+							return
+
+						def finish_system_update(process, result, _user_data=None):
+							try:
+								process.wait_check_finish(result)
+							except GLib.Error as error:
+								toggle.handler_block(handler_id[0])
+								toggle.set_active(saved_state[0])
+								toggle.handler_unblock(handler_id[0])
+								report_error("Could not save system alias setting", error)
+							else:
+								saved_state[0] = requested_state
+							toggle.set_sensitive(True)
+
+						process.wait_check_async(None, finish_system_update)
+						return
+
 					try:
 						exporter.config.set_alias_enabled(
 							record.app_id, record.alias, toggle.get_active()

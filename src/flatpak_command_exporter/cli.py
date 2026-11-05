@@ -79,7 +79,7 @@ def main():
     for command_name in ("enable", "disable"):
         command_parser = subparsers.add_parser(
             command_name,
-            help=f"{command_name.capitalize()} an app or alias for the user installation.",
+            help=f"{command_name.capitalize()} an app or alias in the selected installation.",
         )
         command_parser.add_argument("app_id")
         command_parser.add_argument("export", nargs="?")

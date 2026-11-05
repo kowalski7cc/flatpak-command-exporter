@@ -8,7 +8,10 @@ from unittest.mock import patch
 
 from flatpak_command_exporter import FlatpakCommandExporter
 from flatpak_command_exporter import application as core
-from flatpak_command_exporter.gui import get_exported_icon
+from flatpak_command_exporter.gui import (
+    _system_alias_toggle_command,
+    get_exported_icon,
+)
 
 
 class AliasDataTests(unittest.TestCase):
@@ -66,15 +69,93 @@ class AliasDataTests(unittest.TestCase):
                 records = FlatpakCommandExporter().get_exported_aliases()
 
         self.assertEqual(
-            [(record.app_id, record.branch, record.installation_path) for record in records],
             [
-                ("app.override", "beta", "/user"),
-                ("app.system-only", "stable", "/system"),
+                (
+                    record.app_id,
+                    record.branch,
+                    record.installation_path,
+                    record.installation_scope,
+                )
+                for record in records
+            ],
+            [
+                ("app.override", "beta", "/user", "user"),
+                ("app.system-only", "stable", "/system", "system"),
             ],
         )
 
+    def test_explicit_scope_uses_its_configuration(self):
+        exporter = FlatpakCommandExporter()
+
+        with patch.object(core, "get_exported_aliases", return_value=[]) as lookup:
+            exporter.get_exported_aliases(scope="system")
+
+        config = lookup.call_args.args[0]
+        self.assertEqual(config.scope, "system")
+        self.assertFalse(lookup.call_args.kwargs["include_system"])
+        self.assertEqual(lookup.call_args.kwargs["scope"], "system")
+
+    def test_system_alias_enabled_state_comes_from_system_configuration(self):
+        class Ref:
+            def get_name(self):
+                return "app.system"
+
+            def get_arch(self):
+                return "x86_64"
+
+            def get_branch(self):
+                return "stable"
+
+        ref = Ref()
+        installation = SimpleNamespace(
+            get_path=lambda: SimpleNamespace(get_path=lambda: "/system"),
+            get_current_installed_app=lambda _app_id, _cancellable: ref,
+        )
+        installation_api = SimpleNamespace(new_system=lambda: installation)
+        with tempfile.TemporaryDirectory() as data_home:
+            config = core.AliasConfig(data_home, scope="system")
+            config.set_default_policy("none")
+            with (
+                patch.object(
+                    core,
+                    "Flatpak",
+                    SimpleNamespace(Installation=installation_api),
+                ),
+                patch.object(core, "find_refs", return_value=[ref]),
+                patch.object(
+                    core,
+                    "load_manifest",
+                    return_value={"x-export-commands": {"alias": "command"}},
+                ),
+                patch.object(core, "load_metainfo", return_value=None),
+            ):
+                records = core.get_exported_aliases(config, scope="system")
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].installation_scope, "system")
+        self.assertFalse(records[0].enabled)
+
 
 class DesktopIconTests(unittest.TestCase):
+    def test_system_alias_toggle_uses_policykit_with_argument_separation(self):
+        record = SimpleNamespace(app_id="org.example.App", alias="example")
+
+        self.assertEqual(
+            _system_alias_toggle_command(record, True),
+            [
+                "pkexec",
+                "/usr/bin/flatshell",
+                "enable",
+                "org.example.App",
+                "example",
+                "--system",
+            ],
+        )
+        self.assertEqual(
+            _system_alias_toggle_command(record, False)[2],
+            "disable",
+        )
+
     def test_reads_icon_from_flatpak_exported_desktop_file(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             share_directory = Path(temporary_directory) / "share"

@@ -12,8 +12,8 @@ aliases in a graphical interface.
 > configuration and launchers live under `${XDG_DATA_HOME:-$HOME/.local/share}`
 > and the system scope uses the system Flatpak data directories, with system
 > launchers written to `/usr/share/flatpak-commands` when the process is
-> authorized to edit system state. Flatlink keeps system-installed aliases
-> read-only unless the current user can write to the system configuration.
+> authorized to edit system state. Flatlink can request PolicyKit authorization
+> when changing settings for system-installed aliases.
 
 ## What you can do
 
@@ -147,11 +147,12 @@ Flatlink
 ```
 
 The window lists discovered aliases with their application, branch, and
-architecture. Use the search field to filter the list. Switches beside
-user-installed aliases enable or disable them; the switch in the title bar
-sets the global default. Each saved change refreshes the generated launchers.
-System-installed app aliases are displayed and remain read-only unless the
-current process can write the system Flatpak configuration.
+architecture. Use the search field and the All/User/System filter to narrow
+the list. Switches enable or disable aliases; changing a system-installed
+alias requests PolicyKit authorization. The switch in the title bar sets the
+user-scope global default. Each saved change refreshes the generated
+launchers. The Debian GUI package installs `pkexec`; the PolicyKit action for
+system changes is provided by the core package.
 
 ## Configuration and files
 

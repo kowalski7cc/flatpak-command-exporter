@@ -29,6 +29,7 @@ class ExportedAlias:
     enabled: bool = True
     configurable: bool = True
     custom: bool = False
+    installation_scope: str = "user"
 
 
 @dataclass(frozen=True)
@@ -238,6 +239,10 @@ def get_exported_aliases(
     if system:
         scope_name = "system"
 
+    system_config = config
+    if scope_name != "system" and include_system:
+        system_config = AliasConfig(scope="system")
+
     installations: list[tuple[bool, object]] = []
     if scope_name == "system":
         installations = [(False, Flatpak.Installation.new_system)]
@@ -264,6 +269,7 @@ def get_exported_aliases(
             if app_id in seen_app_ids:
                 continue
             seen_app_ids.add(app_id)
+            installation_config = config if is_user_installation else system_config
             ref = get_current_ref(installation, app_id, fallback_ref)
             arch = ref.get_arch()
             branch = ref.get_branch()
@@ -293,11 +299,10 @@ def get_exported_aliases(
                         branch=branch,
                         installation_path=installation_path,
                         desktop_id=desktop_id,
-                        enabled=(
-                            config.is_alias_enabled(app_id, alias)
-                            if is_user_installation
-                            else True
+                        installation_scope=(
+                            "user" if is_user_installation else "system"
                         ),
+                        enabled=installation_config.is_alias_enabled(app_id, alias),
                         configurable=is_user_installation,
                         custom=is_user_installation and alias in custom_aliases,
                     )
@@ -369,7 +374,7 @@ def export_commands(
                 **config.custom_aliases(app_id),
             }
         for export, command in exported_commands.items():
-            if scope_name == "user" and not config.is_alias_enabled(app_id, export):
+            if not config.is_alias_enabled(app_id, export):
                 disabled_aliases.add(export)
                 continue
             launchers[export] = (
@@ -456,8 +461,22 @@ class FlatpakCommandExporter:
             config = AliasConfig(scope=("system" if system else "user") if scope is None else scope)
         self.config = config
 
-    def get_exported_aliases(self, *, include_system: bool = True) -> list[ExportedAlias]:
-        return get_exported_aliases(self.config, include_system=include_system)
+    def get_exported_aliases(
+        self,
+        *,
+        include_system: bool = True,
+        scope: str | None = None,
+    ) -> list[ExportedAlias]:
+        config = self.config
+        if scope is not None and scope != getattr(config, "scope", "user"):
+            config = AliasConfig(scope=scope)
+        if scope == "system":
+            include_system = False
+        return get_exported_aliases(
+            config,
+            include_system=include_system,
+            scope=scope,
+        )
 
     def get_command_groups(
         self,

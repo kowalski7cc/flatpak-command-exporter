@@ -134,6 +134,38 @@ class ExportCommandsTests(unittest.TestCase):
         )
         remove_launcher.assert_not_called()
 
+    def test_disabled_system_alias_removes_system_launcher(self):
+        ref = self.Ref("app.test", "stable")
+        installation = SimpleNamespace(
+            get_path=lambda: SimpleNamespace(get_path=lambda: "/system"),
+            get_current_installed_app=lambda _app_id, _cancellable: ref,
+        )
+
+        with tempfile.TemporaryDirectory() as data_home:
+            config = core.AliasConfig(data_home, scope="system")
+            config.set_default_policy("none")
+            with (
+                patch.object(
+                    core,
+                    "Flatpak",
+                    SimpleNamespace(
+                        Installation=SimpleNamespace(new_system=lambda: installation)
+                    ),
+                ),
+                patch.object(core, "find_refs", return_value=[ref]),
+                patch.object(
+                    core,
+                    "load_manifest",
+                    return_value={"x-export-commands": {"alias": "command"}},
+                ),
+                patch.object(core, "create_launcher") as create_launcher,
+                patch.object(core, "remove_launcher") as remove_launcher,
+            ):
+                core.export_commands(config)
+
+        create_launcher.assert_not_called()
+        remove_launcher.assert_called_once_with("alias", scope="system")
+
 
 if __name__ == "__main__":
     unittest.main()

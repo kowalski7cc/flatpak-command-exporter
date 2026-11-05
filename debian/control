@@ -31,6 +31,7 @@ Depends:
  ${python3:Depends},
  flatpak-command-exporter (= ${binary:Version}),
  gir1.2-gtk-4.0,
- gir1.2-adw-1
+ gir1.2-adw-1,
+ pkexec
 Description: Graphical interface for Flatpak Command Exporter
  GTK 4 and libadwaita interface for inspecting exported Flatpak commands.
