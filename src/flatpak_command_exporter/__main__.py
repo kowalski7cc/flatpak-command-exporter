@@ -219,11 +219,37 @@ def get_exported_aliases() -> list[ExportedAlias]:
 
 def export_commands():
     """
-    Export commands for all user-installed flatpak applications.
+    Export commands for the current ref of each user-installed Flatpak app.
     """
-    for ref in find_user_refs():
-        manifest = load_manifest(Flatpak.Installation.new_user().get_path(
-        ).get_path(), ref.get_name(), ref.get_arch(), ref.get_branch())
+    installation = Flatpak.Installation.new_user()
+    if installation is None:
+        return
+    installation_path = installation.get_path().get_path()
+    refs_by_app_id = {}
+    for ref in find_refs(installation):
+        refs_by_app_id[ref.get_name()] = ref
+
+    for app_id, fallback_ref in refs_by_app_id.items():
+        try:
+            ref = installation.get_current_installed_app(app_id, None)
+        except GLib.Error as error:
+            logging.warning(
+                "Could not find current ref for %s: %s; using last enumerated ref.",
+                app_id,
+                error,
+            )
+            ref = fallback_ref
+
+        if ref is None:
+            logging.warning(
+                "No current ref found for %s; using last enumerated ref.",
+                app_id,
+            )
+            ref = fallback_ref
+
+        manifest = load_manifest(
+            installation_path, ref.get_name(), ref.get_arch(), ref.get_branch()
+        )
         exported_commands = manifest_exported_commands(ref.get_name(), manifest)
         if exported_commands:
             for export, command in exported_commands.items():
