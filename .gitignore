@@ -393,6 +393,8 @@ $RECYCLE.BIN/
 
 # End of https://www.toptal.com/developers/gitignore/api/linux,python,pycharm+all,visualstudiocode,macos,windows,git,packer
 
+!flatpak-command-exporter.spec
+
 debian/*
 .pybuild/
 !debian/control

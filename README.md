@@ -69,6 +69,22 @@ set up shell integration for the current user, or `flatshell install-profile
 by the PolicyKit-backed system-bus helper. The user installation updates
 `~/.profile` and applies to login shells that read that file.
 
+### Fedora RPM
+
+On Fedora 44 or 45, install the RPM build and project dependencies, then build
+directly from the source checkout:
+
+```console
+sudo dnf install flatpak-devel gtk4 libadwaita make polkit \
+  pyproject-rpm-macros python3-devel python3-gobject python3-packaging \
+  python3-pip python3-setuptools rpm-build
+make rpm
+```
+
+The spec derives its version from `pyproject.toml` and builds a core RPM plus
+an optional `flatpak-command-exporter-gui` RPM. `rpmbuild` writes the packages
+under `~/rpmbuild/RPMS/noarch/` by default.
+
 ### Requirements
 
 - Flatpak and Python 3.13 or newer.

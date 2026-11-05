@@ -1,4 +1,6 @@
-.PHONY: changelog deb tests clean
+BASE ?= flatpak-command-exporter
+
+.PHONY: changelog deb rpm tests clean
 
 changelog:
 	@version=$$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])'); \
@@ -8,6 +10,9 @@ changelog:
 
 deb:
 	DEB_BUILD_OPTIONS=nocheck dpkg-buildpackage -us -uc -b
+
+rpm:
+	rpmbuild -bb --build-in-place $(BASE).spec
 
 tests:
 	PYTHONPATH=src python3 -m unittest discover -s tests -v

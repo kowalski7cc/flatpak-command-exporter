@@ -216,3 +216,9 @@ Run the unit tests and whitespace validation from the repository root:
 python -m unittest discover -s tests -v
 git diff --check
 ```
+
+RPM packaging targets Fedora 44 and 45. Build it from the checkout with:
+
+```console
+make rpm
+```
