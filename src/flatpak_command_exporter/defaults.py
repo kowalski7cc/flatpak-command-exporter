@@ -134,6 +134,13 @@ DEFAULT_EXPORT_COMMANDS = {
     },
     "net.awalter.SuperHaxagon": {
         "SuperHaxagon": "/app/SuperHaxagon"
+    },
+    "uk.org.greenend.chiark.sgtatham.putty": {
+        "putty": "putty",
+        "puttygen": "puttygen",
+        "psftp": "psftp",
+        "pageant": "pageant",
+        "pscp": "pscp"
     }
 }
 
