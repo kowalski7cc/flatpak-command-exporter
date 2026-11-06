@@ -36,6 +36,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 flatpak_command_exporter = [
     "flatpak-exported-commands.sh",
+    "py.typed",
     "gui/locale/*/LC_MESSAGES/*.mo",
 ]
 

@@ -1,7 +1,9 @@
 """Flatpak installation and application-ref helpers."""
 
 import logging
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
+from typing import Protocol
 
 import gi
 
@@ -9,15 +11,41 @@ gi.require_version("Flatpak", "1.0")
 from gi.repository import Flatpak, GLib
 
 
+class _FlatpakRef(Protocol):
+    def get_name(self) -> str: ...
+
+    def get_arch(self) -> str: ...
+
+    def get_branch(self) -> str: ...
+
+
+class _GioFile(Protocol):
+    def get_path(self) -> str: ...
+
+
+class _FlatpakInstallation(Protocol):
+    def list_installed_refs_by_kind(
+        self, kind: object, cancellable: None
+    ) -> Iterable[_FlatpakRef]: ...
+
+    def get_current_installed_app(
+        self, app_id: str, cancellable: None
+    ) -> _FlatpakRef | None: ...
+
+    def get_path(self) -> _GioFile: ...
+
+
 @dataclass(frozen=True)
 class _InstalledRef:
-    ref: object
-    installation: object
+    ref: _FlatpakRef
+    installation: _FlatpakInstallation
     installation_path: str
     scope: str
 
 
-def find_refs(installation):
+def find_refs(
+    installation: _FlatpakInstallation | None,
+) -> Iterator[_FlatpakRef]:
     """Find all application refs in a Flatpak installation."""
     try:
         if installation is None:
@@ -36,7 +64,11 @@ def find_refs(installation):
         logging.error("Error accessing Flatpak API: %s", error)
 
 
-def get_current_ref(installation, app_id, fallback_ref):
+def get_current_ref(
+    installation: _FlatpakInstallation,
+    app_id: str,
+    fallback_ref: _FlatpakRef,
+) -> _FlatpakRef:
     try:
         ref = installation.get_current_installed_app(app_id, None)
     except GLib.Error as error:
@@ -62,7 +94,9 @@ def get_current_ref(installation, app_id, fallback_ref):
     return ref
 
 
-def _get_installed_refs(*, scope="user", include_system=True):
+def _get_installed_refs(
+    *, scope: str = "user", include_system: bool = True
+) -> list[_InstalledRef]:
     if scope not in {"user", "system"}:
         raise ValueError(f"Unknown Flatpak installation scope: {scope!r}")
 
@@ -107,7 +141,9 @@ def _get_installed_refs(*, scope="user", include_system=True):
     return refs
 
 
-def _get_preferred_app_refs(installed_refs, scope):
+def _get_preferred_app_refs(
+    installed_refs: list[_InstalledRef], scope: str
+) -> dict[str, list[_InstalledRef]]:
     """Order each app's preferred installation refs with its current ref first."""
     refs_by_app_id = {}
     for installed_ref in installed_refs:

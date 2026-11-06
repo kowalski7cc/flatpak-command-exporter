@@ -3,19 +3,22 @@ import os
 
 from gi.repository import GLib
 
+from .api import CommandGroup as _CommandGroup
 from .api import FlatpakCommandExporter
 from .cli_parser import build_parsers
 from .profile import install_profile
 
 
-def _configure_logging():
+def _configure_logging() -> None:
     logging.basicConfig(
         level=os.environ.get("LOGLEVEL", "WARNING").upper(),
         format="%(levelname)s: %(message)s",
     )
 
 
-def _print_command_groups(groups, complete):
+def _print_command_groups(
+    groups: list[_CommandGroup], complete: bool
+) -> None:
     for group in groups:
         print(
             f"Exported commands for {group.app_name} "
@@ -28,7 +31,7 @@ def _print_command_groups(groups, complete):
             print(f"- {alias} -> {command}" if complete else f"- {alias}")
 
 
-def main():
+def main() -> None:
     _configure_logging()
     parser, list_parser = build_parsers()
     args = parser.parse_args()

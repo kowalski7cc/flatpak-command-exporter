@@ -3,9 +3,15 @@ from importlib.metadata import metadata as distribution_metadata
 import os
 import tomllib
 from pathlib import Path
+from collections.abc import Iterable
+
+from ..api import ExportedAlias as _ExportedAlias
+from ..api import FlatpakCommandExporter as _FlatpakCommandExporter
 
 
-def find_desktop_file(record, data_dirs=None):
+def find_desktop_file(
+	record: _ExportedAlias, data_dirs: Iterable[str] | None = None
+) -> str | None:
 	"""Find the exported desktop entry for a Flatpak alias record."""
 	application_dirs = []
 	installation_path = getattr(record, "installation_path", None)
@@ -42,7 +48,9 @@ def find_desktop_file(record, data_dirs=None):
 	return None
 
 
-def get_exported_icon(record, data_dirs=None):
+def get_exported_icon(
+	record: _ExportedAlias, data_dirs: Iterable[str] | None = None
+) -> str | None:
 	desktop_file = find_desktop_file(record, data_dirs)
 	if desktop_file is None:
 		return None
@@ -56,7 +64,9 @@ def get_exported_icon(record, data_dirs=None):
 		return None
 
 
-def get_project_details(project_file=None):
+def get_project_details(
+	project_file: str | os.PathLike[str] | None = None,
+) -> tuple[str, tuple[str, ...]]:
 	project_file = Path(project_file) if project_file else (
 		Path(__file__).resolve().parents[3] / "pyproject.toml"
 	)
@@ -75,7 +85,9 @@ def get_project_details(project_file=None):
 	)
 
 
-def get_app_ref_choices(exporter):
+def get_app_ref_choices(
+	exporter: _FlatpakCommandExporter,
+) -> list[tuple[str, _ExportedAlias]]:
 	"""Return one representative installed ref per app ID."""
 	records_by_app_id = {}
 	for record in exporter.get_exported_aliases():
@@ -88,6 +100,10 @@ def get_app_ref_choices(exporter):
 			record.alias.casefold(),
 			record.installation_scope,
 		)
+		if current is None:
+			records_by_app_id[record.app_id] = record
+			continue
+
 		current_key = (
 			current.app_name.casefold(),
 			current.app_id.casefold(),
@@ -95,8 +111,8 @@ def get_app_ref_choices(exporter):
 			current.arch.casefold(),
 			current.alias.casefold(),
 			current.installation_scope,
-		) if current else None
-		if current is None or record_key < current_key:
+		)
+		if record_key < current_key:
 			records_by_app_id[record.app_id] = record
 
 	return sorted(
@@ -108,7 +124,9 @@ def get_app_ref_choices(exporter):
 	)
 
 
-def get_aliases_by_scope(exporter):
+def get_aliases_by_scope(
+	exporter: _FlatpakCommandExporter,
+) -> dict[str, list[_ExportedAlias]]:
 	"""Return current-ref aliases merged or filtered to each installation."""
 	return {
 		"all": exporter.get_exported_aliases(current_only=True),
@@ -121,7 +139,13 @@ def get_aliases_by_scope(exporter):
 	}
 
 
-def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):
+def _make_app_icon(
+	record: _ExportedAlias,
+	Gtk,
+	Gdk,
+	GLib,
+	icon_theme,
+):
 	icon_name = get_exported_icon(record)
 	installation_path = getattr(record, "installation_path", None)
 	if installation_path:

@@ -2,6 +2,7 @@
 
 import logging
 import shlex
+from pathlib import Path
 
 from ..config import AliasConfig
 from ..defaults import COMMAND_TEMPLATE
@@ -9,13 +10,21 @@ from .metadata import _read_manifest_or_empty, manifest_exported_commands
 from .refs import _get_installed_refs, _get_preferred_app_refs
 
 
-def _launcher_path(alias, *, scope="user"):
+def _launcher_path(alias: str, *, scope: str = "user") -> Path:
     AliasConfig._validate_alias(alias)
     config = AliasConfig(scope=scope)
     return config.export_directory / alias
 
 
-def create_launcher(app_id, export, command, arch, branch, *, scope="user"):
+def create_launcher(
+    app_id: str,
+    export: str,
+    command: str,
+    arch: str,
+    branch: str,
+    *,
+    scope: str = "user",
+) -> None:
     path = _launcher_path(export, scope=scope)
     path.parent.mkdir(parents=True, exist_ok=True)
     logging.debug(
@@ -39,7 +48,7 @@ def create_launcher(app_id, export, command, arch, branch, *, scope="user"):
     logging.info("Created launcher for alias %s at %s", export, path)
 
 
-def remove_launcher(export, *, scope="user"):
+def remove_launcher(export: str, *, scope: str = "user") -> None:
     path = _launcher_path(export, scope=scope)
     try:
         path.unlink()
@@ -50,7 +59,7 @@ def remove_launcher(export, *, scope="user"):
         logging.info("Removed launcher for alias %s at %s", export, path)
 
 
-def _create_disabled_launcher(alias):
+def _create_disabled_launcher(alias: str) -> None:
     path = _launcher_path(alias)
     path.parent.mkdir(parents=True, exist_ok=True)
     message = shlex.quote(

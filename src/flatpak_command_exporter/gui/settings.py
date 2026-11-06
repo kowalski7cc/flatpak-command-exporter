@@ -1,9 +1,16 @@
+from collections.abc import Callable, Mapping
+
+from ..api import ExportedAlias as _ExportedAlias
+from ..api import FlatpakCommandExporter as _FlatpakCommandExporter
+from ..config import AliasConfig as _AliasConfig
 from .accessibility import set_accessible_label, set_decorative
 from .data import _make_app_icon, get_app_ref_choices
 from .i18n import _
 
 
-def _make_icon_button(Gtk, icon_name, accessible_label):
+def _make_icon_button(
+	Gtk, icon_name: str, accessible_label: str
+):
 	button = Gtk.Button.new_from_icon_name(icon_name)
 	button.set_tooltip_text(accessible_label)
 	set_accessible_label(button, Gtk, accessible_label)
@@ -11,21 +18,27 @@ def _make_icon_button(Gtk, icon_name, accessible_label):
 	return button
 
 
-def _configure_responsive_label(label, Pango):
+def _configure_responsive_label(label, Pango) -> None:
 	label.set_xalign(0)
 	label.set_hexpand(True)
 	label.set_wrap(True)
 	label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
 
-def _make_app_override_row(Adw, app_id, app_name, app_icon, remove_button):
+def _make_app_override_row(
+	Adw,
+	app_id: str,
+	app_name: str,
+	app_icon: object,
+	remove_button: object,
+) -> object:
 	row = Adw.ActionRow(title=app_name, subtitle=app_id)
 	row.add_prefix(app_icon)
 	row.add_suffix(remove_button)
 	return row
 
 
-def _reset_factory_preferences(config):
+def _reset_factory_preferences(config: _AliasConfig) -> str:
 	config.clear_overrides()
 	default_policy = "none" if config.scope == "system" else "all"
 	config.set_default_policy(default_policy)
@@ -33,13 +46,13 @@ def _reset_factory_preferences(config):
 
 
 def _handle_app_selection(
-	row,
-	records_by_row,
+	row: object | None,
+	records_by_row: Mapping[object, _ExportedAlias],
 	selection_marks,
-	enabled,
-	save_app_override,
-	close_chooser,
-):
+	enabled: bool,
+	save_app_override: Callable[[str, bool], bool],
+	close_chooser: Callable[[], None],
+) -> None:
 	if row is None:
 		return
 	for choice_row, selected_mark in selection_marks.items():
@@ -50,17 +63,17 @@ def _handle_app_selection(
 
 
 def show_settings(
-	window,
-	exporter,
-	refresh_user_controls,
-	report_error,
+	window: object,
+	exporter: _FlatpakCommandExporter,
+	refresh_user_controls: Callable[[], None],
+	report_error: Callable[[str, Exception], None],
 	Adw,
 	Gtk,
 	Gdk,
 	Pango,
 	GLib,
-	icon_theme,
-):
+	icon_theme: object,
+) -> None:
 	preferences_window = Adw.PreferencesWindow(
 		transient_for=window,
 		modal=True,
@@ -94,7 +107,7 @@ def show_settings(
 	for group in override_groups.values():
 		page.add(group)
 
-	def refresh_override_rows():
+	def refresh_override_rows() -> None:
 		choices_by_app_id = {
 			record.app_id: record for _label, record in get_app_ref_choices(exporter)
 		}
@@ -133,12 +146,12 @@ def show_settings(
 			override_groups[enabled].add(row)
 			override_rows[enabled].append(row)
 
-			def reset_override(_button, app_id=app_id):
+			def reset_override(_button: object, app_id: str = app_id) -> None:
 				save_app_override(app_id, None)
 
 			reset_button.connect("clicked", reset_override)
 
-	def save_app_override(app_id, enabled):
+	def save_app_override(app_id: str, enabled: bool | None) -> bool:
 		try:
 			exporter.config.set_app_enabled(app_id, enabled)
 		except (OSError, ValueError) as error:
@@ -156,7 +169,7 @@ def show_settings(
 		refresh_user_controls()
 		return True
 
-	def open_ref_selector(enabled):
+	def open_ref_selector(enabled: bool) -> None:
 		try:
 			choices = get_app_ref_choices(exporter)
 		except (OSError, ValueError, GLib.Error) as error:
@@ -236,7 +249,7 @@ def show_settings(
 			selection_marks[row] = selected_mark
 			records_by_row[row] = record
 
-		def selected_ref(_list_box, row):
+		def selected_ref(_list_box: object, row: object) -> None:
 			_handle_app_selection(
 				row,
 				records_by_row,
@@ -272,7 +285,7 @@ def show_settings(
 
 	default_row_handler = [None]
 
-	def update_default_export(row, _property):
+	def update_default_export(row, _property: object) -> None:
 		policy = "all" if row.get_active() else "none"
 		try:
 			exporter.config.set_default_policy(policy)
@@ -293,7 +306,7 @@ def show_settings(
 		"notify::active", update_default_export
 	)
 
-	def reset_settings():
+	def reset_settings() -> None:
 		try:
 			default_policy = _reset_factory_preferences(exporter.config)
 		except (OSError, ValueError) as error:
@@ -314,7 +327,7 @@ def show_settings(
 			report_error(_("Settings reset, but overrides could not be refreshed"), error)
 		refresh_user_controls()
 
-	def confirm_reset(_button):
+	def confirm_reset(_button: object) -> None:
 		dialog = Adw.AlertDialog(
 			heading=_("Reset settings?"),
 			body=(
@@ -330,7 +343,7 @@ def show_settings(
 		dialog.set_default_response("cancel")
 		dialog.set_close_response("cancel")
 
-		def reset_response(alert_dialog, result):
+		def reset_response(alert_dialog, result: object) -> None:
 			try:
 				response = alert_dialog.choose_finish(result)
 			except GLib.Error as error:

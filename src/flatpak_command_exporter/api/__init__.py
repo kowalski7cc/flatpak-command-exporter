@@ -1,5 +1,7 @@
 """Public Python API for discovering and exporting Flatpak commands."""
 
+from typing import Final
+
 from .discovery import get_command_groups, get_exported_aliases
 from .exporter import FlatpakCommandExporter
 from .launchers import (
@@ -21,7 +23,7 @@ from .metadata import (
 from .models import CommandGroup, ExportedAlias
 from .refs import find_refs, get_current_ref
 
-__all__ = [
+__all__: Final[list[str]] = [
     "CommandGroup",
     "ExportedAlias",
     "FlatpakCommandExporter",

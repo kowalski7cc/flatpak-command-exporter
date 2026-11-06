@@ -1,6 +1,7 @@
 import textwrap
+from typing import Final
 
-DEFAULT_EXPORT_COMMANDS = {
+DEFAULT_EXPORT_COMMANDS: Final[dict[str, dict[str, str]]] = {
     "org.gimp.GIMP": {"gimp": "gimp"},
     "de.wwwtech.gitte": {"gitte": "gitte"},
     "org.audacityteam.Audacity": {"audacity": "audacity"},
@@ -363,7 +364,7 @@ DEFAULT_EXPORT_COMMANDS = {
     "org.kde.yakuake": {"yakuake": "yakuake"},
 }
 
-COMMAND_TEMPLATE = textwrap.dedent("""\
+COMMAND_TEMPLATE: Final[str] = textwrap.dedent("""\
     #!/bin/sh
     for arg do
         shift

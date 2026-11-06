@@ -1,15 +1,16 @@
 import os
 from importlib.resources import files
 from pathlib import Path
+from typing import Final
 
 
-PROFILE_SCRIPT = "flatpak-exported-commands.sh"
-PROFILE_MARKER_START = "# >>> Flatpak Command Exporter >>>"
-PROFILE_MARKER_END = "# <<< Flatpak Command Exporter <<<"
-SYSTEM_PROFILE_DIRECTORY = Path("/etc/profile.d")
+PROFILE_SCRIPT: Final[str] = "flatpak-exported-commands.sh"
+PROFILE_MARKER_START: Final[str] = "# >>> Flatpak Command Exporter >>>"
+PROFILE_MARKER_END: Final[str] = "# <<< Flatpak Command Exporter <<<"
+SYSTEM_PROFILE_DIRECTORY: Final[Path] = Path("/etc/profile.d")
 
 
-def install_profile(scope="user"):
+def install_profile(scope: str = "user") -> Path:
     script = files("flatpak_command_exporter").joinpath(PROFILE_SCRIPT).read_text(
         encoding="utf-8"
     )

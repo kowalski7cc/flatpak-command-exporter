@@ -1,6 +1,11 @@
 import logging
 import os
 import sys
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+
+from ..api.models import ExportedAlias as _ExportedAlias
+from ..config import AliasConfig as _AliasConfig
 from .accessibility import set_accessible_label, set_decorative
 from .data import _make_app_icon, get_aliases_by_scope, get_project_details
 from .i18n import _
@@ -8,14 +13,35 @@ from .menu import create_main_menu
 from .settings import show_settings
 
 
-def _app_commands_enabled(config, records):
+@dataclass(slots=True)
+class _AliasRow:
+    record: _ExportedAlias
+    scopes: set[str]
+
+
+@dataclass(slots=True)
+class _AppGroup:
+    record: _ExportedAlias | None
+    records: list[
+        tuple[tuple[str, str, str, str, str], _ExportedAlias, set[str]]
+    ]
+    scopes: set[str]
+
+
+def _app_commands_enabled(
+    config: _AliasConfig, records: Sequence[_ExportedAlias]
+) -> bool:
 	return all(
 		config.is_alias_enabled(record.app_id, record.alias)
 		for record in records
 	)
 
 
-def _set_app_commands_enabled(config, records, enabled):
+def _set_app_commands_enabled(
+    config: _AliasConfig,
+    records: Sequence[_ExportedAlias],
+    enabled: bool,
+) -> None:
 	if not records:
 		return
 	config.set_aliases_enabled(
@@ -25,7 +51,9 @@ def _set_app_commands_enabled(config, records, enabled):
 	)
 
 
-def _group_app_aliases(aliases_by_scope):
+def _group_app_aliases(
+    aliases_by_scope: Mapping[str, Sequence[_ExportedAlias]],
+) -> dict[str, _AppGroup]:
 	rows_by_ref = {}
 	for filter_scope, scope_records in aliases_by_scope.items():
 		for record in scope_records:
@@ -37,36 +65,36 @@ def _group_app_aliases(aliases_by_scope):
 				record.alias,
 			)
 			row = rows_by_ref.setdefault(
-				key, {"record": record, "scopes": set()}
+				key, _AliasRow(record=record, scopes=set())
 			)
-			row["scopes"].add(filter_scope)
+			row.scopes.add(filter_scope)
 
 	app_groups = {}
 	for key, row in sorted(
 		rows_by_ref.items(),
 		key=lambda item: (
-			item[1]["record"].app_name.casefold(),
-			item[1]["record"].app_id.casefold(),
-			item[1]["record"].branch.casefold(),
-			item[1]["record"].arch.casefold(),
-			item[1]["record"].alias.casefold(),
-			item[1]["record"].installation_scope,
+			item[1].record.app_name.casefold(),
+			item[1].record.app_id.casefold(),
+			item[1].record.branch.casefold(),
+			item[1].record.arch.casefold(),
+			item[1].record.alias.casefold(),
+			item[1].record.installation_scope,
 		),
 	):
-		record = row["record"]
+		record = row.record
 		group = app_groups.setdefault(
 			record.app_id,
-			{"record": None, "records": [], "scopes": set()},
+			_AppGroup(record=None, records=[], scopes=set()),
 		)
-		group["records"].append((key, record, row["scopes"]))
-		group["scopes"].update(row["scopes"])
-		if "all" in row["scopes"]:
-			group["record"] = record
+		group.records.append((key, record, row.scopes))
+		group.scopes.update(row.scopes)
+		if "all" in row.scopes:
+			group.record = record
 
 	return app_groups
 
 
-def main():
+def main() -> None:
 	logging.basicConfig(
 		level=os.environ.get("LOGLEVEL", "INFO").upper(),
 		format="%(levelname)s: %(message)s",
@@ -88,7 +116,7 @@ def main():
 	Adw.init()
 
 	class AliasApplication(Adw.Application):
-		def __init__(self):
+		def __init__(self) -> None:
 			super().__init__(
 				application_id="xyz.kowalski7cc.flatpak-command-exporter",
 				flags=Gio.ApplicationFlags.FLAGS_NONE,
@@ -98,7 +126,7 @@ def main():
 			self.add_action(about_action)
 			self.connect("activate", self.on_activate)
 
-		def show_about(self, *_args):
+		def show_about(self, *_args: object) -> None:
 			version, authors = get_project_details()
 			about_window = Adw.AboutWindow(
 				application_name="Flatlink",
@@ -111,7 +139,7 @@ def main():
 			about_window.set_transient_for(self.window)
 			about_window.present()
 
-		def on_activate(self, _application):
+		def on_activate(self, _application: object) -> None:
 			aliases_by_scope = get_aliases_by_scope(exporter)
 			app_groups = _group_app_aliases(aliases_by_scope)
 
@@ -177,14 +205,14 @@ def main():
 			app_saved_states = {}
 			app_commands = {}
 			for app_id, group in app_groups.items():
-				for _key, record, _scopes in group["records"]:
+				for _key, record, _scopes in group.records:
 					app_commands.setdefault(app_id, {})[record.alias] = record
 
 			for group in app_groups.values():
-				record = group["record"] or group["records"][0][1]
+				record = group.record or group.records[0][1]
 				command_records = [
 					command_record
-					for _key, command_record, _scopes in group["records"]
+					for _key, command_record, _scopes in group.records
 				]
 				row = Gtk.ListBoxRow()
 				row.set_selectable(False)
@@ -250,7 +278,7 @@ def main():
 				)
 				command_list.set_margin_start(64)
 				row._command_rows = []
-				for _key, command_record, command_scopes in group["records"]:
+				for _key, command_record, command_scopes in group.records:
 					command_row = Gtk.Box(
 						orientation=Gtk.Orientation.HORIZONTAL, spacing=12
 					)
@@ -315,7 +343,7 @@ def main():
 					record.arch,
 					record.installation_scope,
 				)).casefold()
-				row._view_scopes = group["scopes"]
+				row._view_scopes = group.scopes
 				rows.append(row)
 				list_box.append(row)
 
@@ -347,7 +375,7 @@ def main():
 			content.append(stack)
 			toolbar.set_content(content)
 
-			def update_search(*_args):
+			def update_search(*_args: object) -> None:
 				query = search_entry.get_text().strip().casefold()
 				selected_scope = ("all", "user", "system")[
 					scope_filter.get_selected()
@@ -400,11 +428,11 @@ def main():
 			toast_overlay.set_child(toolbar)
 			window.set_content(toast_overlay)
 
-			def report_error(message, error):
+			def report_error(message: str, error: Exception) -> None:
 				logging.error("%s: %s", message, error)
 				toast_overlay.add_toast(Adw.Toast.new(f"{message}: {error}"))
 
-			def update_user_control_widgets():
+			def update_user_control_widgets() -> None:
 				for alias_switch, record in alias_switches:
 					handler_id = alias_switch_handlers[
 						(
@@ -458,7 +486,7 @@ def main():
 					finally:
 						app_switch.handler_unblock(handler_id)
 
-			def refresh_user_controls():
+			def refresh_user_controls() -> None:
 				try:
 					update_user_control_widgets()
 				except (OSError, ValueError) as error:
@@ -470,11 +498,11 @@ def main():
 
 				def update_alias(
 					toggle,
-					_property,
-					record=record,
-					handler_id=handler_id,
-					saved_state=saved_state,
-				):
+					_property: object,
+					record: _ExportedAlias = record,
+					handler_id: Sequence[int | None] = handler_id,
+					saved_state: list[bool] = saved_state,
+				) -> None:
 					requested_state = toggle.get_active()
 					try:
 						exporter.config.set_alias_enabled(
@@ -522,11 +550,11 @@ def main():
 
 				def update_app(
 					toggle,
-					_property,
-					command_records=command_records,
-					handler_id=handler_id,
-					saved_state=saved_state,
-				):
+					_property: object,
+					command_records: list[_ExportedAlias] = command_records,
+					handler_id: Sequence[int | None] = handler_id,
+					saved_state: list[bool] = saved_state,
+				) -> None:
 					requested_state = toggle.get_active()
 					try:
 						_set_app_commands_enabled(
@@ -569,7 +597,7 @@ def main():
 					)
 				] = saved_state
 
-			def open_settings(_action, _parameter):
+			def open_settings(_action: object, _parameter: object) -> None:
 				try:
 					show_settings(
 						window,
@@ -591,7 +619,7 @@ def main():
 			settings_action.connect("activate", open_settings)
 			self.add_action(settings_action)
 
-			def export_user_commands(_button):
+			def export_user_commands(_button: object) -> None:
 				try:
 					exporter.export_commands()
 				except (OSError, ValueError, GLib.Error) as error:

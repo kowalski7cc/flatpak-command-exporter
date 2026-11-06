@@ -103,12 +103,12 @@ class AliasDataTests(unittest.TestCase):
 
         self.assertEqual(list(groups), ["org.example.App"])
         group = groups["org.example.App"]
-        self.assertIs(group["record"], user_record)
-        self.assertEqual(group["scopes"], {"all", "user", "system"})
+        self.assertIs(group.record, user_record)
+        self.assertEqual(group.scopes, {"all", "user", "system"})
         self.assertEqual(
             {
                 record.installation_scope: scopes
-                for _key, record, scopes in group["records"]
+                for _key, record, scopes in group.records
             },
             {
                 "user": {"all", "user"},

@@ -4,13 +4,22 @@ import json
 import logging
 import os
 import xml.etree.ElementTree as ET
+from typing import Final
 
 from ..defaults import DEFAULT_EXPORT_COMMANDS
 
-EXPORT_SCHEMA_NAMES = ("x-export-commands", "export-commands")
+EXPORT_SCHEMA_NAMES: Final[tuple[str, ...]] = (
+    "x-export-commands",
+    "export-commands",
+)
 
 
-def load_metainfo(base_path, app_id, arch, branch):
+def load_metainfo(
+    base_path: str | os.PathLike[str],
+    app_id: str,
+    arch: str,
+    branch: str,
+) -> ET.Element | None:
     metainfo_path = os.path.join(
         base_path,
         "app",
@@ -35,14 +44,18 @@ def load_metainfo(base_path, app_id, arch, branch):
         return None
 
 
-def _find_metainfo_child(metainfo, tag):
+def _find_metainfo_child(
+    metainfo: ET.Element, tag: str
+) -> ET.Element | None:
     return next(
         (child for child in metainfo if child.tag.rsplit("}", 1)[-1] == tag),
         None,
     )
 
 
-def get_pretty_name_from_metainfo(metainfo):
+def get_pretty_name_from_metainfo(
+    metainfo: ET.Element | None,
+) -> str | None:
     if metainfo is None:
         return None
     name_element = _find_metainfo_child(metainfo, "name")
@@ -51,7 +64,9 @@ def get_pretty_name_from_metainfo(metainfo):
     return None
 
 
-def get_desktop_id_from_metainfo(metainfo, app_id):
+def get_desktop_id_from_metainfo(
+    metainfo: ET.Element | None, app_id: str
+) -> str:
     if metainfo is None:
         return f"{app_id}.desktop"
     launchable = _find_metainfo_child(metainfo, "launchable")
@@ -64,14 +79,16 @@ def get_desktop_id_from_metainfo(metainfo, app_id):
     return f"{app_id}.desktop"
 
 
-def get_version_from_metainfo(metainfo):
+def get_version_from_metainfo(metainfo: ET.Element | None) -> str | None:
     if metainfo is None:
         return None
     releases_element = _find_metainfo_child(metainfo, "releases")
     if releases_element is not None:
         release_element = _find_metainfo_child(releases_element, "release")
-        if release_element is not None and release_element.get("version"):
-            return release_element.get("version").strip()
+        if release_element is not None:
+            release_version = release_element.get("version")
+            if release_version:
+                return release_version.strip()
 
     version_element = _find_metainfo_child(metainfo, "version")
     if version_element is not None and version_element.text:
@@ -79,7 +96,12 @@ def get_version_from_metainfo(metainfo):
     return None
 
 
-def load_manifest(base_path, app_id, arch, branch):
+def load_manifest(
+    base_path: str | os.PathLike[str],
+    app_id: str,
+    arch: str,
+    branch: str,
+) -> object:
     manifest_path = os.path.join(
         base_path, "app", app_id, arch, branch, "active", "files", "manifest.json"
     )
@@ -88,7 +110,12 @@ def load_manifest(base_path, app_id, arch, branch):
         return json.load(manifest_file)
 
 
-def _read_manifest_or_empty(installation_path, app_id, arch, branch):
+def _read_manifest_or_empty(
+    installation_path: str | os.PathLike[str],
+    app_id: str,
+    arch: str,
+    branch: str,
+) -> dict[str, object] | None:
     try:
         manifest = load_manifest(installation_path, app_id, arch, branch)
     except FileNotFoundError:
@@ -101,10 +128,12 @@ def _read_manifest_or_empty(installation_path, app_id, arch, branch):
     if not isinstance(manifest, dict):
         logging.warning("Manifest for %s is not a dictionary. Ignoring.", app_id)
         return None
-    return manifest
+    return {str(key): value for key, value in manifest.items()}
 
 
-def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
+def manifest_exported_commands(
+    app_id: str, manifest: dict[str, object]
+) -> dict[str, str]:
     commands: dict[str, str] = {}
     for schema_name in EXPORT_SCHEMA_NAMES:
         schema_commands = manifest.get(schema_name, {})
@@ -115,7 +144,15 @@ def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
                 app_id,
             )
             continue
-        commands.update(schema_commands)
+        for alias, command in schema_commands.items():
+            if not isinstance(alias, str) or not isinstance(command, str):
+                logging.warning(
+                    "%s in manifest for %s contains a non-string command. Ignoring.",
+                    schema_name,
+                    app_id,
+                )
+                continue
+            commands[alias] = command
     if not commands:
         logging.debug("Using built-in command defaults for %s", app_id)
         return DEFAULT_EXPORT_COMMANDS.get(app_id, {})

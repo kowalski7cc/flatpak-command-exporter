@@ -257,6 +257,15 @@ only use commands you trust. Use `flatshell export` to explicitly refresh all
 enabled launchers after installing a Flatpak. Check the command's exit status
 to detect errors; do not infer success solely from its output.
 
+## Typing
+
+The package requires Python 3.13 or newer and publishes inline annotations
+through its partial PEP 561 marker. Use built-in collection generics and union
+syntax, and prefer concrete types or `object` over `Any`. Reserve `Any` for
+dynamic PyGObject/Flatpak boundaries where the dependency provides no resolvable
+static type; leave a boundary unannotated rather than guessing at GTK or
+Flatpak contracts.
+
 ## Development checks
 
 Run the unit tests and whitespace validation from the repository root:

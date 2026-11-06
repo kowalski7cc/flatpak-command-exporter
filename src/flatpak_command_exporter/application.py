@@ -3,6 +3,8 @@
 The package root and this module retain their historical import paths.
 """
 
+from typing import Final
+
 import gi
 
 from .api import (
@@ -30,7 +32,7 @@ from .api.refs import Flatpak, GLib
 from .config import AliasConfig
 from .defaults import COMMAND_TEMPLATE, DEFAULT_EXPORT_COMMANDS
 
-__all__ = [
+__all__: Final[list[str]] = [
     "CommandGroup",
     "ExportedAlias",
     "FlatpakCommandExporter",
