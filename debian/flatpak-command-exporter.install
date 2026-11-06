@@ -1,6 +1,7 @@
 usr/bin/flatshell
 build/bash-completion/flatshell usr/share/bash-completion/completions/
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/__init__.py
+usr/lib/python3.*/dist-packages/flatpak_command_exporter/py.typed
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/__main__.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/application.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/cli_parser.py
