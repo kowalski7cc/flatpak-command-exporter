@@ -8,10 +8,12 @@ from .application import FlatpakCommandExporter
 from .profile import install_profile
 from .system_bus import call_system_method
 
-logging.basicConfig(
-    level=os.environ.get("LOGLEVEL", "INFO").upper(),
-    format="%(levelname)s: %(message)s",
-)
+
+def _configure_logging():
+    logging.basicConfig(
+        level=os.environ.get("LOGLEVEL", "WARNING").upper(),
+        format="%(levelname)s: %(message)s",
+    )
 
 
 def _print_command_groups(groups, complete):
@@ -28,6 +30,8 @@ def _print_command_groups(groups, complete):
 
 
 def _run_system_command(args):
+    logging.info("Running system-scope %s operation", args.command)
+    logging.debug("Dispatching %s through the system-bus helper", args.command)
     if args.command == "export":
         call_system_method("Export")
     elif args.command == "add":
@@ -50,9 +54,11 @@ def _run_system_command(args):
         call_system_method("SetDefaultPolicy", args.value)
     elif args.command == "install-profile":
         call_system_method("InstallProfile")
+    logging.info("Completed system-scope %s operation", args.command)
 
 
 def main():
+    _configure_logging()
     parser = argparse.ArgumentParser(
         description="Export Flatpak commands to PATH-accessible directories.",
         prog="flatshell",
@@ -143,6 +149,7 @@ def main():
     if args.command in (None, "help"):
         parser.print_help()
         return
+    logging.debug("Parsed CLI command: %s", args.command)
     try:
         system_mutation = args.command in {
             "export",
@@ -158,6 +165,8 @@ def main():
             return
 
         scope = "system" if getattr(args, "system", False) else "user"
+        logging.info("Running %s command for %s scope", args.command, scope)
+        logging.debug("Using %s scope for command execution", scope)
         exporter = FlatpakCommandExporter(scope=scope)
         if args.command == "export":
             exporter.export_commands()
@@ -178,6 +187,7 @@ def main():
                         print(f"Flatpak application {args.app_id} not found.")
                 else:
                     _print_command_groups(groups, args.complete)
+                logging.info("Listed %d Flatpak application refs", len(groups))
             elif args.app_id is None:
                 list_parser.error("app_id is required unless --all is specified")
             else:
@@ -218,6 +228,7 @@ def main():
             exporter.set_default_policy(args.value)
         elif args.command == "install-profile":
             install_profile(scope)
+        logging.info("Completed %s command for %s scope", args.command, scope)
     except (OSError, ValueError, GLib.Error) as error:
         logging.error("%s", error)
         raise SystemExit(1) from error

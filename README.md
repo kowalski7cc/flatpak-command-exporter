@@ -171,6 +171,20 @@ flatshell remove org.gimp.GIMP my-gimp
 flatshell remove --system org.example.App my-command
 ```
 
+### Logging
+
+`flatshell` shows warnings and errors by default. Set `LOGLEVEL` to include
+operational details or troubleshooting output:
+
+```console
+LOGLEVEL=INFO flatshell list --all
+LOGLEVEL=DEBUG flatshell export
+```
+
+Supported levels are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
+Debug logs include discovery and launcher decisions; command output remains
+unchanged.
+
 ## Flatlink
 
 Launch the GUI from the terminal with:

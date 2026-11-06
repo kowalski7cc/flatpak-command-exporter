@@ -62,6 +62,16 @@ class ExportCommandsTests(unittest.TestCase):
             "app.test", "alias", "command", "x86_64", "beta"
         )
 
+    def test_export_logs_scope_and_launcher_summary(self):
+        with self.assertLogs(level="INFO") as logs:
+            self.run_export(
+                [self.Ref("app.test", "stable")],
+                lambda app_id, _cancellable: self.Ref(app_id, "stable"),
+            )
+
+        self.assertIn("Exporting Flatpak commands for user scope", logs.output[0])
+        self.assertIn("Exported 1 launchers", logs.output[-1])
+
     def test_falls_back_to_last_enumerated_ref_when_current_is_missing(self):
         stable_ref = self.Ref("app.test", "stable")
         beta_ref = self.Ref("app.test", "beta")

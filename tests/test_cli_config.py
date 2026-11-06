@@ -27,6 +27,42 @@ class ConfigurationCliTests(unittest.TestCase):
         with patch.object(sys, "argv", ["flatshell", *arguments]):
             cli.main()
 
+    def test_logging_defaults_to_warning(self):
+        with (
+            patch.dict(os.environ, {}, clear=True),
+            patch.object(cli.logging, "basicConfig") as basic_config,
+        ):
+            cli._configure_logging()
+
+        basic_config.assert_called_once_with(
+            level="WARNING",
+            format="%(levelname)s: %(message)s",
+        )
+
+    def test_loglevel_environment_variable_selects_logging_verbosity(self):
+        with (
+            patch.dict(os.environ, {"LOGLEVEL": "DEBUG"}),
+            patch.object(cli.logging, "basicConfig") as basic_config,
+        ):
+            cli._configure_logging()
+
+        basic_config.assert_called_once_with(
+            level="DEBUG",
+            format="%(levelname)s: %(message)s",
+        )
+
+    def test_cli_logs_operation_lifecycle(self):
+        with (
+            patch.object(sys, "argv", ["flatshell", "export"]),
+            patch.object(cli, "FlatpakCommandExporter") as exporter_factory,
+            self.assertLogs(level="INFO") as logs,
+        ):
+            cli.main()
+
+        exporter_factory.return_value.export_commands.assert_called_once()
+        self.assertIn("Running export command for user scope", logs.output[0])
+        self.assertIn("Completed export command for user scope", logs.output[-1])
+
     def test_config_command_updates_global_default_and_exports(self):
         self.run_cli("config", "default-export", "none")
 

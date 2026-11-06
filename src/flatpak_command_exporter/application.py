@@ -61,6 +61,7 @@ def load_metainfo(base_path, app_id, arch, branch):
         return None
     try:
         tree = ET.parse(metainfo_path)
+        logging.debug("Loaded metainfo for %s from %s", app_id, metainfo_path)
         return tree.getroot()
     except ET.ParseError as error:
         logging.error("Error parsing metainfo for %s: %s", app_id, error)
@@ -115,6 +116,7 @@ def load_manifest(base_path, app_id, arch, branch):
     manifest_path = os.path.join(
         base_path, "app", app_id, arch, branch, "active", "files", "manifest.json"
     )
+    logging.debug("Reading manifest for %s from %s", app_id, manifest_path)
     with open(manifest_path, encoding="utf-8") as manifest_file:
         return json.load(manifest_file)
 
@@ -123,6 +125,7 @@ def _read_manifest_or_empty(installation_path, app_id, arch, branch):
     try:
         manifest = load_manifest(installation_path, app_id, arch, branch)
     except FileNotFoundError:
+        logging.debug("No manifest found for %s; using an empty manifest", app_id)
         return {}
     except (OSError, json.JSONDecodeError) as error:
         logging.warning("Could not load manifest for %s: %s", app_id, error)
@@ -140,8 +143,17 @@ def find_refs(installation):
     """
     try:
         if installation is None:
+            logging.debug("Skipping unavailable Flatpak installation")
             return
-        yield from installation.list_installed_refs_by_kind(Flatpak.RefKind.APP, None)
+        logging.debug("Enumerating installed Flatpak application refs")
+        for ref in installation.list_installed_refs_by_kind(Flatpak.RefKind.APP, None):
+            logging.debug(
+                "Found Flatpak ref %s/%s/%s",
+                ref.get_name(),
+                ref.get_arch(),
+                ref.get_branch(),
+            )
+            yield ref
     except GLib.Error as error:
         logging.error("Error accessing Flatpak API: %s", error)
 
@@ -163,6 +175,12 @@ def get_current_ref(installation, app_id, fallback_ref):
             app_id,
         )
         return fallback_ref
+    logging.debug(
+        "Selected current ref %s/%s/%s",
+        ref.get_name(),
+        ref.get_arch(),
+        ref.get_branch(),
+    )
     return ref
 
 
@@ -176,10 +194,10 @@ def create_launcher(app_id, export, command, arch, branch, *, scope="user"):
     path = _launcher_path(export, scope=scope)
     path.parent.mkdir(parents=True, exist_ok=True)
     logging.debug(
-        "Creating launcher for %s at %s with command: %s and arch: %s, branch: %s",
+        "Creating launcher for %s alias %s at %s (arch: %s, branch: %s)",
         app_id,
+        export,
         path,
-        command,
         arch,
         branch,
     )
@@ -193,6 +211,7 @@ def create_launcher(app_id, export, command, arch, branch, *, scope="user"):
         encoding="utf-8",
     )
     path.chmod(0o755)
+    logging.info("Created launcher for alias %s at %s", export, path)
 
 
 def remove_launcher(export, *, scope="user"):
@@ -200,7 +219,10 @@ def remove_launcher(export, *, scope="user"):
     try:
         path.unlink()
     except FileNotFoundError:
+        logging.debug("No existing launcher for alias %s at %s", export, path)
         pass
+    else:
+        logging.info("Removed launcher for alias %s at %s", export, path)
 
 
 def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
@@ -216,7 +238,7 @@ def manifest_exported_commands(app_id, manifest: dict) -> dict[str, str]:
             continue
         commands.update(schema_commands)
     if not commands:
-        # Fetch commands from defaults
+        logging.debug("Using built-in command defaults for %s", app_id)
         return DEFAULT_EXPORT_COMMANDS.get(app_id, {})
     return commands
 
@@ -229,6 +251,7 @@ def get_exported_aliases(
     system: bool = False,
 ) -> list[ExportedAlias]:
     """Return aliases from current user and system app refs, preferring user refs."""
+    logging.info("Discovering exported Flatpak aliases")
     aliases: list[ExportedAlias] = []
     seen_app_ids: set[str] = set()
     if config is None:
@@ -253,6 +276,8 @@ def get_exported_aliases(
             installations.append((False, Flatpak.Installation.new_system))
 
     for is_user_installation, installation_factory in installations:
+        installation_scope = "user" if is_user_installation else "system"
+        logging.debug("Inspecting %s Flatpak installation", installation_scope)
         try:
             installation = installation_factory()
             if installation is None:
@@ -287,6 +312,12 @@ def get_exported_aliases(
             commands = manifest_exported_commands(app_id, manifest)
             custom_aliases = installation_config.custom_aliases(app_id)
             commands = {**commands, **custom_aliases}
+            logging.debug(
+                "Found %d command aliases for %s in %s scope",
+                len(commands),
+                app_id,
+                installation_scope,
+            )
             for alias, command in commands.items():
                 aliases.append(
                     ExportedAlias(
@@ -307,6 +338,7 @@ def get_exported_aliases(
                     )
                 )
 
+    logging.info("Discovered %d exported Flatpak aliases", len(aliases))
     return aliases
 
 
@@ -328,6 +360,7 @@ def export_commands(
         scope_name = scope
     if system:
         scope_name = "system"
+    logging.info("Exporting Flatpak commands for %s scope", scope_name)
 
     installation_factories: list[object] = []
     if scope_name == "system":
@@ -342,11 +375,16 @@ def export_commands(
     disabled_aliases: set[str] = set()
 
     for installation_factory in installation_factories:
+        logging.debug("Collecting refs from a Flatpak installation")
         installation = installation_factory()
         if installation is None:
             continue
         for ref in find_refs(installation):
             refs_by_app_id[ref.get_name()] = ref
+    logging.info(
+        "Preparing launchers for %d installed applications",
+        len(refs_by_app_id),
+    )
 
     for app_id, fallback_ref in refs_by_app_id.items():
         install_factory = (
@@ -370,8 +408,10 @@ def export_commands(
         exported_commands = {**exported_commands, **config.custom_aliases(app_id)}
         for export, command in exported_commands.items():
             if not config.is_alias_enabled(app_id, export):
+                logging.debug("Skipping disabled alias %s for %s", export, app_id)
                 disabled_aliases.add(export)
                 continue
+            logging.debug("Scheduling launcher for alias %s from %s", export, app_id)
             launchers[export] = (
                 ref.get_name(),
                 command,
@@ -379,16 +419,24 @@ def export_commands(
                 ref.get_branch(),
             )
 
+    removed_count = 0
     for export in disabled_aliases - launchers.keys():
         if scope_name == "user":
             remove_launcher(export)
         else:
             remove_launcher(export, scope=scope_name)
+        removed_count += 1
     for export, (app_id, command, arch, branch) in launchers.items():
         if scope_name == "user":
             create_launcher(app_id, export, command, arch, branch)
         else:
             create_launcher(app_id, export, command, arch, branch, scope=scope_name)
+    logging.info(
+        "Exported %d launchers and processed %d disabled aliases for %s scope",
+        len(launchers),
+        removed_count,
+        scope_name,
+    )
 
 
 def get_command_groups(
@@ -401,6 +449,13 @@ def get_command_groups(
 ) -> list[CommandGroup]:
     """Return exported commands grouped by installed application ref."""
     scope_name = "system" if system else (scope or "user")
+    logging.info("Listing Flatpak command groups for %s scope", scope_name)
+    logging.debug(
+        "Command-group filters: app_id=%r, include_system=%s, first_only=%s",
+        app_id,
+        include_system,
+        first_only,
+    )
     installation_factories = [Flatpak.Installation.new_user]
     if scope_name == "system":
         installation_factories = [Flatpak.Installation.new_system]
@@ -443,8 +498,10 @@ def get_command_groups(
                 )
             )
             if first_only:
+                logging.info("Found a command group for %s", ref_app_id)
                 return groups
 
+    logging.info("Found %d Flatpak command groups", len(groups))
     return groups
 
 
@@ -496,23 +553,54 @@ class FlatpakCommandExporter:
         return export_commands(self.config)
 
     def set_default_policy(self, policy: str) -> None:
+        logging.info(
+            "Setting default export policy to %s for %s scope",
+            policy,
+            self.config.scope,
+        )
         self.config.set_default_policy(policy)
         self.export_commands()
 
     def set_app_enabled(self, app_id: str, enabled: bool | None) -> None:
+        logging.info(
+            "Setting app %s enabled state to %s for %s scope",
+            app_id,
+            enabled,
+            self.config.scope,
+        )
         self.config.set_app_enabled(app_id, enabled)
         self.export_commands()
 
     def set_alias_enabled(self, app_id: str, alias: str, enabled: bool) -> None:
+        logging.info(
+            "Setting alias %s for %s enabled state to %s in %s scope",
+            alias,
+            app_id,
+            enabled,
+            self.config.scope,
+        )
         self.config.set_alias_enabled(app_id, alias, enabled)
         self.export_commands()
 
     def add_custom_alias(self, app_id: str, alias: str, command: str) -> None:
+        logging.info(
+            "Adding custom alias %s for %s in %s scope",
+            alias,
+            app_id,
+            self.config.scope,
+        )
         self.config.set_custom_alias(app_id, alias, command)
         self.export_commands()
 
     def remove_custom_alias(self, app_id: str, alias: str) -> bool:
         removed = self.config.remove_custom_alias(app_id, alias)
+        logging.info(
+            "Removed custom alias %s for %s in %s scope: %s",
+            alias,
+            app_id,
+            self.config.scope,
+            removed,
+        )
         self.config.set_alias_enabled(app_id, alias, False)
         if self.config.scope == "user":
             remove_launcher(alias)
