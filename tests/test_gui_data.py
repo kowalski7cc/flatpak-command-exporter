@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from flatpak_command_exporter import FlatpakCommandExporter
 from flatpak_command_exporter.api import discovery as core
@@ -18,6 +18,10 @@ from flatpak_command_exporter.gui import (
 )
 from flatpak_command_exporter.gui.data import get_app_ref_choices
 from flatpak_command_exporter.gui.menu import create_main_menu
+from flatpak_command_exporter.gui.settings import (
+    _handle_app_selection,
+    _make_icon_button,
+)
 
 
 class AliasDataTests(unittest.TestCase):
@@ -29,6 +33,8 @@ class AliasDataTests(unittest.TestCase):
                 arch="x86_64",
                 branch="stable",
                 installation_scope="system",
+                installation_path="/system",
+                desktop_id="org.example.App.desktop",
                 alias="first",
             ),
             SimpleNamespace(
@@ -37,6 +43,8 @@ class AliasDataTests(unittest.TestCase):
                 arch="x86_64",
                 branch="stable",
                 installation_scope="system",
+                installation_path="/system",
+                desktop_id="org.example.App.desktop",
                 alias="second",
             ),
             SimpleNamespace(
@@ -45,6 +53,8 @@ class AliasDataTests(unittest.TestCase):
                 arch="aarch64",
                 branch="beta",
                 installation_scope="user",
+                installation_path="/user",
+                desktop_id="org.example.App.desktop",
                 alias="first",
             ),
         ]
@@ -52,19 +62,125 @@ class AliasDataTests(unittest.TestCase):
             get_exported_aliases=lambda: records,
         )
 
+        choices = get_app_ref_choices(exporter)
+
         self.assertEqual(
-            get_app_ref_choices(exporter),
+            [label for label, _record in choices],
             [
-                (
-                    "Example (org.example.App, beta/aarch64, user installation)",
-                    "org.example.App",
-                ),
-                (
-                    "Example (org.example.App, stable/x86_64, system installation)",
-                    "org.example.App",
-                ),
+                "Example (org.example.App, beta/aarch64, user installation)",
+                "Example (org.example.App, stable/x86_64, system installation)",
             ],
         )
+        self.assertEqual(
+            [
+                (
+                    record.installation_scope,
+                    record.installation_path,
+                    record.desktop_id,
+                )
+                for _label, record in choices
+            ],
+            [
+                ("user", "/user", "org.example.App.desktop"),
+                ("system", "/system", "org.example.App.desktop"),
+            ],
+        )
+
+    def test_override_action_buttons_use_symbolic_icons_and_accessible_labels(self):
+        class Button:
+            @classmethod
+            def new_from_icon_name(cls, icon_name):
+                button = cls()
+                button.icon_name = icon_name
+                return button
+
+            def set_tooltip_text(self, text):
+                self.tooltip = text
+
+            def update_property(self, properties, values):
+                self.accessible_properties = (properties, values)
+
+            def set_valign(self, alignment):
+                self.alignment = alignment
+
+        accessible_label = object()
+        center = object()
+        gtk = SimpleNamespace(
+            Button=Button,
+            AccessibleProperty=SimpleNamespace(LABEL=accessible_label),
+            Align=SimpleNamespace(CENTER=center),
+        )
+
+        buttons = [
+            _make_icon_button(gtk, "list-add-symbolic", "Add app override"),
+            _make_icon_button(
+                gtk, "list-remove-symbolic", "Remove app override"
+            ),
+        ]
+
+        self.assertEqual(
+            [button.icon_name for button in buttons],
+            ["list-add-symbolic", "list-remove-symbolic"],
+        )
+        self.assertEqual(
+            [button.tooltip for button in buttons],
+            ["Add app override", "Remove app override"],
+        )
+        self.assertEqual(
+            [button.accessible_properties for button in buttons],
+            [
+                ([accessible_label], ["Add app override"]),
+                ([accessible_label], ["Remove app override"]),
+            ],
+        )
+        self.assertTrue(all(button.alignment is center for button in buttons))
+
+    def test_selecting_app_ref_saves_override_once_and_closes_chooser(self):
+        class SelectionMark:
+            def set_visible(self, visible):
+                self.visible = visible
+
+        selected_row = object()
+        other_row = object()
+        selected_mark = SelectionMark()
+        other_mark = SelectionMark()
+        record = SimpleNamespace(app_id="org.example.App")
+        save_override = Mock(return_value=True)
+        close_chooser = Mock()
+
+        _handle_app_selection(
+            selected_row,
+            {selected_row: record},
+            {
+                selected_row: selected_mark,
+                other_row: other_mark,
+            },
+            False,
+            save_override,
+            close_chooser,
+        )
+
+        save_override.assert_called_once_with("org.example.App", False)
+        close_chooser.assert_called_once_with()
+        self.assertTrue(selected_mark.visible)
+        self.assertFalse(other_mark.visible)
+
+    def test_failed_app_override_save_keeps_chooser_open(self):
+        selected_row = object()
+        save_override = Mock(return_value=False)
+        close_chooser = Mock()
+
+        _handle_app_selection(
+            selected_row,
+            {selected_row: SimpleNamespace(app_id="org.example.App")},
+            {selected_row: SimpleNamespace(set_visible=lambda _visible: None)},
+            True,
+            save_override,
+            close_chooser,
+        )
+
+        save_override.assert_called_once_with("org.example.App", True)
+        close_chooser.assert_not_called()
 
     def test_current_user_ref_overrides_system_and_system_only_app_remains(self):
         class Ref:

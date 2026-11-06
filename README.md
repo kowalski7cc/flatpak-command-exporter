@@ -272,11 +272,12 @@ and app switches are stored as user overrides, including for system-installed
 apps, and refresh user launchers without requesting system authorization.
 
 The hamburger menu's **Settings** page controls the global default and lists
-enabled and disabled app overrides. Add an override by selecting an installed
-app ref; it applies to every ref of that app. Reset removes the app override
-and returns to the global default. The refresh button exports all user
-commands, like `flatshell export --user`. Settings also includes the About
-window with version and author information from the project metadata.
+enabled and disabled app overrides. Use the plus button to choose an installed
+app from a list; selecting it applies the override to every ref of that app.
+The remove button clears the app override and returns to the global default.
+The refresh button exports all user commands, like `flatshell export --user`.
+Settings also includes the About window with version and author information
+from the project metadata.
 
 ## Configuration and files
 

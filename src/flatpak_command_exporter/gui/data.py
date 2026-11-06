@@ -76,7 +76,7 @@ def get_project_details(project_file=None):
 
 
 def get_app_ref_choices(exporter):
-	"""Return unique installed app refs for Flatlink's override selector."""
+	"""Return unique installed app refs and their display labels."""
 	refs = {}
 	for record in exporter.get_exported_aliases():
 		key = (
@@ -89,7 +89,7 @@ def get_app_ref_choices(exporter):
 			f"{record.app_name} ({record.app_id}, "
 			f"{record.branch}/{record.arch}, "
 			f"{record.installation_scope} installation)",
-			record.app_id,
+			record,
 		)
 	return sorted(refs.values(), key=lambda choice: choice[0].casefold())
 

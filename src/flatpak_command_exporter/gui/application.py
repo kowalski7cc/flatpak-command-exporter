@@ -510,7 +510,9 @@ def main():
 						report_error,
 						Adw,
 						Gtk,
+						Gdk,
 						GLib,
+						icon_theme,
 					)
 				except (OSError, ValueError, GLib.Error) as error:
 					report_error("Could not open settings", error)
