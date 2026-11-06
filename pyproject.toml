@@ -28,6 +28,7 @@ where = ["src"]
 
 [tool.setuptools.data-files]
 "share/applications" = ["resources/xyz.kowalski7cc.flatpak-command-exporter.desktop"]
+"share/metainfo" = ["resources/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml"]
 "share/icons/hicolor/scalable/apps" = ["resources/xyz.kowalski7cc.flatpak-command-exporter.svg"]
 "share/icons/hicolor/symbolic/apps" = ["resources/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg"]
 

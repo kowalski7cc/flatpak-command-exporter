@@ -172,6 +172,8 @@ Launch the GUI with:
 Flatlink
 ```
 
+![Flatlink window showing exported Flatpak commands](screenshots/flatlink.png)
+
 The window lists discovered apps in expandable rows, grouped by app and
 installation scope. Each app has a switch for its default setting; individual
 alias settings take precedence over the app and global defaults. Expand an app

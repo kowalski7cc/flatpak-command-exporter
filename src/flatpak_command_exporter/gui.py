@@ -203,6 +203,7 @@ def main():
 
 			window = Adw.ApplicationWindow(application=self, title="Flatlink")
 			window.set_default_size(720, 640)
+			#window.set_default_size(1000, 700)
 			window.set_icon_name("xyz.kowalski7cc.flatpak-command-exporter")
 			self.window = window
 

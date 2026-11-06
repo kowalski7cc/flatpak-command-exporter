@@ -67,6 +67,7 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %exclude %{_bindir}/Flatlink
 %exclude %{_bindir}/flatpak-command-exporter-gui
 %exclude %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
+%exclude %{_datadir}/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml
 %exclude %{_datadir}/icons/hicolor/scalable/apps/xyz.kowalski7cc.flatpak-command-exporter.svg
 %exclude %{_datadir}/icons/hicolor/symbolic/apps/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg
 %config(noreplace) %{_sysconfdir}/profile.d/flatpak-exported-commands.sh
@@ -79,6 +80,7 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %{_bindir}/Flatlink
 %{_bindir}/flatpak-command-exporter-gui
 %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
+%{_datadir}/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml
 %{_datadir}/icons/hicolor/scalable/apps/xyz.kowalski7cc.flatpak-command-exporter.svg
 %{_datadir}/icons/hicolor/symbolic/apps/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg
 

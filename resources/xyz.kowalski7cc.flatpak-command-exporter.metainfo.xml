@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>xyz.kowalski7cc.flatpak-command-exporter</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Flatlink</name>
+  <summary>Manage commands exported by installed Flatpak apps</summary>
+  <developer id="xyz.kowalski7cc">
+    <name>Kowalski Dragon</name>
+  </developer>
+  <description>
+    <p>
+      Flatlink helps you discover and manage command-line tools provided by
+      installed Flatpak applications. It lets you choose which commands are
+      available in your terminal, configure defaults, and create custom
+      aliases.
+    </p>
+    <p>
+      Built with GTK 4 and libadwaita, Flatlink provides an adaptive desktop
+      interface for searching apps and commands, changing export settings, and
+      refreshing exported commands.
+    </p>
+  </description>
+  <launchable type="desktop-id">xyz.kowalski7cc.flatpak-command-exporter.desktop</launchable>
+  <icon type="stock">xyz.kowalski7cc.flatpak-command-exporter</icon>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Flatlink window (placeholder screenshot URL)</caption>
+      <image>https://raw.githubusercontent.com/kowalski7cc/flatpak-command-exporter/main/screenshots/flatlink.png</image>
+    </screenshot>
+  </screenshots>
+  <url type="homepage">https://github.com/kowalski7cc/flatpak-command-exporter</url>
+  <url type="bugtracker">https://github.com/kowalski7cc/flatpak-command-exporter/issues</url>
+  <url type="vcs-browser">https://github.com/kowalski7cc/flatpak-command-exporter.git</url>
+  <provides>
+    <binary>flatshell</binary>
+    <binary>flatpak-command-exporter</binary>
+    <binary>Flatlink</binary>
+    <binary>flatpak-command-exporter-gui</binary>
+  </provides>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <keywords>
+    <keyword>Flatpak</keyword>
+    <keyword>command</keyword>
+    <keyword>alias</keyword>
+    <keyword>terminal</keyword>
+    <keyword>export</keyword>
+  </keywords>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.8.0" date="2026-11-06"/>
+  </releases>
+</component>
