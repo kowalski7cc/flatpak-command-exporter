@@ -98,6 +98,24 @@ msgstr "Nelze otevřít nastavení"
 msgid "Could not export user commands"
 msgstr "Nelze exportovat uživatelské příkazy"
 
+msgid "Remove custom alias"
+msgstr "Odebrat vlastní alias"
+
+msgid "Remove custom alias?"
+msgstr "Odebrat vlastní alias?"
+
+msgid "This permanently removes the custom alias %(alias)s."
+msgstr "Tím se trvale odebere vlastní alias %(alias)s."
+
+msgid "Remove"
+msgstr "Odebrat"
+
+msgid "Could not confirm custom alias removal"
+msgstr "Nelze potvrdit odebrání vlastního aliasu"
+
+msgid "Could not remove custom alias"
+msgstr "Nelze odebrat vlastní alias"
+
 msgid "User commands exported"
 msgstr "Uživatelské příkazy byly exportovány"
 

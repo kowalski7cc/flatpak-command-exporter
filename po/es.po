@@ -98,6 +98,24 @@ msgstr "No se pudo abrir la configuración"
 msgid "Could not export user commands"
 msgstr "No se pudieron exportar los comandos del usuario"
 
+msgid "Remove custom alias"
+msgstr "Eliminar alias personalizado"
+
+msgid "Remove custom alias?"
+msgstr "¿Eliminar alias personalizado?"
+
+msgid "This permanently removes the custom alias %(alias)s."
+msgstr "Esto elimina permanentemente el alias personalizado %(alias)s."
+
+msgid "Remove"
+msgstr "Eliminar"
+
+msgid "Could not confirm custom alias removal"
+msgstr "No se pudo confirmar la eliminación del alias personalizado"
+
+msgid "Could not remove custom alias"
+msgstr "No se pudo eliminar el alias personalizado"
+
 msgid "User commands exported"
 msgstr "Comandos del usuario exportados"
 

@@ -98,6 +98,24 @@ msgstr "設定を開けませんでした"
 msgid "Could not export user commands"
 msgstr "ユーザーコマンドをエクスポートできませんでした"
 
+msgid "Remove custom alias"
+msgstr "カスタムエイリアスを削除"
+
+msgid "Remove custom alias?"
+msgstr "カスタムエイリアスを削除しますか？"
+
+msgid "This permanently removes the custom alias %(alias)s."
+msgstr "カスタムエイリアス %(alias)s を完全に削除します。"
+
+msgid "Remove"
+msgstr "削除"
+
+msgid "Could not confirm custom alias removal"
+msgstr "カスタムエイリアスの削除を確認できませんでした"
+
+msgid "Could not remove custom alias"
+msgstr "カスタムエイリアスを削除できませんでした"
+
 msgid "User commands exported"
 msgstr "ユーザーコマンドをエクスポートしました"
 

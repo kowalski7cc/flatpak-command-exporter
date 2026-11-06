@@ -51,6 +51,59 @@ def _set_app_commands_enabled(
 	)
 
 
+def _make_custom_alias_remove_button(record: _ExportedAlias, Gtk):
+	if not record.custom or not record.configurable:
+		return None
+
+	button = Gtk.Button.new_from_icon_name("edit-delete-symbolic")
+	button.set_tooltip_text(_("Remove custom alias"))
+	button.set_valign(Gtk.Align.CENTER)
+	set_accessible_label(button, Gtk, _("Remove custom alias"))
+	return button
+
+
+def _confirm_custom_alias_removal(
+    parent,
+    record: _ExportedAlias,
+    exporter,
+    on_removed,
+    report_error,
+    Adw,
+    GLib,
+) -> None:
+	dialog = Adw.AlertDialog(
+		heading=_("Remove custom alias?"),
+		body=_("This permanently removes the custom alias %(alias)s.") % {
+			"alias": record.alias,
+		},
+	)
+	dialog.add_response("cancel", _("Cancel"))
+	dialog.add_response("remove", _("Remove"))
+	dialog.set_response_appearance(
+		"remove", Adw.ResponseAppearance.DESTRUCTIVE
+	)
+	dialog.set_default_response("cancel")
+	dialog.set_close_response("cancel")
+
+	def remove_response(alert_dialog, result: object) -> None:
+		try:
+			response = alert_dialog.choose_finish(result)
+		except GLib.Error as error:
+			report_error(_("Could not confirm custom alias removal"), error)
+			return
+		if response != "remove":
+			return
+
+		try:
+			exporter.remove_custom_alias(record.app_id, record.alias)
+		except (OSError, ValueError, GLib.Error) as error:
+			on_removed(error)
+			return
+		on_removed(None)
+
+	dialog.choose(parent, None, remove_response)
+
+
 def _group_app_aliases(
     aliases_by_scope: Mapping[str, Sequence[_ExportedAlias]],
 ) -> dict[str, _AppGroup]:
@@ -304,6 +357,31 @@ def main() -> None:
 					command_labels.append(command_label)
 					command_row.append(command_labels)
 
+					remove_button = _make_custom_alias_remove_button(
+						command_record, Gtk
+					)
+					if remove_button is not None:
+						command_row.append(remove_button)
+
+						def confirm_custom_alias_removal(
+							_button: object,
+							record: _ExportedAlias = command_record,
+						) -> None:
+							_confirm_custom_alias_removal(
+								window,
+								record,
+								exporter,
+								refresh_main_window,
+								report_error,
+								Adw,
+								GLib,
+							)
+
+						remove_button.connect(
+							"clicked",
+							confirm_custom_alias_removal,
+						)
+
 					alias_switch = Gtk.Switch()
 					alias_switch.set_active(
 						exporter.config.is_alias_enabled(
@@ -425,12 +503,19 @@ def main() -> None:
 			update_search(search_entry)
 
 			toast_overlay = Adw.ToastOverlay()
+			self.toast_overlay = toast_overlay
 			toast_overlay.set_child(toolbar)
 			window.set_content(toast_overlay)
 
 			def report_error(message: str, error: Exception) -> None:
 				logging.error("%s: %s", message, error)
-				toast_overlay.add_toast(Adw.Toast.new(f"{message}: {error}"))
+				self.toast_overlay.add_toast(Adw.Toast.new(f"{message}: {error}"))
+
+			def refresh_main_window(error: Exception | None = None) -> None:
+				window.close()
+				self.on_activate(self)
+				if error is not None:
+					report_error(_("Could not remove custom alias"), error)
 
 			def update_user_control_widgets() -> None:
 				for alias_switch, record in alias_switches:

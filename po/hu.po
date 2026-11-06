@@ -98,6 +98,24 @@ msgstr "A beállítások nem nyithatók meg"
 msgid "Could not export user commands"
 msgstr "A felhasználói parancsok nem exportálhatók"
 
+msgid "Remove custom alias"
+msgstr "Egyéni álnév eltávolítása"
+
+msgid "Remove custom alias?"
+msgstr "Eltávolítja az egyéni álnevet?"
+
+msgid "This permanently removes the custom alias %(alias)s."
+msgstr "Ez véglegesen eltávolítja a(z) %(alias)s egyéni álnevet."
+
+msgid "Remove"
+msgstr "Eltávolítás"
+
+msgid "Could not confirm custom alias removal"
+msgstr "Nem sikerült megerősíteni az egyéni álnév eltávolítását"
+
+msgid "Could not remove custom alias"
+msgstr "Nem sikerült eltávolítani az egyéni álnevet"
+
 msgid "User commands exported"
 msgstr "Felhasználói parancsok exportálva"
 

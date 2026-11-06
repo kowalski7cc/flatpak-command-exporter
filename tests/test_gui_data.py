@@ -34,12 +34,156 @@ from flatpak_command_exporter.gui.settings import (
 )
 from flatpak_command_exporter.gui.application import (
     _app_commands_enabled,
+    _confirm_custom_alias_removal,
     _group_app_aliases,
+    _make_custom_alias_remove_button,
     _set_app_commands_enabled,
 )
 
 
 class AliasDataTests(unittest.TestCase):
+    def test_custom_aliases_are_discovered_without_a_manifest(self):
+        class Ref:
+            def get_name(self):
+                return "org.example.App"
+
+            def get_arch(self):
+                return "x86_64"
+
+            def get_branch(self):
+                return "stable"
+
+        installed_ref = _InstalledRef(
+            Ref(), SimpleNamespace(), "/user/flatpak", "user"
+        )
+        with tempfile.TemporaryDirectory() as data_home:
+            config = core.AliasConfig(data_home)
+            config.set_custom_alias(
+                "org.example.App", "custom-command", "custom app"
+            )
+            with (
+                patch.object(
+                    core, "_get_installed_refs", return_value=[installed_ref]
+                ),
+                patch.object(core, "_read_manifest_or_empty", return_value=None),
+                patch.object(core, "load_metainfo", return_value=None),
+            ):
+                records = core.get_exported_aliases(
+                    config, include_system=False
+                )
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].alias, "custom-command")
+        self.assertEqual(records[0].command, "custom app")
+        self.assertTrue(records[0].custom)
+
+    def test_custom_alias_remove_button_uses_a_symbolic_icon(self):
+        class Button:
+            @classmethod
+            def new_from_icon_name(cls, icon_name):
+                button = cls()
+                button.icon_name = icon_name
+                return button
+
+            def set_tooltip_text(self, text):
+                self.tooltip = text
+
+            def set_valign(self, alignment):
+                self.alignment = alignment
+
+            def update_property(self, properties, values):
+                self.accessible_properties = (properties, values)
+
+        gtk = SimpleNamespace(
+            Button=Button,
+            Align=SimpleNamespace(CENTER=object()),
+            AccessibleProperty=SimpleNamespace(LABEL=object()),
+        )
+
+        button = _make_custom_alias_remove_button(
+            SimpleNamespace(custom=True, configurable=True), gtk
+        )
+
+        self.assertEqual(button.icon_name, "edit-delete-symbolic")
+        self.assertEqual(button.tooltip, "Remove custom alias")
+        self.assertEqual(
+            button.accessible_properties[1], ["Remove custom alias"]
+        )
+        self.assertIsNone(
+            _make_custom_alias_remove_button(
+                SimpleNamespace(custom=True, configurable=False), gtk
+            )
+        )
+
+    def test_custom_alias_removal_requires_confirmation(self):
+        class AlertDialog:
+            instances = []
+
+            def __init__(self, **kwargs):
+                self.options = kwargs
+                self.responses = []
+                self.instances.append(self)
+
+            def add_response(self, response, label):
+                self.responses.append((response, label))
+
+            def set_response_appearance(self, response, appearance):
+                self.destructive_response = (response, appearance)
+
+            def set_default_response(self, response):
+                self.default_response = response
+
+            def set_close_response(self, response):
+                self.close_response = response
+
+            def choose(self, parent, cancellable, callback):
+                self.callback = callback
+
+            def choose_finish(self, result):
+                return result
+
+        record = SimpleNamespace(
+            app_id="org.example.App", alias="custom-command"
+        )
+        exporter = Mock()
+        on_removed = Mock()
+        report_error = Mock()
+        adw = SimpleNamespace(
+            AlertDialog=AlertDialog,
+            ResponseAppearance=SimpleNamespace(DESTRUCTIVE=object()),
+        )
+
+        _confirm_custom_alias_removal(
+            object(),
+            record,
+            exporter,
+            on_removed,
+            report_error,
+            adw,
+            SimpleNamespace(Error=Exception),
+        )
+
+        dialog = AlertDialog.instances[-1]
+        self.assertEqual(dialog.default_response, "cancel")
+        self.assertEqual(dialog.close_response, "cancel")
+        self.assertEqual(dialog.destructive_response[0], "remove")
+        dialog.callback(dialog, "cancel")
+        exporter.remove_custom_alias.assert_not_called()
+        on_removed.assert_not_called()
+        dialog.callback(dialog, "remove")
+        exporter.remove_custom_alias.assert_called_once_with(
+            "org.example.App", "custom-command"
+        )
+        on_removed.assert_called_once_with(None)
+        report_error.assert_not_called()
+
+        removal_error = OSError("export failed")
+        exporter.remove_custom_alias.side_effect = removal_error
+        on_removed.reset_mock()
+        dialog.callback(dialog, "remove")
+        on_removed.assert_called_once_with(removal_error)
+        report_error.assert_not_called()
+
     def test_aliases_by_scope_use_merged_and_installation_specific_refs(self):
         merged_records = [object()]
         user_records = [object()]

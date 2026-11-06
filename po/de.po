@@ -98,6 +98,24 @@ msgstr "Einstellungen konnten nicht geöffnet werden"
 msgid "Could not export user commands"
 msgstr "Benutzerbefehle konnten nicht exportiert werden"
 
+msgid "Remove custom alias"
+msgstr "Benutzerdefinierten Alias entfernen"
+
+msgid "Remove custom alias?"
+msgstr "Benutzerdefinierten Alias entfernen?"
+
+msgid "This permanently removes the custom alias %(alias)s."
+msgstr "Der benutzerdefinierte Alias %(alias)s wird dauerhaft entfernt."
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Could not confirm custom alias removal"
+msgstr "Entfernen des benutzerdefinierten Alias konnte nicht bestätigt werden"
+
+msgid "Could not remove custom alias"
+msgstr "Benutzerdefinierter Alias konnte nicht entfernt werden"
+
 msgid "User commands exported"
 msgstr "Benutzerbefehle exportiert"
 

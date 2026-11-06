@@ -61,14 +61,14 @@ def get_exported_aliases(
         manifest = _read_manifest_or_empty(
             installed_ref.installation_path, app_id, arch, branch
         )
-        if manifest is None:
+        custom_aliases = installation_config.custom_aliases(app_id)
+        if manifest is None and not custom_aliases:
             continue
 
         metainfo = load_metainfo(installed_ref.installation_path, app_id, arch, branch)
         app_name = get_pretty_name_from_metainfo(metainfo) or app_id
         desktop_id = get_desktop_id_from_metainfo(metainfo, app_id)
-        commands = manifest_exported_commands(app_id, manifest)
-        custom_aliases = installation_config.custom_aliases(app_id)
+        commands = manifest_exported_commands(app_id, manifest or {})
         commands = {**commands, **custom_aliases}
         logging.debug(
             "Found %d command aliases for %s in %s scope",
