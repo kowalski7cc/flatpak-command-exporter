@@ -7,7 +7,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from flatpak_command_exporter import FlatpakCommandExporter
-from flatpak_command_exporter import application as core
+from flatpak_command_exporter.api import discovery as core
+from flatpak_command_exporter.api import exporter as api_exporter
 from flatpak_command_exporter.gui import (
     find_desktop_file,
     get_exported_icon,
@@ -66,7 +67,7 @@ class AliasDataTests(unittest.TestCase):
                     "find_refs",
                     side_effect=lambda installation: user_refs if installation is user_installation else system_refs,
                 ),
-                patch.object(core, "load_manifest", side_effect=load_manifest),
+                patch.object(core, "_read_manifest_or_empty", side_effect=load_manifest),
                 patch.object(core, "load_metainfo", return_value=None),
             ):
                 records = FlatpakCommandExporter().get_exported_aliases()
@@ -90,7 +91,9 @@ class AliasDataTests(unittest.TestCase):
     def test_explicit_scope_uses_its_configuration(self):
         exporter = FlatpakCommandExporter()
 
-        with patch.object(core, "get_exported_aliases", return_value=[]) as lookup:
+        with patch.object(
+            api_exporter, "get_exported_aliases", return_value=[]
+        ) as lookup:
             exporter.get_exported_aliases(scope="system")
 
         config = lookup.call_args.args[0]
@@ -128,7 +131,7 @@ class AliasDataTests(unittest.TestCase):
                 patch.object(core, "find_refs", return_value=[ref]),
                 patch.object(
                     core,
-                    "load_manifest",
+                    "_read_manifest_or_empty",
                     return_value={"x-export-commands": {"alias": "command"}},
                 ),
                 patch.object(core, "load_metainfo", return_value=None),

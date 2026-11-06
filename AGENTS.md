@@ -11,11 +11,12 @@ intentional, and update this guide when the project conventions change.
 - The package provides the shared Flatpak discovery/export behavior, the
   `flatshell` CLI, and the Flatlink GTK/libadwaita GUI. Keep behavior consistent
   across these surfaces and avoid duplicating configuration or export rules.
-- `application.py` contains the reusable `FlatpakCommandExporter` API and
-  discovery/export operations. `cli_parser.py` owns the shared `argparse`
-  definition, and `cli.py` owns command execution and terminal output;
-  `__main__.py` is only the module launcher. Export public library types from
-  `__init__.py`.
+- `api/` contains the reusable library API, split into data models, ref and
+  alias discovery, metadata parsing, launcher operations, and the high-level
+  exporter. `application.py` remains a compatibility facade for existing
+  imports. `cli_parser.py` owns the shared `argparse` definition, and `cli.py`
+  owns command execution and terminal output; `__main__.py` is only the module
+  launcher. Export public library types from `__init__.py`.
 - CLI and GUI entry points are declared in `pyproject.toml`. Debian package
   contents are controlled by files in `debian/`; RPM contents are controlled
   by `flatpak-command-exporter.spec`. Profile integration and systemd watcher

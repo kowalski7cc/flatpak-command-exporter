@@ -4,7 +4,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from flatpak_command_exporter import application as core
+from flatpak_command_exporter.api import launchers as core
 
 
 class ExportCommandsTests(unittest.TestCase):
@@ -38,7 +38,7 @@ class ExportCommandsTests(unittest.TestCase):
                 patch.object(core, "find_refs", return_value=refs),
                 patch.object(
                     core,
-                    "load_manifest",
+                    "_read_manifest_or_empty",
                     return_value={"x-export-commands": {"alias": "command"}},
                 ),
                 patch.object(core, "create_launcher") as create_launcher,
@@ -165,7 +165,7 @@ class ExportCommandsTests(unittest.TestCase):
                 patch.object(core, "find_refs", return_value=[ref]),
                 patch.object(
                     core,
-                    "load_manifest",
+                    "_read_manifest_or_empty",
                     return_value={"x-export-commands": {"alias": "command"}},
                 ),
                 patch.object(core, "create_launcher") as create_launcher,
@@ -197,7 +197,7 @@ class ExportCommandsTests(unittest.TestCase):
                 patch.object(core, "find_refs", return_value=[ref]),
                 patch.object(
                     core,
-                    "load_manifest",
+                    "_read_manifest_or_empty",
                     return_value={"x-export-commands": {"manifest-alias": "command"}},
                 ),
                 patch.object(core, "create_launcher") as create_launcher,

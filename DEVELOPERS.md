@@ -66,6 +66,12 @@ for group in exporter.get_command_groups(include_system=True):
         print(f"  {name} -> {command}")
 ```
 
+The implementation is split across `flatpak_command_exporter.api` modules for
+models, discovery, metadata, launcher operations, and the exporter facade.
+Existing imports from `flatpak_command_exporter.application` remain supported;
+new integrations should import the public types from the package root or
+`flatpak_command_exporter.api`.
+
 `ExportedAlias` records include `alias`, `command`, `app_id`, `app_name`,
 `arch`, `branch`, `installation_path`, `desktop_id`, and the `enabled`,
 `configurable`, and `custom` flags. A user-installed ref takes precedence over

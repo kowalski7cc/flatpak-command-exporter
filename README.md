@@ -381,6 +381,10 @@ groups = exporter.get_command_groups(include_system=True)
 exporter.set_alias_enabled("org.gimp.GIMP", "gimp", True)
 ```
 
+The public types are available from `flatpak_command_exporter` or
+`flatpak_command_exporter.api`. Existing imports from
+`flatpak_command_exporter.application` remain supported.
+
 The `set_*` and `add_custom_alias` methods save settings and refresh generated
 launchers. `remove_custom_alias` removes the custom alias, disables it, and
 refreshes exports. A custom `AliasConfig` can be passed to the constructor to

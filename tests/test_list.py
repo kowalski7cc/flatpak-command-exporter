@@ -5,7 +5,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from flatpak_command_exporter import application as core
+from flatpak_command_exporter.api import discovery as core
 from flatpak_command_exporter import cli
 
 
@@ -50,7 +50,7 @@ class ListAllCommandsTests(unittest.TestCase):
         with (
             patch.object(core, "Flatpak", SimpleNamespace(Installation=installations)),
             patch.object(core, "find_refs", side_effect=lambda installation: refs[id(installation)]),
-            patch.object(core, "load_manifest", side_effect=load_manifest),
+            patch.object(core, "_read_manifest_or_empty", side_effect=load_manifest),
             patch.object(core, "load_metainfo", return_value=None),
             contextlib.redirect_stdout(output),
         ):

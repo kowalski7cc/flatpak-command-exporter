@@ -3,7 +3,7 @@ import os
 
 from gi.repository import GLib
 
-from .application import FlatpakCommandExporter
+from .api import FlatpakCommandExporter
 from .cli_parser import build_parsers
 from .profile import install_profile
 from .system_bus import call_system_method

@@ -5,7 +5,7 @@ import gi
 gi.require_version("Polkit", "1.0")
 from gi.repository import Gio, GLib, Polkit
 
-from .application import FlatpakCommandExporter
+from .api import FlatpakCommandExporter
 from .profile import install_profile
 from .system_bus import (
     OBJECT_PATH,

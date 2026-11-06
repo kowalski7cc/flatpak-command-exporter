@@ -22,7 +22,7 @@ def main():
 			"The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
 		) from error
 
-	from .. import FlatpakCommandExporter
+	from ..api import FlatpakCommandExporter
 	from ..config import AliasConfig, GlobalExportSettings
 
 	exporter = FlatpakCommandExporter()
