@@ -137,6 +137,28 @@ user launchers still use `XDG_DATA_HOME` (or the default user data directory),
 while system launchers use the system export path. Set `XDG_DATA_HOME` if a
 custom user data directory should be used.
 
+### Automatic Flatpak export refresh
+
+The Debian and RPM packages install separate systemd path/service pairs for
+the default Flatpak installations:
+
+- `flatpak-command-exporter-system.path` watches system Flatpak exports under
+  `/var/lib/flatpak/exports/`. Its service runs the direct
+  `flatpak_command_exporter.system_export` entry point as root, which exports
+  system-installed apps only.
+- `flatpak-command-exporter-user.path` watches each user's exports under
+  `~/.local/share/flatpak/exports/`. Its service runs `flatshell export` in
+  that user's session, which exports user-installed apps only.
+
+Both path units are enabled by default by Debian/RPM packaging. The service
+adds a short delay to coalesce events during transactions. Path units monitor
+direct filesystem changes, not recursive changes, so this is best-effort and
+does not cover custom installation paths or a non-default `XDG_DATA_HOME`.
+Keep the unit files, Debian and RPM install/enablement rules, and the scope
+regression tests synchronized when changing this integration. The system
+export service must use the direct system-scope API rather than invoking the
+interactive CLI/PolicyKit route.
+
 ## Shell CLI
 
 Commands that update settings also regenerate launchers for the selected scope:

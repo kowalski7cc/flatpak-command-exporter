@@ -1,0 +1,14 @@
+[Unit]
+Description=Watch system Flatpak exports for command changes
+
+[Path]
+PathChanged=/var/lib/flatpak/exports/share/applications
+PathChanged=/var/lib/flatpak/exports/share/dbus-1/services
+PathChanged=/var/lib/flatpak/exports/share/gnome-shell/search-providers
+PathChanged=/var/lib/flatpak/exports/share/krunner/dbusplugins
+PathChanged=/var/lib/flatpak/exports/share/mime/packages
+PathChanged=/var/lib/flatpak/exports/share/metainfo
+Unit=flatpak-command-exporter-system.service
+
+[Install]
+WantedBy=paths.target

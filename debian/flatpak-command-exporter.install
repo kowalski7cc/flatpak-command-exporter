@@ -9,7 +9,13 @@ usr/lib/python3.*/dist-packages/flatpak_command_exporter/profile.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/flatpak-exported-commands.sh
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/system_bus.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/system_service.py
+usr/lib/python3.*/dist-packages/flatpak_command_exporter/system_export.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter-*.dist-info
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/flatpak-exported-commands.sh etc/profile.d/
 resources/xyz.kowalski7cc.flatpak-command-exporter.policy usr/share/polkit-1/actions/
 resources/xyz.kowalski7cc.FlatpakCommandExporter.service usr/share/dbus-1/system-services/
+resources/flatpak-command-exporter-system.path usr/lib/systemd/system/
+resources/flatpak-command-exporter-system.service usr/lib/systemd/system/
+resources/flatpak-command-exporter-user.path usr/lib/systemd/user/
+resources/flatpak-command-exporter-user.service usr/lib/systemd/user/
+resources/flatpak-command-exporter-user.preset usr/lib/systemd/user-preset/

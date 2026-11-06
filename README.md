@@ -24,6 +24,7 @@ aliases in a graphical interface.
 - Add your own aliases for commands inside user- or system-installed Flatpaks.
 - Search and toggle apps and aliases in Flatlink.
 - Refresh user command exports from Flatlink after installing an app.
+- Automatically refresh user and system exports when Flatpak changes app exports.
 - Keep generated launchers on your `PATH` using the included profile script.
 
 ## Quick start
@@ -77,7 +78,7 @@ directly from the source checkout:
 
 ```console
 sudo dnf install flatpak-devel gtk4 libadwaita make polkit \
-  pyproject-rpm-macros python3-devel python3-gobject \
+  pyproject-rpm-macros python3-devel python3-gobject systemd-rpm-macros \
   python3-pip python3-setuptools rpm-build
 make rpm
 ```
@@ -100,9 +101,47 @@ includes `base-devel` and `namcap`.
 - Flatpak and Python 3.13 or newer.
 - PyGObject and the Flatpak GObject introspection bindings for the CLI and
   exporter.
+- systemd for automatic export refresh when Flatpak application exports change.
 - System-scope operations use the system D-Bus and Polkit; the Debian core
   package installs the service and its authorization policy.
 - GTK 4, libadwaita, and their introspection data to run Flatlink.
+
+### Automatic export refresh
+
+The Debian and RPM packages install and enable separate systemd path watchers
+for the default system and per-user Flatpak installations. The system watcher
+runs a privileged system-scope export as root and only monitors
+`/var/lib/flatpak/exports/`. Each user's watcher runs `flatshell export` as that
+user and only monitors
+`~/.local/share/flatpak/exports/`. A short delay coalesces bursts of export
+changes during Flatpak transactions.
+
+The watchers observe direct changes in Flatpak's exported application,
+metadata, MIME, and service directories. systemd path units are not recursive,
+so this is best-effort: apps without files in those locations, nested icon-only
+changes, custom Flatpak installation locations, and a non-default
+`XDG_DATA_HOME` may not trigger a refresh. The watchers do not monitor one
+scope to refresh the other.
+
+To disable the system watcher:
+
+```console
+sudo systemctl disable --now flatpak-command-exporter-system.path
+```
+
+To disable the per-user watcher (the package enables it by default for user
+sessions):
+
+```console
+systemctl --user mask --now flatpak-command-exporter-user.path
+```
+
+Undo the user mask and start watching again with:
+
+```console
+systemctl --user unmask flatpak-command-exporter-user.path
+systemctl --user start flatpak-command-exporter-user.path
+```
 
 ## CLI
 

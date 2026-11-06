@@ -9,3 +9,6 @@ ifneq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 else
 	PYTHONPATH=src python3 -m unittest discover -s tests -v
 endif
+
+override_dh_installsystemd:
+	dh_installsystemd -pflatpak-command-exporter flatpak-command-exporter-system.path

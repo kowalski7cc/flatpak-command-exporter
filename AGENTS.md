@@ -16,8 +16,9 @@ intentional, and update this guide when the project conventions change.
   output; `__main__.py` is only the module launcher. Export public library
   types from `__init__.py`.
 - CLI and GUI entry points are declared in `pyproject.toml`. Debian package
-  contents are controlled by files in `debian/`; profile integration lives in
-  the Python package resources.
+  contents are controlled by files in `debian/`; RPM contents are controlled
+  by `flatpak-command-exporter.spec`. Profile integration and systemd watcher
+  units live in `resources/`.
 - The established application ID and icon prefix is
   `xyz.kowalski7cc`. Preserve it for application identity and installed
   resource names.
@@ -49,7 +50,17 @@ intentional, and update this guide when the project conventions change.
 - Keep library operations independent of terminal formatting; the CLI should
   format data returned by the library API.
 - Keep Debian install manifests, Python entry points, desktop metadata, icons,
-  and profile-script names in sync when changing commands or resources.
+  profile scripts, and systemd unit resources in sync when changing commands
+  or resources.
+- Keep the system and user Flatpak watchers strictly scoped: the system unit
+  must refresh system exports only, and the user unit must refresh that user's
+  exports only. The system service runs as root through the direct
+  `system_export` entry point; do not route it through the interactive
+  PolicyKit CLI.
+- Treat path-unit coverage as best-effort. The units watch default Flatpak
+  exported directories non-recursively; update the units, package manifests,
+  documentation, and `tests/test_systemd_units.py` together if watch paths or
+  unit behavior change.
 
 ## Tests and verification
 
@@ -70,6 +81,10 @@ intentional, and update this guide when the project conventions change.
   ```console
   make deb
   ```
+
+- Validate systemd unit files with `systemd-analyze verify` when changing the
+  watcher units. RPM packaging uses systemd RPM macros and presets; build it
+  with `make rpm` where `rpmbuild` is available.
 
 - Run `git diff --check` before finishing. Mention any validation that could
   not be run and why.

@@ -12,11 +12,13 @@ BuildArch:      noarch
 BuildRequires:  flatpak-devel
 BuildRequires:  polkit
 BuildRequires:  pyproject-rpm-macros
+BuildRequires:  systemd-rpm-macros
 BuildRequires:  python3-devel
 
 Requires:       dbus
 Requires:       flatpak
 Requires:       polkit
+%systemd_requires
 
 %description
 Flatpak Command Exporter discovers commands declared by installed Flatpak
@@ -53,9 +55,33 @@ install -Dpm 0644 resources/xyz.kowalski7cc.FlatpakCommandExporter.service \
     %{buildroot}%{_datadir}/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service
 install -Dpm 0644 resources/xyz.kowalski7cc.flatpak-command-exporter.policy \
     %{buildroot}%{_datadir}/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy
+install -Dpm 0644 resources/flatpak-command-exporter-system.path \
+    %{buildroot}%{_unitdir}/flatpak-command-exporter-system.path
+install -Dpm 0644 resources/flatpak-command-exporter-system.service \
+    %{buildroot}%{_unitdir}/flatpak-command-exporter-system.service
+install -Dpm 0644 resources/flatpak-command-exporter-user.path \
+    %{buildroot}%{_userunitdir}/flatpak-command-exporter-user.path
+install -Dpm 0644 resources/flatpak-command-exporter-user.service \
+    %{buildroot}%{_userunitdir}/flatpak-command-exporter-user.service
+install -Dpm 0644 resources/flatpak-command-exporter-system.preset \
+    %{buildroot}%{_prefix}/lib/systemd/system-preset/80-flatpak-command-exporter.preset
+install -Dpm 0644 resources/flatpak-command-exporter-user.preset \
+    %{buildroot}%{_prefix}/lib/systemd/user-preset/80-flatpak-command-exporter.preset
 
 %check
 PYTHONPATH=src %{python3} -m unittest discover -s tests -v
+
+%post
+%systemd_post flatpak-command-exporter-system.path
+%systemd_user_post flatpak-command-exporter-user.path
+
+%preun
+%systemd_preun flatpak-command-exporter-system.path
+%systemd_user_preun flatpak-command-exporter-user.path
+
+%postun
+%systemd_postun
+%systemd_user_postun
 
 %files -f %{pyproject_files}
 %doc README.md
@@ -71,6 +97,12 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %config(noreplace) %{_sysconfdir}/profile.d/flatpak-exported-commands.sh
 %{_datadir}/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service
 %{_datadir}/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy
+%{_unitdir}/flatpak-command-exporter-system.path
+%{_unitdir}/flatpak-command-exporter-system.service
+%{_prefix}/lib/systemd/system-preset/80-flatpak-command-exporter.preset
+%{_userunitdir}/flatpak-command-exporter-user.path
+%{_userunitdir}/flatpak-command-exporter-user.service
+%{_prefix}/lib/systemd/user-preset/80-flatpak-command-exporter.preset
 
 %files gui
 %{python3_sitelib}/flatpak_command_exporter/gui/
