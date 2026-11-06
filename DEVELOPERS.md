@@ -24,6 +24,17 @@ For development from a checkout:
 python -m pip install -e .
 ```
 
+To regenerate the static Bash completion after changing the shared
+`argparse` definition, install the build-time `shtab` tool and run:
+
+```console
+make completion
+```
+
+The generated file is written to `build/bash-completion/flatshell`; package
+builds install it under `/usr/share/bash-completion/completions/`. It does not
+run Python when completing commands interactively.
+
 The installed `flatshell` command is the recommended interface for shell
 scripts. From a source checkout, the equivalent entry point is:
 

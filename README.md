@@ -46,7 +46,8 @@ gimp
 
 Use `flatlink` to browse and toggle aliases with the GUI. Settings changed in
 either the GUI or the CLI are saved and the corresponding export scope is
-refreshed.
+refreshed. The Debian and RPM packages also install Bash completion for
+`flatshell`; it is loaded automatically when `bash-completion` is enabled.
 
 ## Install
 
@@ -78,7 +79,8 @@ directly from the source checkout:
 
 ```console
 sudo dnf install flatpak-devel gtk4 libadwaita make polkit \
-  pyproject-rpm-macros python3-devel python3-gobject systemd-rpm-macros \
+  pyproject-rpm-macros python3-devel python3-gobject python3-shtab \
+  systemd-rpm-macros \
   python3-pip python3-setuptools rpm-build
 make rpm
 ```

@@ -8,6 +8,7 @@ Build-Depends:
  pybuild-plugin-pyproject,
  python3 (>= 3.13),
  python3-setuptools,
+ python3-shtab,
  python3-gi,
  gir1.2-flatpak-1.0,
  gir1.2-polkit-1.0

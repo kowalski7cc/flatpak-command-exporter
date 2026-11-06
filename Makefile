@@ -1,6 +1,6 @@
 BASE ?= flatpak-command-exporter
 
-.PHONY: changelog metainfo spec release deb rpm tests clean
+.PHONY: changelog metainfo spec release deb rpm completion tests clean
 
 changelog:
 	@version=$$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])'); \
@@ -28,6 +28,12 @@ deb:
 
 rpm:
 	rpmbuild -bb --build-in-place $(BASE).spec
+
+completion:
+	mkdir -p build/bash-completion
+	PYTHONPATH=src shtab --shell=bash -u \
+		flatpak_command_exporter.cli_parser.build_parser \
+		-o build/bash-completion/flatshell
 
 tests:
 	PYTHONPATH=src python3 -m unittest discover -s tests -v

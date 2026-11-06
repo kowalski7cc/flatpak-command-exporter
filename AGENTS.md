@@ -12,9 +12,10 @@ intentional, and update this guide when the project conventions change.
   `flatshell` CLI, and the Flatlink GTK/libadwaita GUI. Keep behavior consistent
   across these surfaces and avoid duplicating configuration or export rules.
 - `application.py` contains the reusable `FlatpakCommandExporter` API and
-  discovery/export operations. `cli.py` owns argument parsing and terminal
-  output; `__main__.py` is only the module launcher. Export public library
-  types from `__init__.py`.
+  discovery/export operations. `cli_parser.py` owns the shared `argparse`
+  definition, and `cli.py` owns command execution and terminal output;
+  `__main__.py` is only the module launcher. Export public library types from
+  `__init__.py`.
 - CLI and GUI entry points are declared in `pyproject.toml`. Debian package
   contents are controlled by files in `debian/`; RPM contents are controlled
   by `flatpak-command-exporter.spec`. Profile integration and systemd watcher
@@ -52,6 +53,10 @@ intentional, and update this guide when the project conventions change.
 - Keep Debian install manifests, Python entry points, desktop metadata, icons,
   profile scripts, and systemd unit resources in sync when changing commands
   or resources.
+- Generate the static Bash completion from `cli_parser.py` with
+  `make completion`; keep `shtab` as a build-time dependency only. Debian and
+  RPM packages install the generated file under
+  `/usr/share/bash-completion/completions/`.
 - Keep the system and user Flatpak watchers strictly scoped: the system unit
   must refresh system exports only, and the user unit must refresh that user's
   exports only. The system service runs as root through the direct
@@ -81,6 +86,10 @@ intentional, and update this guide when the project conventions change.
   ```console
   make deb
   ```
+
+- Bash completion generation requires `shtab` in the build environment.
+  Packaging declares the platform build dependency; local builds can install
+  the Python `shtab` package before running `make completion`.
 
 - Validate systemd unit files with `systemd-analyze verify` when changing the
   watcher units. RPM packaging uses systemd RPM macros and presets; build it

@@ -14,6 +14,7 @@ BuildRequires:  polkit
 BuildRequires:  pyproject-rpm-macros
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  python3-devel
+BuildRequires:  python3-shtab
 
 Requires:       dbus
 Requires:       flatpak
@@ -44,9 +45,12 @@ command exports.
 
 %build
 %pyproject_wheel
+make completion
 
 %install
 %pyproject_install
+install -Dpm 0644 build/bash-completion/flatshell \
+    %{buildroot}%{_datadir}/bash-completion/completions/flatshell
 %pyproject_save_files flatpak_command_exporter
 
 install -Dpm 0644 src/flatpak_command_exporter/flatpak-exported-commands.sh \
@@ -87,6 +91,7 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %doc README.md
 %license LICENSE
 %{_bindir}/flatshell
+%{_datadir}/bash-completion/completions/flatshell
 %exclude %{python3_sitelib}/flatpak_command_exporter/gui/*.py
 %exclude %{python3_sitelib}/flatpak_command_exporter/gui/__pycache__/*.pyc
 %exclude %{_bindir}/flatlink
