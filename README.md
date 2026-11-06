@@ -310,6 +310,11 @@ Build the Debian packages with `make deb`. The test suite covers configuration
 precedence and persistence, CLI compatibility, launcher generation, library
 operations, and Flatpak alias discovery.
 
+Update the Debian, RPM spec, and AppStream release changelogs together with
+`make release`. The individual `make changelog`, `make spec`, and
+`make metainfo` targets can also be run separately. Set `SOURCE_DATE_EPOCH` to
+choose a reproducible date for new entries.
+
 ## Recent changes
 
 - Added per-user global and per-app alias configuration in

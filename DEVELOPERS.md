@@ -222,3 +222,13 @@ RPM packaging targets Fedora 44 and 45. Build it from the checkout with:
 ```console
 make rpm
 ```
+
+Prepare release changelog entries for Debian, RPM, and AppStream with:
+
+```console
+make release
+```
+
+The individual `make changelog`, `make spec`, and `make metainfo` targets are
+available as well. Set `SOURCE_DATE_EPOCH` to use a reproducible date when
+creating new entries.
