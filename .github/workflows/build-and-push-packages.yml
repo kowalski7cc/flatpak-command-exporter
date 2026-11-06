@@ -69,6 +69,7 @@ jobs:
         run: |
           dnf install -y \
             flatpak-devel \
+            gettext \
             git \
             gtk4 \
             libadwaita \
