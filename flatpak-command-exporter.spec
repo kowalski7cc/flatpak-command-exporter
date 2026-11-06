@@ -111,6 +111,9 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %{_datadir}/icons/hicolor/symbolic/apps/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg
 
 %changelog
+* Fri Nov 06 2026 Kowalski Dragon <kowalski7cc@users.noreply.github.com> - 0.14.2-1
+- Release 0.14.2.
+
 * Fri Nov 06 2026 Kowalski Dragon <kowalski7cc@users.noreply.github.com> - 0.14.1-1
 - Release 0.14.1.
 
