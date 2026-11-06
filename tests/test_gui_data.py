@@ -16,6 +16,10 @@ from flatpak_command_exporter.gui import (
     get_project_details,
     main,
 )
+from flatpak_command_exporter.gui.accessibility import (
+    set_accessible_label,
+    set_decorative,
+)
 from flatpak_command_exporter.gui.data import get_app_ref_choices
 from flatpak_command_exporter.gui.menu import create_main_menu
 from flatpak_command_exporter.gui.settings import (
@@ -204,7 +208,7 @@ class AliasDataTests(unittest.TestCase):
         self.assertEqual(row.prefixes, [icon])
         self.assertEqual(row.suffixes, [remove_button])
 
-    def test_chooser_labels_are_single_line_and_ellipsized(self):
+    def test_chooser_labels_wrap_for_scalable_text(self):
         class Label:
             def set_xalign(self, value):
                 self.xalign = value
@@ -212,27 +216,61 @@ class AliasDataTests(unittest.TestCase):
             def set_hexpand(self, value):
                 self.hexpand = value
 
-            def set_single_line_mode(self, value):
-                self.single_line = value
+            def set_wrap(self, value):
+                self.wrap = value
 
-            def set_max_width_chars(self, value):
-                self.max_width_chars = value
+            def set_wrap_mode(self, mode):
+                self.wrap_mode = mode
 
-            def set_ellipsize(self, mode):
-                self.ellipsize = mode
-
-        end = object()
+        word_char = object()
         label = Label()
 
         _configure_responsive_label(
-            label, SimpleNamespace(EllipsizeMode=SimpleNamespace(END=end))
+            label, SimpleNamespace(WrapMode=SimpleNamespace(WORD_CHAR=word_char))
         )
 
         self.assertEqual(label.xalign, 0)
         self.assertTrue(label.hexpand)
-        self.assertTrue(label.single_line)
-        self.assertEqual(label.max_width_chars, 40)
-        self.assertIs(label.ellipsize, end)
+        self.assertTrue(label.wrap)
+        self.assertIs(label.wrap_mode, word_char)
+
+    def test_accessible_label_sets_the_gtk_label_property(self):
+        class Widget:
+            def update_property(self, properties, values):
+                self.accessible_properties = (properties, values)
+
+        accessible_label = object()
+        widget = Widget()
+
+        set_accessible_label(
+            widget,
+            SimpleNamespace(
+                AccessibleProperty=SimpleNamespace(LABEL=accessible_label)
+            ),
+            "Search apps and commands",
+        )
+
+        self.assertEqual(
+            widget.accessible_properties,
+            ([accessible_label], ["Search apps and commands"]),
+        )
+
+    def test_decorative_images_are_hidden_from_the_accessibility_tree(self):
+        class Widget:
+            def set_accessible_role(self, role):
+                self.accessible_role = role
+
+        presentation = object()
+        widget = Widget()
+
+        set_decorative(
+            widget,
+            SimpleNamespace(
+                AccessibleRole=SimpleNamespace(PRESENTATION=presentation)
+            ),
+        )
+
+        self.assertIs(widget.accessible_role, presentation)
 
     def test_override_action_buttons_use_symbolic_icons_and_accessible_labels(self):
         class Button:

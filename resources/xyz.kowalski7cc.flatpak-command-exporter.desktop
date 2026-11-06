@@ -2,6 +2,14 @@
 Type=Application
 Name=Flatlink
 Comment=Inspect exported Flatpak commands
+Comment[it]=Esamina i comandi Flatpak esportati
+Comment[fr]=Inspecter les commandes Flatpak exportées
+Comment[de]=Exportierte Flatpak-Befehle anzeigen
+Comment[es]=Consultar los comandos Flatpak exportados
+Comment[ja]=エクスポート済みFlatpakコマンドを確認
+Comment[hu]=Exportált Flatpak-parancsok áttekintése
+Comment[pl]=Przeglądaj eksportowane polecenia Flatpak
+Comment[cs]=Prohlížet exportované příkazy Flatpak
 Exec=flatlink
 Icon=xyz.kowalski7cc.flatpak-command-exporter
 Terminal=false

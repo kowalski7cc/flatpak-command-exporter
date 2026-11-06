@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: flatpak-command-exporter\n"
+"PO-Revision-Date: 2026-11-06 17:00+0100\n"
+"Last-Translator: Flatpak Command Exporter contributors\n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
+msgstr "L'interfaccia richiede PyGObject, GTK 4 e libadwaita con i dati di introspezione installati."
+
+msgid "Exported Commands"
+msgstr "Comandi esportati"
+
+msgid "Export all user commands"
+msgstr "Esporta tutti i comandi utente"
+
+msgid "Main Menu"
+msgstr "Menu principale"
+
+msgid "Search apps and commands"
+msgstr "Cerca applicazioni e comandi"
+
+msgid "All apps"
+msgstr "Tutte le applicazioni"
+
+msgid "User apps"
+msgstr "Applicazioni utente"
+
+msgid "System apps"
+msgstr "Applicazioni di sistema"
+
+msgid "Filter by Flatpak installation"
+msgstr "Filtra per installazione Flatpak"
+
+#, python-format
+msgid "Show commands for %(app)s"
+msgstr "Mostra i comandi di %(app)s"
+
+msgid "User"
+msgstr "Utente"
+
+msgid "System"
+msgstr "Sistema"
+
+#, python-format
+msgid "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
+msgstr "%(app_id)s - %(branch)s (%(arch)s) - installazione %(scope)s"
+
+msgid "Enable or disable every exported command in this app"
+msgstr "Abilita o disabilita tutti i comandi esportati da questa applicazione"
+
+#, python-format
+msgid "Export commands for %(app)s"
+msgstr "Esporta i comandi di %(app)s"
+
+#, python-format
+msgid "Export %(alias)s from %(app)s"
+msgstr "Esporta %(alias)s da %(app)s"
+
+msgid "No exported aliases"
+msgstr "Nessun alias esportato"
+
+msgid "No aliases found"
+msgstr "Nessun alias trovato"
+
+msgid "No user aliases"
+msgstr "Nessun alias utente"
+
+msgid "No system aliases"
+msgstr "Nessun alias di sistema"
+
+msgid "Could not refresh user settings"
+msgstr "Impossibile aggiornare le impostazioni utente"
+
+msgid "Could not save alias setting"
+msgstr "Impossibile salvare l'impostazione dell'alias"
+
+msgid "Alias setting saved, but export failed"
+msgstr "Impostazione dell'alias salvata, ma l'esportazione non è riuscita"
+
+msgid "Could not save app command settings"
+msgstr "Impossibile salvare le impostazioni dei comandi dell'applicazione"
+
+msgid "App command settings saved, but export failed"
+msgstr "Impostazioni dei comandi salvate, ma l'esportazione non è riuscita"
+
+msgid "Could not open settings"
+msgstr "Impossibile aprire le impostazioni"
+
+msgid "Could not export user commands"
+msgstr "Impossibile esportare i comandi utente"
+
+msgid "User commands exported"
+msgstr "Comandi utente esportati"
+
+msgid "Settings"
+msgstr "Impostazioni"
+
+msgid "Default export"
+msgstr "Esportazione predefinita"
+
+msgid "Export new commands by default"
+msgstr "Esporta i nuovi comandi per impostazione predefinita"
+
+msgid "Applies to user commands, including commands from system apps."
+msgstr "Si applica ai comandi utente, inclusi quelli delle applicazioni di sistema."
+
+msgid "Reset to factory defaults"
+msgstr "Ripristina le impostazioni predefinite"
+
+msgid "Restore the default export policy and clear app overrides."
+msgstr "Ripristina i criteri di esportazione predefiniti e cancella le eccezioni delle applicazioni."
+
+msgid "Reset"
+msgstr "Ripristina"
+
+msgid "Enabled app overrides"
+msgstr "Eccezioni applicazioni abilitate"
+
+msgid "Disabled app overrides"
+msgstr "Eccezioni applicazioni disabilitate"
+
+msgid "Remove app override"
+msgstr "Rimuovi eccezione dell'applicazione"
+
+msgid "Could not save app override"
+msgstr "Impossibile salvare l'eccezione dell'applicazione"
+
+msgid "App override saved, but export failed"
+msgstr "Eccezione dell'applicazione salvata, ma l'esportazione non è riuscita"
+
+msgid "App override saved, but settings could not be refreshed"
+msgstr "Eccezione dell'applicazione salvata, ma non è stato possibile aggiornare le impostazioni"
+
+msgid "Could not load installed app refs"
+msgstr "Impossibile caricare i riferimenti delle applicazioni installate"
+
+msgid "Could not add app override"
+msgstr "Impossibile aggiungere un'eccezione per l'applicazione"
+
+msgid "No installed Flatpak apps with exported commands were found"
+msgstr "Non sono state trovate applicazioni Flatpak installate con comandi esportati"
+
+msgid "Select an installed app"
+msgstr "Seleziona un'applicazione installata"
+
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Selected"
+msgstr "Selezionato"
+
+msgid "Choose an app"
+msgstr "Scegli un'applicazione"
+
+msgid "Set this override for all refs of an installed app."
+msgstr "Imposta questa eccezione per tutti i riferimenti di un'applicazione installata."
+
+msgid "Add app override"
+msgstr "Aggiungi eccezione dell'applicazione"
+
+msgid "Could not save default export setting"
+msgstr "Impossibile salvare l'impostazione di esportazione predefinita"
+
+msgid "Default setting saved, but export failed"
+msgstr "Impostazione predefinita salvata, ma l'esportazione non è riuscita"
+
+msgid "Could not reset settings"
+msgstr "Impossibile ripristinare le impostazioni"
+
+msgid "Settings reset, but export failed"
+msgstr "Impostazioni ripristinate, ma l'esportazione non è riuscita"
+
+msgid "Settings reset, but overrides could not be refreshed"
+msgstr "Impostazioni ripristinate, ma non è stato possibile aggiornare le eccezioni"
+
+msgid "Reset settings?"
+msgstr "Ripristinare le impostazioni?"
+
+msgid "This restores the default export policy and clears app overrides. Alias-specific settings and custom aliases are not changed."
+msgstr "Verrà ripristinato il criterio di esportazione predefinito e saranno cancellate le eccezioni delle applicazioni. Le impostazioni specifiche degli alias e gli alias personalizzati non verranno modificati."
+
+msgid "Could not confirm settings reset"
+msgstr "Impossibile confermare il ripristino delle impostazioni"
+
+msgid "Could not load app overrides"
+msgstr "Impossibile caricare le eccezioni delle applicazioni"
+
+msgid "About"
+msgstr "Informazioni"

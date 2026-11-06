@@ -7,13 +7,13 @@ arch=('any')
 url='https://github.com/kowalski7cc/flatpak-command-exporter'
 license=('MIT')
 depends=('flatpak' 'python>=3.13' 'python-gobject')
-makedepends=('gtk4' 'hicolor-icon-theme' 'libadwaita' 'python-shtab')
+makedepends=('gtk4' 'gettext' 'hicolor-icon-theme' 'libadwaita' 'python-shtab')
 source=(".flatpak-command-exporter-$pkgver.tar.gz")
 sha256sums=('SKIP')
 
 build() {
     cd "$srcdir/flatpak-command-exporter-$pkgver"
-    make completion
+    make translations completion
 }
 
 package_flatpak-command-exporter() {

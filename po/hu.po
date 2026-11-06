@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: flatpak-command-exporter\n"
+"PO-Revision-Date: 2026-11-06 17:00+0100\n"
+"Last-Translator: Flatpak Command Exporter contributors\n"
+"Language-Team: Hungarian\n"
+"Language: hu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
+msgstr "A grafikus felülethez telepített PyGObject, GTK 4 és introspekciós adatokkal rendelkező libadwaita szükséges."
+
+msgid "Exported Commands"
+msgstr "Exportált parancsok"
+
+msgid "Export all user commands"
+msgstr "Az összes felhasználói parancs exportálása"
+
+msgid "Main Menu"
+msgstr "Főmenü"
+
+msgid "Search apps and commands"
+msgstr "Alkalmazások és parancsok keresése"
+
+msgid "All apps"
+msgstr "Minden alkalmazás"
+
+msgid "User apps"
+msgstr "Felhasználói alkalmazások"
+
+msgid "System apps"
+msgstr "Rendszeralkalmazások"
+
+msgid "Filter by Flatpak installation"
+msgstr "Szűrés Flatpak-telepítés szerint"
+
+#, python-format
+msgid "Show commands for %(app)s"
+msgstr "%(app)s parancsainak megjelenítése"
+
+msgid "User"
+msgstr "Felhasználó"
+
+msgid "System"
+msgstr "Rendszer"
+
+#, python-format
+msgid "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
+msgstr "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s telepítés"
+
+msgid "Enable or disable every exported command in this app"
+msgstr "Az alkalmazás összes exportált parancsának engedélyezése vagy letiltása"
+
+#, python-format
+msgid "Export commands for %(app)s"
+msgstr "%(app)s parancsainak exportálása"
+
+#, python-format
+msgid "Export %(alias)s from %(app)s"
+msgstr "%(app)s %(alias)s parancsának exportálása"
+
+msgid "No exported aliases"
+msgstr "Nincsenek exportált álnevek"
+
+msgid "No aliases found"
+msgstr "Nem található álnév"
+
+msgid "No user aliases"
+msgstr "Nincsenek felhasználói álnevek"
+
+msgid "No system aliases"
+msgstr "Nincsenek rendszerálnevek"
+
+msgid "Could not refresh user settings"
+msgstr "A felhasználói beállítások nem frissíthetők"
+
+msgid "Could not save alias setting"
+msgstr "Az álnév beállítása nem menthető"
+
+msgid "Alias setting saved, but export failed"
+msgstr "Az álnév beállítása mentve, de az exportálás nem sikerült"
+
+msgid "Could not save app command settings"
+msgstr "Az alkalmazás parancsbeállításai nem menthetők"
+
+msgid "App command settings saved, but export failed"
+msgstr "Az alkalmazás parancsbeállításai mentve, de az exportálás nem sikerült"
+
+msgid "Could not open settings"
+msgstr "A beállítások nem nyithatók meg"
+
+msgid "Could not export user commands"
+msgstr "A felhasználói parancsok nem exportálhatók"
+
+msgid "User commands exported"
+msgstr "Felhasználói parancsok exportálva"
+
+msgid "Settings"
+msgstr "Beállítások"
+
+msgid "Default export"
+msgstr "Alapértelmezett exportálás"
+
+msgid "Export new commands by default"
+msgstr "Új parancsok exportálása alapértelmezés szerint"
+
+msgid "Applies to user commands, including commands from system apps."
+msgstr "A felhasználói parancsokra vonatkozik, beleértve a rendszeralkalmazások parancsait is."
+
+msgid "Reset to factory defaults"
+msgstr "Gyári alapértékek visszaállítása"
+
+msgid "Restore the default export policy and clear app overrides."
+msgstr "Az alapértelmezett exportálási szabály visszaállítása és az alkalmazásfelülbírálások törlése."
+
+msgid "Reset"
+msgstr "Visszaállítás"
+
+msgid "Enabled app overrides"
+msgstr "Engedélyezett alkalmazásfelülbírálások"
+
+msgid "Disabled app overrides"
+msgstr "Letiltott alkalmazásfelülbírálások"
+
+msgid "Remove app override"
+msgstr "Alkalmazásfelülbírálás eltávolítása"
+
+msgid "Could not save app override"
+msgstr "Az alkalmazásfelülbírálás nem menthető"
+
+msgid "App override saved, but export failed"
+msgstr "Az alkalmazásfelülbírálás mentve, de az exportálás nem sikerült"
+
+msgid "App override saved, but settings could not be refreshed"
+msgstr "Az alkalmazásfelülbírálás mentve, de a beállítások nem frissíthetők"
+
+msgid "Could not load installed app refs"
+msgstr "A telepített alkalmazáshivatkozások nem tölthetők be"
+
+msgid "Could not add app override"
+msgstr "Az alkalmazásfelülbírálás nem adható hozzá"
+
+msgid "No installed Flatpak apps with exported commands were found"
+msgstr "Nem találhatók exportált parancsokkal rendelkező telepített Flatpak-alkalmazások"
+
+msgid "Select an installed app"
+msgstr "Telepített alkalmazás kiválasztása"
+
+msgid "Cancel"
+msgstr "Mégse"
+
+msgid "Selected"
+msgstr "Kiválasztva"
+
+msgid "Choose an app"
+msgstr "Alkalmazás kiválasztása"
+
+msgid "Set this override for all refs of an installed app."
+msgstr "A felülbírálás alkalmazása egy telepített alkalmazás összes hivatkozására."
+
+msgid "Add app override"
+msgstr "Alkalmazásfelülbírálás hozzáadása"
+
+msgid "Could not save default export setting"
+msgstr "Az alapértelmezett exportálási beállítás nem menthető"
+
+msgid "Default setting saved, but export failed"
+msgstr "Az alapértelmezett beállítás mentve, de az exportálás nem sikerült"
+
+msgid "Could not reset settings"
+msgstr "A beállítások nem állíthatók vissza"
+
+msgid "Settings reset, but export failed"
+msgstr "A beállítások visszaállítva, de az exportálás nem sikerült"
+
+msgid "Settings reset, but overrides could not be refreshed"
+msgstr "A beállítások visszaállítva, de a felülbírálások nem frissíthetők"
+
+msgid "Reset settings?"
+msgstr "Visszaállítja a beállításokat?"
+
+msgid "This restores the default export policy and clears app overrides. Alias-specific settings and custom aliases are not changed."
+msgstr "Visszaállítja az alapértelmezett exportálási szabályt, és törli az alkalmazásfelülbírálásokat. Az álnévspecifikus beállítások és az egyéni álnevek nem változnak."
+
+msgid "Could not confirm settings reset"
+msgstr "A beállítások visszaállítása nem erősíthető meg"
+
+msgid "Could not load app overrides"
+msgstr "Az alkalmazásfelülbírálások nem tölthetők be"
+
+msgid "About"
+msgstr "Névjegy"

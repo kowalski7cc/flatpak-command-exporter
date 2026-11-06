@@ -14,6 +14,7 @@ BuildRequires:  pyproject-rpm-macros
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  python3-devel
 BuildRequires:  python3-shtab
+BuildRequires:  gettext
 
 Requires:       flatpak
 %systemd_requires
@@ -41,6 +42,7 @@ command exports.
 %autosetup -n %{name}-%{version} -p1
 
 %build
+make translations
 %pyproject_wheel
 make completion
 

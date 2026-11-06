@@ -34,7 +34,10 @@ where = ["src"]
 "share/icons/hicolor/symbolic/apps" = ["resources/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg"]
 
 [tool.setuptools.package-data]
-flatpak_command_exporter = ["flatpak-exported-commands.sh"]
+flatpak_command_exporter = [
+    "flatpak-exported-commands.sh",
+    "gui/locale/*/LC_MESSAGES/*.mo",
+]
 
 [project.scripts]
 flatshell = "flatpak_command_exporter.__main__:main"

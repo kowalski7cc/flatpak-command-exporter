@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: flatpak-command-exporter\n"
+"PO-Revision-Date: 2026-11-06 17:00+0100\n"
+"Last-Translator: Flatpak Command Exporter contributors\n"
+"Language-Team: Czech\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+msgid "The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
+msgstr "Grafické rozhraní vyžaduje PyGObject, GTK 4 a libadwaita s nainstalovanými introspekčními daty."
+
+msgid "Exported Commands"
+msgstr "Exportované příkazy"
+
+msgid "Export all user commands"
+msgstr "Exportovat všechny uživatelské příkazy"
+
+msgid "Main Menu"
+msgstr "Hlavní nabídka"
+
+msgid "Search apps and commands"
+msgstr "Hledat aplikace a příkazy"
+
+msgid "All apps"
+msgstr "Všechny aplikace"
+
+msgid "User apps"
+msgstr "Uživatelské aplikace"
+
+msgid "System apps"
+msgstr "Systémové aplikace"
+
+msgid "Filter by Flatpak installation"
+msgstr "Filtrovat podle instalace Flatpaku"
+
+#, python-format
+msgid "Show commands for %(app)s"
+msgstr "Zobrazit příkazy aplikace %(app)s"
+
+msgid "User"
+msgstr "Uživatel"
+
+msgid "System"
+msgstr "Systém"
+
+#, python-format
+msgid "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
+msgstr "%(app_id)s - %(branch)s (%(arch)s) - instalace %(scope)s"
+
+msgid "Enable or disable every exported command in this app"
+msgstr "Povolit nebo zakázat všechny exportované příkazy této aplikace"
+
+#, python-format
+msgid "Export commands for %(app)s"
+msgstr "Exportovat příkazy aplikace %(app)s"
+
+#, python-format
+msgid "Export %(alias)s from %(app)s"
+msgstr "Exportovat %(alias)s z aplikace %(app)s"
+
+msgid "No exported aliases"
+msgstr "Žádné exportované aliasy"
+
+msgid "No aliases found"
+msgstr "Nebyly nalezeny žádné aliasy"
+
+msgid "No user aliases"
+msgstr "Žádné uživatelské aliasy"
+
+msgid "No system aliases"
+msgstr "Žádné systémové aliasy"
+
+msgid "Could not refresh user settings"
+msgstr "Nelze obnovit uživatelská nastavení"
+
+msgid "Could not save alias setting"
+msgstr "Nelze uložit nastavení aliasu"
+
+msgid "Alias setting saved, but export failed"
+msgstr "Nastavení aliasu bylo uloženo, ale export se nezdařil"
+
+msgid "Could not save app command settings"
+msgstr "Nelze uložit nastavení příkazů aplikace"
+
+msgid "App command settings saved, but export failed"
+msgstr "Nastavení příkazů aplikace bylo uloženo, ale export se nezdařil"
+
+msgid "Could not open settings"
+msgstr "Nelze otevřít nastavení"
+
+msgid "Could not export user commands"
+msgstr "Nelze exportovat uživatelské příkazy"
+
+msgid "User commands exported"
+msgstr "Uživatelské příkazy byly exportovány"
+
+msgid "Settings"
+msgstr "Nastavení"
+
+msgid "Default export"
+msgstr "Výchozí export"
+
+msgid "Export new commands by default"
+msgstr "Ve výchozím nastavení exportovat nové příkazy"
+
+msgid "Applies to user commands, including commands from system apps."
+msgstr "Platí pro uživatelské příkazy včetně příkazů ze systémových aplikací."
+
+msgid "Reset to factory defaults"
+msgstr "Obnovit tovární nastavení"
+
+msgid "Restore the default export policy and clear app overrides."
+msgstr "Obnovit výchozí pravidla exportu a odstranit přepsání pro aplikace."
+
+msgid "Reset"
+msgstr "Obnovit"
+
+msgid "Enabled app overrides"
+msgstr "Povolená přepsání aplikací"
+
+msgid "Disabled app overrides"
+msgstr "Zakázaná přepsání aplikací"
+
+msgid "Remove app override"
+msgstr "Odebrat přepsání aplikace"
+
+msgid "Could not save app override"
+msgstr "Nelze uložit přepsání aplikace"
+
+msgid "App override saved, but export failed"
+msgstr "Přepsání aplikace bylo uloženo, ale export se nezdařil"
+
+msgid "App override saved, but settings could not be refreshed"
+msgstr "Přepsání aplikace bylo uloženo, ale nastavení nelze obnovit"
+
+msgid "Could not load installed app refs"
+msgstr "Nelze načíst reference nainstalovaných aplikací"
+
+msgid "Could not add app override"
+msgstr "Nelze přidat přepsání aplikace"
+
+msgid "No installed Flatpak apps with exported commands were found"
+msgstr "Nebyly nalezeny nainstalované aplikace Flatpak s exportovanými příkazy"
+
+msgid "Select an installed app"
+msgstr "Vybrat nainstalovanou aplikaci"
+
+msgid "Cancel"
+msgstr "Zrušit"
+
+msgid "Selected"
+msgstr "Vybráno"
+
+msgid "Choose an app"
+msgstr "Vybrat aplikaci"
+
+msgid "Set this override for all refs of an installed app."
+msgstr "Nastavit toto přepsání pro všechny reference nainstalované aplikace."
+
+msgid "Add app override"
+msgstr "Přidat přepsání aplikace"
+
+msgid "Could not save default export setting"
+msgstr "Nelze uložit výchozí nastavení exportu"
+
+msgid "Default setting saved, but export failed"
+msgstr "Výchozí nastavení bylo uloženo, ale export se nezdařil"
+
+msgid "Could not reset settings"
+msgstr "Nelze obnovit nastavení"
+
+msgid "Settings reset, but export failed"
+msgstr "Nastavení bylo obnoveno, ale export se nezdařil"
+
+msgid "Settings reset, but overrides could not be refreshed"
+msgstr "Nastavení bylo obnoveno, ale přepsání nelze obnovit"
+
+msgid "Reset settings?"
+msgstr "Obnovit nastavení?"
+
+msgid "This restores the default export policy and clears app overrides. Alias-specific settings and custom aliases are not changed."
+msgstr "Obnoví se výchozí pravidla exportu a odstraní se přepsání aplikací. Nastavení konkrétních aliasů ani vlastní aliasy se nezmění."
+
+msgid "Could not confirm settings reset"
+msgstr "Nelze potvrdit obnovení nastavení"
+
+msgid "Could not load app overrides"
+msgstr "Nelze načíst přepsání aplikací"
+
+msgid "About"
+msgstr "O aplikaci"

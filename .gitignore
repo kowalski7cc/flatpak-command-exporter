@@ -231,6 +231,9 @@ cover/
 # Translations
 *.mo
 *.pot
+!src/flatpak_command_exporter/gui/locale/
+!src/flatpak_command_exporter/gui/locale/**/
+!src/flatpak_command_exporter/gui/locale/**/*.mo
 
 # Django stuff:
 *.log

@@ -1,12 +1,12 @@
+from .accessibility import set_accessible_label, set_decorative
 from .data import _make_app_icon, get_app_ref_choices
+from .i18n import _
 
 
 def _make_icon_button(Gtk, icon_name, accessible_label):
 	button = Gtk.Button.new_from_icon_name(icon_name)
 	button.set_tooltip_text(accessible_label)
-	button.update_property(
-		[Gtk.AccessibleProperty.LABEL], [accessible_label]
-	)
+	set_accessible_label(button, Gtk, accessible_label)
 	button.set_valign(Gtk.Align.CENTER)
 	return button
 
@@ -14,9 +14,8 @@ def _make_icon_button(Gtk, icon_name, accessible_label):
 def _configure_responsive_label(label, Pango):
 	label.set_xalign(0)
 	label.set_hexpand(True)
-	label.set_single_line_mode(True)
-	label.set_max_width_chars(40)
-	label.set_ellipsize(Pango.EllipsizeMode.END)
+	label.set_wrap(True)
+	label.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
 
 
 def _make_app_override_row(Adw, app_id, app_name, app_icon, remove_button):
@@ -66,30 +65,30 @@ def show_settings(
 		transient_for=window,
 		modal=True,
 	)
-	preferences_window.set_title("Settings")
+	preferences_window.set_title(_("Settings"))
 	page = Adw.PreferencesPage()
 
-	default_group = Adw.PreferencesGroup(title="Default export")
+	default_group = Adw.PreferencesGroup(title=_("Default export"))
 	default_row = Adw.SwitchRow(
-		title="Export new commands by default",
-		subtitle="Applies to user commands, including commands from system apps.",
+		title=_("Export new commands by default"),
+		subtitle=_("Applies to user commands, including commands from system apps."),
 	)
 	default_row.set_active(exporter.config.default_policy() == "all")
 	default_group.add(default_row)
 	page.add(default_group)
 
 	reset_row = Adw.ActionRow(
-		title="Reset to factory defaults",
-		subtitle="Restore the default export policy and clear app overrides.",
+		title=_("Reset to factory defaults"),
+		subtitle=_("Restore the default export policy and clear app overrides."),
 	)
-	reset_button = Gtk.Button(label="Reset")
+	reset_button = Gtk.Button(label=_("Reset"))
 	reset_button.set_valign(Gtk.Align.CENTER)
 	reset_row.add_suffix(reset_button)
 	default_group.add(reset_row)
 
 	override_groups = {
-		True: Adw.PreferencesGroup(title="Enabled app overrides"),
-		False: Adw.PreferencesGroup(title="Disabled app overrides"),
+		True: Adw.PreferencesGroup(title=_("Enabled app overrides")),
+		False: Adw.PreferencesGroup(title=_("Disabled app overrides")),
 	}
 	override_rows = {True: [], False: []}
 	for group in override_groups.values():
@@ -123,9 +122,10 @@ def show_settings(
 					"application-x-executable-symbolic"
 				)
 			)
+			set_decorative(app_icon, Gtk)
 			app_icon.set_pixel_size(32)
 			reset_button = _make_icon_button(
-				Gtk, "list-remove-symbolic", "Remove app override"
+				Gtk, "list-remove-symbolic", _("Remove app override")
 			)
 			row = _make_app_override_row(
 				Adw, app_id, app_name, app_icon, reset_button
@@ -142,17 +142,17 @@ def show_settings(
 		try:
 			exporter.config.set_app_enabled(app_id, enabled)
 		except (OSError, ValueError) as error:
-			report_error("Could not save app override", error)
+			report_error(_("Could not save app override"), error)
 			return False
 
 		try:
 			exporter.export_commands()
 		except (OSError, ValueError, GLib.Error) as error:
-			report_error("App override saved, but export failed", error)
+			report_error(_("App override saved, but export failed"), error)
 		try:
 			refresh_override_rows()
 		except (OSError, ValueError, GLib.Error) as error:
-			report_error("App override saved, but settings could not be refreshed", error)
+			report_error(_("App override saved, but settings could not be refreshed"), error)
 		refresh_user_controls()
 		return True
 
@@ -160,24 +160,24 @@ def show_settings(
 		try:
 			choices = get_app_ref_choices(exporter)
 		except (OSError, ValueError, GLib.Error) as error:
-			report_error("Could not load installed app refs", error)
+			report_error(_("Could not load installed app refs"), error)
 			return
 		if not choices:
 			report_error(
-				"Could not add app override",
-				ValueError("No installed Flatpak apps with exported commands were found"),
+				_("Could not add app override"),
+				ValueError(_("No installed Flatpak apps with exported commands were found")),
 			)
 			return
 
 		dialog = Adw.Dialog()
-		dialog.set_title("Select an installed app")
+		dialog.set_title(_("Select an installed app"))
 		dialog.set_content_height(480)
 		toolbar = Adw.ToolbarView()
 		header = Adw.HeaderBar()
 		header.set_title_widget(
-			Adw.WindowTitle(title="Select an installed app", subtitle=None)
+			Adw.WindowTitle(title=_("Select an installed app"), subtitle=None)
 		)
-		cancel_button = Gtk.Button(label="Cancel")
+		cancel_button = Gtk.Button(label=_("Cancel"))
 		cancel_button.connect("clicked", lambda _button: dialog.close())
 		header.pack_start(cancel_button)
 		toolbar.add_top_bar(header)
@@ -195,9 +195,7 @@ def show_settings(
 		for label, record in choices:
 			row = Gtk.ListBoxRow()
 			row.set_activatable(True)
-			row.update_property(
-				[Gtk.AccessibleProperty.LABEL], [label]
-			)
+			set_accessible_label(row, Gtk, label)
 			row_content = Gtk.Box(
 				orientation=Gtk.Orientation.HORIZONTAL,
 				spacing=12,
@@ -208,6 +206,7 @@ def show_settings(
 			row_content.set_margin_start(8)
 			row_content.set_margin_end(8)
 			app_icon = _make_app_icon(record, Gtk, Gdk, GLib, icon_theme)
+			set_decorative(app_icon, Gtk)
 			app_icon.set_pixel_size(40)
 			row_content.append(app_icon)
 
@@ -229,6 +228,7 @@ def show_settings(
 			selected_mark = Gtk.Image.new_from_icon_name(
 				"object-select-symbolic"
 			)
+			set_accessible_label(selected_mark, Gtk, _("Selected"))
 			selected_mark.set_visible(False)
 			row_content.append(selected_mark)
 			row.set_child(row_content)
@@ -257,11 +257,11 @@ def show_settings(
 
 	for enabled, group in override_groups.items():
 		add_row = Adw.ActionRow(
-			title="Choose an app",
-			subtitle="Set this override for all refs of an installed app.",
+			title=_("Choose an app"),
+			subtitle=_("Set this override for all refs of an installed app."),
 		)
 		add_button = _make_icon_button(
-			Gtk, "list-add-symbolic", "Add app override"
+			Gtk, "list-add-symbolic", _("Add app override")
 		)
 		add_row.add_suffix(add_button)
 		group.add(add_row)
@@ -280,13 +280,13 @@ def show_settings(
 			row.handler_block(default_row_handler[0])
 			row.set_active(not row.get_active())
 			row.handler_unblock(default_row_handler[0])
-			report_error("Could not save default export setting", error)
+			report_error(_("Could not save default export setting"), error)
 			return
 
 		try:
 			exporter.export_commands()
 		except (OSError, ValueError, GLib.Error) as error:
-			report_error("Default setting saved, but export failed", error)
+			report_error(_("Default setting saved, but export failed"), error)
 		refresh_user_controls()
 
 	default_row_handler[0] = default_row.connect(
@@ -297,13 +297,13 @@ def show_settings(
 		try:
 			default_policy = _reset_factory_preferences(exporter.config)
 		except (OSError, ValueError) as error:
-			report_error("Could not reset settings", error)
+			report_error(_("Could not reset settings"), error)
 			return
 
 		try:
 			exporter.export_commands()
 		except (OSError, ValueError, GLib.Error) as error:
-			report_error("Settings reset, but export failed", error)
+			report_error(_("Settings reset, but export failed"), error)
 
 		default_row.handler_block(default_row_handler[0])
 		default_row.set_active(default_policy == "all")
@@ -311,19 +311,19 @@ def show_settings(
 		try:
 			refresh_override_rows()
 		except (OSError, ValueError, GLib.Error) as error:
-			report_error("Settings reset, but overrides could not be refreshed", error)
+			report_error(_("Settings reset, but overrides could not be refreshed"), error)
 		refresh_user_controls()
 
 	def confirm_reset(_button):
 		dialog = Adw.AlertDialog(
-			heading="Reset settings?",
+			heading=_("Reset settings?"),
 			body=(
-				"This restores the default export policy and clears app overrides. "
-				"Alias-specific settings and custom aliases are not changed."
+				_("This restores the default export policy and clears app overrides. "
+				"Alias-specific settings and custom aliases are not changed.")
 			),
 		)
-		dialog.add_response("cancel", "Cancel")
-		dialog.add_response("reset", "Reset")
+		dialog.add_response("cancel", _("Cancel"))
+		dialog.add_response("reset", _("Reset"))
 		dialog.set_response_appearance(
 			"reset", Adw.ResponseAppearance.DESTRUCTIVE
 		)
@@ -334,7 +334,7 @@ def show_settings(
 			try:
 				response = alert_dialog.choose_finish(result)
 			except GLib.Error as error:
-				report_error("Could not confirm settings reset", error)
+				report_error(_("Could not confirm settings reset"), error)
 				return
 			if response == "reset":
 				reset_settings()
@@ -347,5 +347,5 @@ def show_settings(
 	try:
 		refresh_override_rows()
 	except (OSError, ValueError, GLib.Error) as error:
-		report_error("Could not load app overrides", error)
+		report_error(_("Could not load app overrides"), error)
 	preferences_window.present()

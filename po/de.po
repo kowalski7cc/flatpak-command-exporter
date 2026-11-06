@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: flatpak-command-exporter\n"
+"PO-Revision-Date: 2026-11-06 17:00+0100\n"
+"Last-Translator: Flatpak Command Exporter contributors\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
+msgstr "Die grafische Oberfläche benötigt PyGObject, GTK 4 und libadwaita mit installierten Introspektionsdaten."
+
+msgid "Exported Commands"
+msgstr "Exportierte Befehle"
+
+msgid "Export all user commands"
+msgstr "Alle Benutzerbefehle exportieren"
+
+msgid "Main Menu"
+msgstr "Hauptmenü"
+
+msgid "Search apps and commands"
+msgstr "Apps und Befehle suchen"
+
+msgid "All apps"
+msgstr "Alle Apps"
+
+msgid "User apps"
+msgstr "Benutzer-Apps"
+
+msgid "System apps"
+msgstr "System-Apps"
+
+msgid "Filter by Flatpak installation"
+msgstr "Nach Flatpak-Installation filtern"
+
+#, python-format
+msgid "Show commands for %(app)s"
+msgstr "Befehle für %(app)s anzeigen"
+
+msgid "User"
+msgstr "Benutzer"
+
+msgid "System"
+msgstr "System"
+
+#, python-format
+msgid "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
+msgstr "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s-Installation"
+
+msgid "Enable or disable every exported command in this app"
+msgstr "Alle exportierten Befehle dieser App aktivieren oder deaktivieren"
+
+#, python-format
+msgid "Export commands for %(app)s"
+msgstr "Befehle für %(app)s exportieren"
+
+#, python-format
+msgid "Export %(alias)s from %(app)s"
+msgstr "%(alias)s aus %(app)s exportieren"
+
+msgid "No exported aliases"
+msgstr "Keine exportierten Aliase"
+
+msgid "No aliases found"
+msgstr "Keine Aliase gefunden"
+
+msgid "No user aliases"
+msgstr "Keine Benutzer-Aliase"
+
+msgid "No system aliases"
+msgstr "Keine System-Aliase"
+
+msgid "Could not refresh user settings"
+msgstr "Benutzereinstellungen konnten nicht aktualisiert werden"
+
+msgid "Could not save alias setting"
+msgstr "Alias-Einstellung konnte nicht gespeichert werden"
+
+msgid "Alias setting saved, but export failed"
+msgstr "Alias-Einstellung gespeichert, aber der Export ist fehlgeschlagen"
+
+msgid "Could not save app command settings"
+msgstr "Befehlseinstellungen der App konnten nicht gespeichert werden"
+
+msgid "App command settings saved, but export failed"
+msgstr "Befehlseinstellungen gespeichert, aber der Export ist fehlgeschlagen"
+
+msgid "Could not open settings"
+msgstr "Einstellungen konnten nicht geöffnet werden"
+
+msgid "Could not export user commands"
+msgstr "Benutzerbefehle konnten nicht exportiert werden"
+
+msgid "User commands exported"
+msgstr "Benutzerbefehle exportiert"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Default export"
+msgstr "Standardexport"
+
+msgid "Export new commands by default"
+msgstr "Neue Befehle standardmäßig exportieren"
+
+msgid "Applies to user commands, including commands from system apps."
+msgstr "Gilt für Benutzerbefehle, einschließlich Befehlen aus System-Apps."
+
+msgid "Reset to factory defaults"
+msgstr "Auf Werkseinstellungen zurücksetzen"
+
+msgid "Restore the default export policy and clear app overrides."
+msgstr "Die Standard-Exportrichtlinie wiederherstellen und App-Ausnahmen löschen."
+
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+msgid "Enabled app overrides"
+msgstr "Aktivierte App-Ausnahmen"
+
+msgid "Disabled app overrides"
+msgstr "Deaktivierte App-Ausnahmen"
+
+msgid "Remove app override"
+msgstr "App-Ausnahme entfernen"
+
+msgid "Could not save app override"
+msgstr "App-Ausnahme konnte nicht gespeichert werden"
+
+msgid "App override saved, but export failed"
+msgstr "App-Ausnahme gespeichert, aber der Export ist fehlgeschlagen"
+
+msgid "App override saved, but settings could not be refreshed"
+msgstr "App-Ausnahme gespeichert, aber die Einstellungen konnten nicht aktualisiert werden"
+
+msgid "Could not load installed app refs"
+msgstr "Referenzen installierter Apps konnten nicht geladen werden"
+
+msgid "Could not add app override"
+msgstr "App-Ausnahme konnte nicht hinzugefügt werden"
+
+msgid "No installed Flatpak apps with exported commands were found"
+msgstr "Keine installierten Flatpak-Apps mit exportierten Befehlen gefunden"
+
+msgid "Select an installed app"
+msgstr "Installierte App auswählen"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Selected"
+msgstr "Ausgewählt"
+
+msgid "Choose an app"
+msgstr "App auswählen"
+
+msgid "Set this override for all refs of an installed app."
+msgstr "Diese Ausnahme für alle Referenzen einer installierten App festlegen."
+
+msgid "Add app override"
+msgstr "App-Ausnahme hinzufügen"
+
+msgid "Could not save default export setting"
+msgstr "Standard-Exporteinstellung konnte nicht gespeichert werden"
+
+msgid "Default setting saved, but export failed"
+msgstr "Standardeinstellung gespeichert, aber der Export ist fehlgeschlagen"
+
+msgid "Could not reset settings"
+msgstr "Einstellungen konnten nicht zurückgesetzt werden"
+
+msgid "Settings reset, but export failed"
+msgstr "Einstellungen zurückgesetzt, aber der Export ist fehlgeschlagen"
+
+msgid "Settings reset, but overrides could not be refreshed"
+msgstr "Einstellungen zurückgesetzt, aber die Ausnahmen konnten nicht aktualisiert werden"
+
+msgid "Reset settings?"
+msgstr "Einstellungen zurücksetzen?"
+
+msgid "This restores the default export policy and clears app overrides. Alias-specific settings and custom aliases are not changed."
+msgstr "Die Standard-Exportrichtlinie wird wiederhergestellt und App-Ausnahmen werden gelöscht. Aliasspezifische Einstellungen und eigene Aliase bleiben unverändert."
+
+msgid "Could not confirm settings reset"
+msgstr "Zurücksetzen der Einstellungen konnte nicht bestätigt werden"
+
+msgid "Could not load app overrides"
+msgstr "App-Ausnahmen konnten nicht geladen werden"
+
+msgid "About"
+msgstr "Info"

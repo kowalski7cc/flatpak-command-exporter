@@ -20,12 +20,52 @@
       interface for searching apps and commands, changing export settings, and
       refreshing exported commands.
     </p>
+    <p xml:lang="it">Flatlink consente di individuare e gestire gli strumenti a riga di comando forniti dalle applicazioni Flatpak installate. Puoi scegliere quali comandi rendere disponibili nel terminale, configurare le impostazioni predefinite e creare alias personalizzati.</p>
+    <p xml:lang="it">Realizzato con GTK 4 e libadwaita, Flatlink offre un'interfaccia adattiva per cercare applicazioni e comandi, modificare le impostazioni di esportazione e aggiornare i comandi esportati.</p>
+    <p xml:lang="fr">Flatlink vous aide à découvrir et gérer les outils en ligne de commande fournis par les applications Flatpak installées. Choisissez les commandes disponibles dans votre terminal, configurez les paramètres par défaut et créez des alias personnalisés.</p>
+    <p xml:lang="fr">Conçu avec GTK 4 et libadwaita, Flatlink propose une interface adaptative pour rechercher des applications et des commandes, modifier les paramètres d’export et actualiser les commandes exportées.</p>
+    <p xml:lang="de">Mit Flatlink können Sie Befehlszeilenwerkzeuge aus installierten Flatpak-Anwendungen finden und verwalten. Legen Sie fest, welche Befehle im Terminal verfügbar sind, konfigurieren Sie Voreinstellungen und erstellen Sie eigene Aliase.</p>
+    <p xml:lang="de">Flatlink basiert auf GTK 4 und libadwaita und bietet eine adaptive Oberfläche zum Suchen von Apps und Befehlen, Ändern der Exporteinstellungen und Aktualisieren exportierter Befehle.</p>
+    <p xml:lang="es">Flatlink permite descubrir y gestionar las herramientas de línea de comandos incluidas en las aplicaciones Flatpak instaladas. Elige qué comandos estarán disponibles en el terminal, configura los valores predeterminados y crea alias personalizados.</p>
+    <p xml:lang="es">Creada con GTK 4 y libadwaita, Flatlink ofrece una interfaz adaptable para buscar aplicaciones y comandos, cambiar la configuración de exportación y actualizar los comandos exportados.</p>
+    <p xml:lang="ja">Flatlinkを使用すると、インストール済みFlatpakアプリが提供するコマンドラインツールを見つけて管理できます。端末で使用できるコマンドを選択し、既定の設定やカスタムエイリアスを設定できます。</p>
+    <p xml:lang="ja">GTK 4とlibadwaitaで構築されたFlatlinkは、アプリやコマンドの検索、エクスポート設定の変更、エクスポート済みコマンドの更新に対応する適応型インターフェースを提供します。</p>
+    <p xml:lang="hu">A Flatlink segítségével felfedezhetők és kezelhetők a telepített Flatpak-alkalmazások parancssori eszközei. Kiválaszthatja, mely parancsok legyenek elérhetők a terminálban, beállíthatja az alapértelmezéseket, és egyéni álneveket hozhat létre.</p>
+    <p xml:lang="hu">A GTK 4 és libadwaita használatával készült Flatlink alkalmazkodó felületet biztosít az alkalmazások és parancsok kereséséhez, az exportálási beállítások módosításához és az exportált parancsok frissítéséhez.</p>
+    <p xml:lang="pl">Flatlink pomaga odkrywać i zarządzać narzędziami wiersza poleceń dostarczanymi przez zainstalowane aplikacje Flatpak. Wybierz polecenia dostępne w terminalu, skonfiguruj ustawienia domyślne i utwórz własne aliasy.</p>
+    <p xml:lang="pl">Flatlink, zbudowany z użyciem GTK 4 i libadwaita, oferuje adaptacyjny interfejs do wyszukiwania aplikacji i poleceń, zmiany ustawień eksportu oraz odświeżania eksportowanych poleceń.</p>
+    <p xml:lang="cs">Flatlink pomáhá objevovat a spravovat nástroje příkazového řádku dodávané nainstalovanými aplikacemi Flatpak. Vyberte příkazy dostupné v terminálu, nastavte výchozí chování a vytvořte vlastní aliasy.</p>
+    <p xml:lang="cs">Flatlink vytvořený pomocí GTK 4 a libadwaita nabízí přizpůsobitelné rozhraní pro hledání aplikací a příkazů, změnu nastavení exportu a obnovení exportovaných příkazů.</p>
   </description>
+  <name xml:lang="it">Flatlink</name>
+  <summary xml:lang="it">Gestisci i comandi esportati dalle applicazioni Flatpak installate</summary>
+  <name xml:lang="fr">Flatlink</name>
+  <summary xml:lang="fr">Gérer les commandes exportées par les applications Flatpak installées</summary>
+  <name xml:lang="de">Flatlink</name>
+  <summary xml:lang="de">Von installierten Flatpak-Apps exportierte Befehle verwalten</summary>
+  <name xml:lang="es">Flatlink</name>
+  <summary xml:lang="es">Gestionar comandos exportados por aplicaciones Flatpak instaladas</summary>
+  <name xml:lang="ja">Flatlink</name>
+  <summary xml:lang="ja">インストール済みFlatpakアプリのエクスポート済みコマンドを管理</summary>
+  <name xml:lang="hu">Flatlink</name>
+  <summary xml:lang="hu">Telepített Flatpak-alkalmazások exportált parancsainak kezelése</summary>
+  <name xml:lang="pl">Flatlink</name>
+  <summary xml:lang="pl">Zarządzaj poleceniami eksportowanymi przez zainstalowane aplikacje Flatpak</summary>
+  <name xml:lang="cs">Flatlink</name>
+  <summary xml:lang="cs">Spravujte příkazy exportované nainstalovanými aplikacemi Flatpak</summary>
   <launchable type="desktop-id">xyz.kowalski7cc.flatpak-command-exporter.desktop</launchable>
   <icon type="stock">xyz.kowalski7cc.flatpak-command-exporter</icon>
   <screenshots>
     <screenshot type="default">
       <caption>Flatlink window (placeholder screenshot URL)</caption>
+      <caption xml:lang="it">Finestra di Flatlink (URL segnaposto)</caption>
+      <caption xml:lang="fr">Fenêtre de Flatlink (URL provisoire)</caption>
+      <caption xml:lang="de">Flatlink-Fenster (Platzhalter-URL)</caption>
+      <caption xml:lang="es">Ventana de Flatlink (URL provisional)</caption>
+      <caption xml:lang="ja">Flatlinkのウィンドウ（仮のURL）</caption>
+      <caption xml:lang="hu">A Flatlink ablaka (helyőrző URL)</caption>
+      <caption xml:lang="pl">Okno Flatlink (tymczasowy adres URL)</caption>
+      <caption xml:lang="cs">Okno aplikace Flatlink (zástupná adresa URL)</caption>
       <image>https://raw.githubusercontent.com/kowalski7cc/flatpak-command-exporter/main/screenshots/flatlink.png</image>
     </screenshot>
   </screenshots>

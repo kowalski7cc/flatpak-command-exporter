@@ -1,6 +1,6 @@
 BASE ?= flatpak-command-exporter
 
-.PHONY: changelog metainfo spec release deb rpm apk completion tests clean
+.PHONY: changelog metainfo spec release deb rpm apk completion translations tests clean
 
 changelog:
 	@version=$$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])'); \
@@ -44,6 +44,23 @@ completion:
 	PYTHONPATH=src shtab --shell=bash -u \
 		flatpak_command_exporter.cli_parser.build_parser \
 		> build/bash-completion/flatshell
+
+translations:
+	@set -eu; \
+	mkdir -p build; \
+	xgettext --language=Python --keyword=_ --from-code=UTF-8 \
+		--output=build/flatpak-command-exporter.pot \
+		src/flatpak_command_exporter/gui/application.py \
+		src/flatpak_command_exporter/gui/settings.py \
+		src/flatpak_command_exporter/gui/menu.py; \
+	for catalog in po/*.po; do \
+		language=$$(basename "$$catalog" .po); \
+		output_dir="src/flatpak_command_exporter/gui/locale/$$language/LC_MESSAGES"; \
+		mkdir -p "$$output_dir"; \
+		msgcmp "$$catalog" build/flatpak-command-exporter.pot; \
+		msgfmt --check --check-format \
+			--output-file "$$output_dir/flatpak-command-exporter.mo" "$$catalog"; \
+	done
 
 tests:
 	PYTHONPATH=src python3 -m unittest discover -s tests -v

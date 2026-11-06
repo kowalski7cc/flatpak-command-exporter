@@ -11,8 +11,9 @@ else
 endif
 
 override_dh_auto_build:
-	dh_auto_build
+	$(MAKE) translations
 	$(MAKE) completion
+	dh_auto_build
 
 override_dh_installsystemd:
 	dh_installsystemd -pflatpak-command-exporter flatpak-command-exporter-system.timer

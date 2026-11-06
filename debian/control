@@ -10,6 +10,7 @@ Build-Depends:
  python3-setuptools,
  python3-shtab,
  python3-gi,
+ gettext,
  gir1.2-flatpak-1.0
 Standards-Version: 4.7.0
 Rules-Requires-Root: no

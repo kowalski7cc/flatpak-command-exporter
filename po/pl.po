@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: flatpak-command-exporter\n"
+"PO-Revision-Date: 2026-11-06 17:00+0100\n"
+"Last-Translator: Flatpak Command Exporter contributors\n"
+"Language-Team: Polish\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2;\n"
+
+msgid "The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
+msgstr "Interfejs graficzny wymaga PyGObject, GTK 4 oraz libadwaita z zainstalowanymi danymi introspekcji."
+
+msgid "Exported Commands"
+msgstr "Eksportowane polecenia"
+
+msgid "Export all user commands"
+msgstr "Eksportuj wszystkie polecenia użytkownika"
+
+msgid "Main Menu"
+msgstr "Menu główne"
+
+msgid "Search apps and commands"
+msgstr "Szukaj aplikacji i poleceń"
+
+msgid "All apps"
+msgstr "Wszystkie aplikacje"
+
+msgid "User apps"
+msgstr "Aplikacje użytkownika"
+
+msgid "System apps"
+msgstr "Aplikacje systemowe"
+
+msgid "Filter by Flatpak installation"
+msgstr "Filtruj według instalacji Flatpak"
+
+#, python-format
+msgid "Show commands for %(app)s"
+msgstr "Pokaż polecenia aplikacji %(app)s"
+
+msgid "User"
+msgstr "Użytkownik"
+
+msgid "System"
+msgstr "System"
+
+#, python-format
+msgid "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
+msgstr "%(app_id)s - %(branch)s (%(arch)s) - instalacja %(scope)s"
+
+msgid "Enable or disable every exported command in this app"
+msgstr "Włącz lub wyłącz wszystkie eksportowane polecenia tej aplikacji"
+
+#, python-format
+msgid "Export commands for %(app)s"
+msgstr "Eksportuj polecenia aplikacji %(app)s"
+
+#, python-format
+msgid "Export %(alias)s from %(app)s"
+msgstr "Eksportuj %(alias)s z aplikacji %(app)s"
+
+msgid "No exported aliases"
+msgstr "Brak eksportowanych aliasów"
+
+msgid "No aliases found"
+msgstr "Nie znaleziono aliasów"
+
+msgid "No user aliases"
+msgstr "Brak aliasów użytkownika"
+
+msgid "No system aliases"
+msgstr "Brak aliasów systemowych"
+
+msgid "Could not refresh user settings"
+msgstr "Nie można odświeżyć ustawień użytkownika"
+
+msgid "Could not save alias setting"
+msgstr "Nie można zapisać ustawienia aliasu"
+
+msgid "Alias setting saved, but export failed"
+msgstr "Zapisano ustawienie aliasu, ale eksport się nie powiódł"
+
+msgid "Could not save app command settings"
+msgstr "Nie można zapisać ustawień poleceń aplikacji"
+
+msgid "App command settings saved, but export failed"
+msgstr "Zapisano ustawienia poleceń aplikacji, ale eksport się nie powiódł"
+
+msgid "Could not open settings"
+msgstr "Nie można otworzyć ustawień"
+
+msgid "Could not export user commands"
+msgstr "Nie można wyeksportować poleceń użytkownika"
+
+msgid "User commands exported"
+msgstr "Wyeksportowano polecenia użytkownika"
+
+msgid "Settings"
+msgstr "Ustawienia"
+
+msgid "Default export"
+msgstr "Eksport domyślny"
+
+msgid "Export new commands by default"
+msgstr "Domyślnie eksportuj nowe polecenia"
+
+msgid "Applies to user commands, including commands from system apps."
+msgstr "Dotyczy poleceń użytkownika, w tym poleceń z aplikacji systemowych."
+
+msgid "Reset to factory defaults"
+msgstr "Przywróć ustawienia fabryczne"
+
+msgid "Restore the default export policy and clear app overrides."
+msgstr "Przywróć domyślne zasady eksportu i usuń nadpisania aplikacji."
+
+msgid "Reset"
+msgstr "Przywróć"
+
+msgid "Enabled app overrides"
+msgstr "Włączone nadpisania aplikacji"
+
+msgid "Disabled app overrides"
+msgstr "Wyłączone nadpisania aplikacji"
+
+msgid "Remove app override"
+msgstr "Usuń nadpisanie aplikacji"
+
+msgid "Could not save app override"
+msgstr "Nie można zapisać nadpisania aplikacji"
+
+msgid "App override saved, but export failed"
+msgstr "Zapisano nadpisanie aplikacji, ale eksport się nie powiódł"
+
+msgid "App override saved, but settings could not be refreshed"
+msgstr "Zapisano nadpisanie aplikacji, ale nie można odświeżyć ustawień"
+
+msgid "Could not load installed app refs"
+msgstr "Nie można wczytać referencji zainstalowanych aplikacji"
+
+msgid "Could not add app override"
+msgstr "Nie można dodać nadpisania aplikacji"
+
+msgid "No installed Flatpak apps with exported commands were found"
+msgstr "Nie znaleziono zainstalowanych aplikacji Flatpak z eksportowanymi poleceniami"
+
+msgid "Select an installed app"
+msgstr "Wybierz zainstalowaną aplikację"
+
+msgid "Cancel"
+msgstr "Anuluj"
+
+msgid "Selected"
+msgstr "Wybrano"
+
+msgid "Choose an app"
+msgstr "Wybierz aplikację"
+
+msgid "Set this override for all refs of an installed app."
+msgstr "Ustaw to nadpisanie dla wszystkich referencji zainstalowanej aplikacji."
+
+msgid "Add app override"
+msgstr "Dodaj nadpisanie aplikacji"
+
+msgid "Could not save default export setting"
+msgstr "Nie można zapisać domyślnego ustawienia eksportu"
+
+msgid "Default setting saved, but export failed"
+msgstr "Zapisano domyślne ustawienie, ale eksport się nie powiódł"
+
+msgid "Could not reset settings"
+msgstr "Nie można przywrócić ustawień"
+
+msgid "Settings reset, but export failed"
+msgstr "Przywrócono ustawienia, ale eksport się nie powiódł"
+
+msgid "Settings reset, but overrides could not be refreshed"
+msgstr "Przywrócono ustawienia, ale nie można odświeżyć nadpisań"
+
+msgid "Reset settings?"
+msgstr "Przywrócić ustawienia?"
+
+msgid "This restores the default export policy and clears app overrides. Alias-specific settings and custom aliases are not changed."
+msgstr "Przywróci to domyślne zasady eksportu i usunie nadpisania aplikacji. Ustawienia poszczególnych aliasów i własne aliasy nie zostaną zmienione."
+
+msgid "Could not confirm settings reset"
+msgstr "Nie można potwierdzić przywrócenia ustawień"
+
+msgid "Could not load app overrides"
+msgstr "Nie można wczytać nadpisań aplikacji"
+
+msgid "About"
+msgstr "Informacje"

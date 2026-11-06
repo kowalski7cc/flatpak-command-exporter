@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: flatpak-command-exporter\n"
+"PO-Revision-Date: 2026-11-06 17:00+0100\n"
+"Last-Translator: Flatpak Command Exporter contributors\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
+msgstr "GUIを使用するには、PyGObject、GTK 4、およびイントロスペクションデータがインストールされたlibadwaitaが必要です。"
+
+msgid "Exported Commands"
+msgstr "エクスポート済みコマンド"
+
+msgid "Export all user commands"
+msgstr "ユーザーコマンドをすべてエクスポート"
+
+msgid "Main Menu"
+msgstr "メインメニュー"
+
+msgid "Search apps and commands"
+msgstr "アプリとコマンドを検索"
+
+msgid "All apps"
+msgstr "すべてのアプリ"
+
+msgid "User apps"
+msgstr "ユーザーアプリ"
+
+msgid "System apps"
+msgstr "システムアプリ"
+
+msgid "Filter by Flatpak installation"
+msgstr "Flatpakのインストール先で絞り込む"
+
+#, python-format
+msgid "Show commands for %(app)s"
+msgstr "%(app)sのコマンドを表示"
+
+msgid "User"
+msgstr "ユーザー"
+
+msgid "System"
+msgstr "システム"
+
+#, python-format
+msgid "%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
+msgstr "%(app_id)s - %(branch)s (%(arch)s) - %(scope)sインストール"
+
+msgid "Enable or disable every exported command in this app"
+msgstr "このアプリのエクスポート済みコマンドをすべて有効または無効にする"
+
+#, python-format
+msgid "Export commands for %(app)s"
+msgstr "%(app)sのコマンドをエクスポート"
+
+#, python-format
+msgid "Export %(alias)s from %(app)s"
+msgstr "%(app)sの%(alias)sをエクスポート"
+
+msgid "No exported aliases"
+msgstr "エクスポート済みのエイリアスはありません"
+
+msgid "No aliases found"
+msgstr "エイリアスが見つかりません"
+
+msgid "No user aliases"
+msgstr "ユーザーエイリアスはありません"
+
+msgid "No system aliases"
+msgstr "システムエイリアスはありません"
+
+msgid "Could not refresh user settings"
+msgstr "ユーザー設定を更新できませんでした"
+
+msgid "Could not save alias setting"
+msgstr "エイリアスの設定を保存できませんでした"
+
+msgid "Alias setting saved, but export failed"
+msgstr "エイリアスの設定を保存しましたが、エクスポートに失敗しました"
+
+msgid "Could not save app command settings"
+msgstr "アプリのコマンド設定を保存できませんでした"
+
+msgid "App command settings saved, but export failed"
+msgstr "アプリのコマンド設定を保存しましたが、エクスポートに失敗しました"
+
+msgid "Could not open settings"
+msgstr "設定を開けませんでした"
+
+msgid "Could not export user commands"
+msgstr "ユーザーコマンドをエクスポートできませんでした"
+
+msgid "User commands exported"
+msgstr "ユーザーコマンドをエクスポートしました"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "Default export"
+msgstr "既定のエクスポート"
+
+msgid "Export new commands by default"
+msgstr "新しいコマンドを既定でエクスポート"
+
+msgid "Applies to user commands, including commands from system apps."
+msgstr "システムアプリのコマンドを含む、ユーザーコマンドに適用されます。"
+
+msgid "Reset to factory defaults"
+msgstr "初期設定に戻す"
+
+msgid "Restore the default export policy and clear app overrides."
+msgstr "既定のエクスポートポリシーに戻し、アプリごとの設定を消去します。"
+
+msgid "Reset"
+msgstr "リセット"
+
+msgid "Enabled app overrides"
+msgstr "有効なアプリごとの設定"
+
+msgid "Disabled app overrides"
+msgstr "無効なアプリごとの設定"
+
+msgid "Remove app override"
+msgstr "アプリごとの設定を削除"
+
+msgid "Could not save app override"
+msgstr "アプリごとの設定を保存できませんでした"
+
+msgid "App override saved, but export failed"
+msgstr "アプリごとの設定を保存しましたが、エクスポートに失敗しました"
+
+msgid "App override saved, but settings could not be refreshed"
+msgstr "アプリごとの設定を保存しましたが、設定を更新できませんでした"
+
+msgid "Could not load installed app refs"
+msgstr "インストール済みアプリの参照を読み込めませんでした"
+
+msgid "Could not add app override"
+msgstr "アプリごとの設定を追加できませんでした"
+
+msgid "No installed Flatpak apps with exported commands were found"
+msgstr "コマンドをエクスポートしたインストール済みFlatpakアプリが見つかりません"
+
+msgid "Select an installed app"
+msgstr "インストール済みアプリを選択"
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "Selected"
+msgstr "選択済み"
+
+msgid "Choose an app"
+msgstr "アプリを選択"
+
+msgid "Set this override for all refs of an installed app."
+msgstr "インストール済みアプリのすべての参照にこの設定を適用します。"
+
+msgid "Add app override"
+msgstr "アプリごとの設定を追加"
+
+msgid "Could not save default export setting"
+msgstr "既定のエクスポート設定を保存できませんでした"
+
+msgid "Default setting saved, but export failed"
+msgstr "既定の設定を保存しましたが、エクスポートに失敗しました"
+
+msgid "Could not reset settings"
+msgstr "設定をリセットできませんでした"
+
+msgid "Settings reset, but export failed"
+msgstr "設定をリセットしましたが、エクスポートに失敗しました"
+
+msgid "Settings reset, but overrides could not be refreshed"
+msgstr "設定をリセットしましたが、アプリごとの設定を更新できませんでした"
+
+msgid "Reset settings?"
+msgstr "設定をリセットしますか？"
+
+msgid "This restores the default export policy and clears app overrides. Alias-specific settings and custom aliases are not changed."
+msgstr "既定のエクスポートポリシーに戻し、アプリごとの設定を消去します。エイリアス固有の設定とカスタムエイリアスは変更されません。"
+
+msgid "Could not confirm settings reset"
+msgstr "設定のリセットを確認できませんでした"
+
+msgid "Could not load app overrides"
+msgstr "アプリごとの設定を読み込めませんでした"
+
+msgid "About"
+msgstr "このアプリについて"

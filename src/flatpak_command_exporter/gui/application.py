@@ -1,7 +1,9 @@
 import logging
 import os
 import sys
+from .accessibility import set_accessible_label, set_decorative
 from .data import _make_app_icon, get_project_details
+from .i18n import _
 from .menu import create_main_menu
 from .settings import show_settings
 
@@ -36,7 +38,7 @@ def main():
 		from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango
 	except (ImportError, ValueError) as error:
 		raise SystemExit(
-			"The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
+			_("The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed.")
 		) from error
 
 	from ..api import FlatpakCommandExporter
@@ -107,26 +109,36 @@ def main():
 
 			toolbar = Adw.ToolbarView()
 			header = Adw.HeaderBar()
-			header.set_title_widget(Adw.WindowTitle(title="Exported Commands", subtitle=None))
+			header.set_title_widget(Adw.WindowTitle(title=_("Exported Commands"), subtitle=None))
 			export_button = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
-			export_button.set_tooltip_text("Export all user commands")
+			export_button.set_tooltip_text(_("Export all user commands"))
+			set_accessible_label(
+				export_button, Gtk, _("Export all user commands")
+			)
 
 			menu_model = create_main_menu(Gio)
 			menu_button = Gtk.MenuButton()
 			menu_button.set_icon_name("open-menu-symbolic")
 			menu_button.set_menu_model(menu_model)
-			menu_button.set_tooltip_text("Main Menu")
+			menu_button.set_tooltip_text(_("Main Menu"))
+			set_accessible_label(menu_button, Gtk, _("Main Menu"))
 			header.pack_end(menu_button)
 			header.pack_end(export_button)
 			search_entry = Gtk.SearchEntry()
-			search_entry.set_placeholder_text("Search apps and commands")
+			search_entry.set_placeholder_text(_("Search apps and commands"))
+			set_accessible_label(
+				search_entry, Gtk, _("Search apps and commands")
+			)
 			search_entry.set_hexpand(True)
 			search_entry.set_size_request(-1, 40)
 			scope_filter = Gtk.DropDown.new_from_strings(
-				["All apps", "User apps", "System apps"]
+				[_("All apps"), _("User apps"), _("System apps")]
 			)
 			scope_filter.set_size_request(-1, 40)
-			scope_filter.set_tooltip_text("Filter by Flatpak installation")
+			scope_filter.set_tooltip_text(_("Filter by Flatpak installation"))
+			set_accessible_label(
+				scope_filter, Gtk, _("Filter by Flatpak installation")
+			)
 			toolbar.add_top_bar(header)
 
 			list_box = Gtk.ListBox()
@@ -168,15 +180,21 @@ def main():
 			for group in app_groups.values():
 				record = group["record"]
 				command_records = [
-					command_record for _, command_record in group["records"]
+					command_record for _key, command_record in group["records"]
 				]
 				row = Gtk.ListBoxRow()
 				row.set_selectable(False)
 				row.set_activatable(False)
 				expander = Gtk.Expander()
 				expander.set_expanded(False)
+				set_accessible_label(
+					expander,
+					Gtk,
+					_("Show commands for %(app)s") % {"app": record.app_name},
+				)
 
 				app_icon = _make_app_icon(record, Gtk, Gdk, GLib, icon_theme)
+				set_decorative(app_icon, Gtk)
 				app_icon.set_pixel_size(48)
 
 				labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -185,10 +203,19 @@ def main():
 				title = Gtk.Label(label=record.app_name)
 				title.set_xalign(0)
 				title.add_css_class("heading")
-				subtitle_text = (
-					f"{record.app_id} - {record.branch} ({record.arch}) - "
-					f"{record.installation_scope.capitalize()} installation"
+				scope_name = (
+					_("User")
+					if record.installation_scope == "user"
+					else _("System")
 				)
+				subtitle_text = _(
+					"%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
+				) % {
+					"app_id": record.app_id,
+					"branch": record.branch,
+					"arch": record.arch,
+					"scope": scope_name,
+				}
 				subtitle = Gtk.Label(label=subtitle_text)
 				subtitle.set_xalign(0)
 				subtitle.add_css_class("dim-label")
@@ -212,7 +239,12 @@ def main():
 				app_switch.set_active(app_setting)
 				app_switch.set_valign(Gtk.Align.CENTER)
 				app_switch.set_tooltip_text(
-					"Enable or disable every exported command in this app"
+					_("Enable or disable every exported command in this app")
+				)
+				set_accessible_label(
+					app_switch,
+					Gtk,
+					_("Export commands for %(app)s") % {"app": record.app_name},
 				)
 				header.append(app_switch)
 				app_switches.append((
@@ -227,7 +259,7 @@ def main():
 				)
 				command_list.set_margin_start(64)
 				row._command_rows = []
-				for _, command_record in group["records"]:
+				for _key, command_record in group["records"]:
 					command_row = Gtk.Box(
 						orientation=Gtk.Orientation.HORIZONTAL, spacing=12
 					)
@@ -261,6 +293,14 @@ def main():
 					)
 					alias_switch.set_valign(Gtk.Align.CENTER)
 					alias_switch.set_sensitive(True)
+					set_accessible_label(
+						alias_switch,
+						Gtk,
+						_("Export %(alias)s from %(app)s") % {
+							"alias": command_record.alias,
+							"app": record.app_name,
+						},
+					)
 					command_row.append(alias_switch)
 					alias_switches.append((alias_switch, command_record))
 					command_list.append(command_row)
@@ -293,7 +333,7 @@ def main():
 
 			empty_page = Adw.StatusPage(
 				icon_name="application-x-executable-symbolic",
-				title="No exported aliases",
+				title=_("No exported aliases"),
 			)
 			stack = Gtk.Stack()
 			stack.add_named(scroller, "list")
@@ -347,12 +387,12 @@ def main():
 					stack.set_visible_child_name("list")
 				else:
 					if query:
-						empty_page.set_title("No aliases found")
+						empty_page.set_title(_("No aliases found"))
 					else:
 						empty_page.set_title({
-							"all": "No exported aliases",
-							"user": "No user aliases",
-							"system": "No system aliases",
+							"all": _("No exported aliases"),
+							"user": _("No user aliases"),
+							"system": _("No system aliases"),
 						}[selected_scope])
 					stack.set_visible_child_name("empty")
 
@@ -426,7 +466,7 @@ def main():
 				try:
 					update_user_control_widgets()
 				except (OSError, ValueError) as error:
-					report_error("Could not refresh user settings", error)
+					report_error(_("Could not refresh user settings"), error)
 
 			for alias_switch, record in alias_switches:
 				handler_id = [None]
@@ -448,14 +488,14 @@ def main():
 						toggle.handler_block(handler_id[0])
 						toggle.set_active(saved_state[0])
 						toggle.handler_unblock(handler_id[0])
-						report_error("Could not save alias setting", error)
+						report_error(_("Could not save alias setting"), error)
 						return
 
 					saved_state[0] = requested_state
 					try:
 						exporter.export_commands()
 					except (OSError, ValueError, GLib.Error) as error:
-						report_error("Alias setting saved, but export failed", error)
+						report_error(_("Alias setting saved, but export failed"), error)
 					refresh_user_controls()
 
 				handler_id[0] = alias_switch.connect(
@@ -500,7 +540,7 @@ def main():
 						toggle.handler_block(handler_id[0])
 						toggle.set_active(saved_state[0])
 						toggle.handler_unblock(handler_id[0])
-						report_error("Could not save app command settings", error)
+						report_error(_("Could not save app command settings"), error)
 						return
 
 					saved_state[0] = requested_state
@@ -508,7 +548,7 @@ def main():
 						exporter.export_commands()
 					except (OSError, ValueError, GLib.Error) as error:
 						report_error(
-							"App command settings saved, but export failed",
+							_("App command settings saved, but export failed"),
 							error,
 						)
 					refresh_user_controls()
@@ -548,7 +588,7 @@ def main():
 						icon_theme,
 					)
 				except (OSError, ValueError, GLib.Error) as error:
-					report_error("Could not open settings", error)
+					report_error(_("Could not open settings"), error)
 
 			self.remove_action("settings")
 			settings_action = Gio.SimpleAction.new("settings", None)
@@ -559,9 +599,9 @@ def main():
 				try:
 					exporter.export_commands()
 				except (OSError, ValueError, GLib.Error) as error:
-					report_error("Could not export user commands", error)
+					report_error(_("Could not export user commands"), error)
 				else:
-					toast_overlay.add_toast(Adw.Toast.new("User commands exported"))
+					toast_overlay.add_toast(Adw.Toast.new(_("User commands exported")))
 
 			export_button.connect("clicked", export_user_commands)
 			window.present()
