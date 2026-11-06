@@ -78,12 +78,16 @@ new integrations should import the public types from the package root or
 a system-installed ref with the same app ID in `get_exported_aliases()`.
 
 `get_command_groups()` accepts an optional app ID filter and keyword options.
-For example, restrict discovery to user-installed refs:
+The default includes user and system refs, with user refs taking priority when
+the same app ID, architecture, and branch are installed in both scopes. Use
+`scope`, `arch`, or `branch` to narrow discovery. For example, restrict
+discovery to user-installed refs:
 
 ```python
 groups = exporter.get_command_groups(
     "org.gimp.GIMP",
     include_system=False,
+    branch="stable",
 )
 ```
 

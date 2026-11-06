@@ -49,10 +49,16 @@ class FlatpakCommandExporter:
         first_only: bool = False,
         scope: str | None = None,
         system: bool = False,
+        arch: str | None = None,
+        branch: str | None = None,
     ) -> list[CommandGroup]:
         if scope is None and not system:
             return get_command_groups(
-                app_id, include_system=include_system, first_only=first_only
+                app_id,
+                include_system=include_system,
+                first_only=first_only,
+                arch=arch,
+                branch=branch,
             )
         return get_command_groups(
             app_id,
@@ -60,6 +66,8 @@ class FlatpakCommandExporter:
             first_only=first_only,
             scope=scope,
             system=system,
+            arch=arch,
+            branch=branch,
         )
 
     def export_commands(self) -> None:

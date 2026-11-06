@@ -59,35 +59,27 @@ def main():
 				global_export_settings.global_default_scope()
 			]
 			all_records = exporter.get_exported_aliases()
-			system_records = exporter.get_exported_aliases(scope="system")
 			row_records = {}
 			row_scopes = {}
 			for record in all_records:
 				key = (
 					record.installation_scope,
 					record.app_id,
+					record.arch,
+					record.branch,
 					record.alias,
 				)
 				row_records[key] = record
 				row_scopes.setdefault(key, set()).add("all")
-				if record.installation_scope == "user":
-					row_scopes[key].add("user")
-			for record in system_records:
-				key = (
-					record.installation_scope,
-					record.app_id,
-					record.alias,
-				)
-				row_records.setdefault(key, record)
-				row_scopes.setdefault(key, set()).add("system")
+				row_scopes[key].add(record.installation_scope)
 			records = sorted(
 				row_records.items(),
 				key=lambda item: (
 					item[1].app_name.casefold(),
 					item[1].app_id.casefold(),
-					item[1].alias.casefold(),
 					item[1].branch.casefold(),
 					item[1].arch.casefold(),
+					item[1].alias.casefold(),
 					item[1].installation_scope,
 				),
 			)
@@ -152,7 +144,12 @@ def main():
 			app_switches = []
 			app_groups = {}
 			for key, record in records:
-				group_key = (record.app_id, record.installation_scope)
+				group_key = (
+					record.app_id,
+					record.installation_scope,
+					record.branch,
+					record.arch,
+				)
 				if group_key not in app_groups:
 					app_groups[group_key] = {
 						"record": record,

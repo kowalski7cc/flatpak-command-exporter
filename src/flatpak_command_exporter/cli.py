@@ -86,47 +86,24 @@ def main():
         if args.command == "export":
             exporter.export_commands()
         elif args.command == "list":
-            if args.all:
-                if args.system or args.user:
-                    groups = exporter.get_command_groups(
-                        args.app_id,
-                        include_system=False,
-                        scope="system" if args.system else "user",
-                    )
-                else:
-                    groups = exporter.get_command_groups(args.app_id)
-                if not groups:
-                    if args.app_id is None:
-                        print("No installed Flatpak application refs found.")
-                    else:
-                        print(f"Flatpak application {args.app_id} not found.")
-                else:
-                    _print_command_groups(groups, args.complete)
-                logging.info("Listed %d Flatpak application refs", len(groups))
-            elif args.app_id is None:
+            if args.app_id is None and not args.all:
                 list_parser.error("app_id is required unless --all is specified")
+            if args.system or args.user:
+                groups = exporter.get_command_groups(
+                    args.app_id,
+                    include_system=False,
+                    scope="system" if args.system else "user",
+                )
             else:
-                if args.system or args.user:
-                    groups = exporter.get_command_groups(
-                        args.app_id,
-                        include_system=False,
-                        first_only=True,
-                        scope="system" if args.system else "user",
-                    )
+                groups = exporter.get_command_groups(args.app_id)
+            if not groups:
+                if args.app_id is None:
+                    print("No installed Flatpak application refs found.")
                 else:
-                    groups = exporter.get_command_groups(
-                        args.app_id, include_system=False, first_only=True
-                    )
-                if not groups:
                     print(f"Flatpak application {args.app_id} not found.")
-                else:
-                    group = groups[0]
-                    print(f"Exported commands for {group.app_name} ({group.app_id}):")
-                    if group.commands:
-                        for alias, command in group.commands.items():
-                            print(f"- {alias} -> {command}" if args.complete else f"- {alias}")
-                    else:
-                        print(f"No exported commands found for {args.app_id}.")
+            else:
+                _print_command_groups(groups, args.complete)
+            logging.info("Listed %d Flatpak application refs", len(groups))
         elif args.command in {"enable", "disable"}:
             if args.all and args.export is not None:
                 parser.error("--all cannot be combined with an alias")

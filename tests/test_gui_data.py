@@ -9,6 +9,7 @@ from unittest.mock import patch
 from flatpak_command_exporter import FlatpakCommandExporter
 from flatpak_command_exporter.api import discovery as core
 from flatpak_command_exporter.api import exporter as api_exporter
+from flatpak_command_exporter.api.refs import _InstalledRef
 from flatpak_command_exporter.gui import (
     find_desktop_file,
     get_exported_icon,
@@ -40,20 +41,15 @@ class AliasDataTests(unittest.TestCase):
             Ref("app.override", "beta"),
             Ref("app.system-only"),
         ]
-        user_installation = SimpleNamespace(
-            get_path=lambda: SimpleNamespace(get_path=lambda: "/user"),
-            get_current_installed_app=lambda app_id, _cancellable: user_refs[-1],
-        )
-        system_installation = SimpleNamespace(
-            get_path=lambda: SimpleNamespace(get_path=lambda: "/system"),
-            get_current_installed_app=lambda app_id, _cancellable: next(
-                ref for ref in system_refs if ref.get_name() == app_id
+        user_installation = SimpleNamespace()
+        system_installation = SimpleNamespace()
+        installed_refs = [
+            *(
+                _InstalledRef(ref, user_installation, "/user", "user")
+                for ref in user_refs
             ),
-        )
-        installation_api = SimpleNamespace(
-            new_user=lambda: user_installation,
-            new_system=lambda: system_installation,
-        )
+            _InstalledRef(system_refs[-1], system_installation, "/system", "system"),
+        ]
 
         def load_manifest(path, app_id, _arch, branch):
             return {"x-export-commands": {f"{app_id}-{path}-{branch}": "command"}}
@@ -61,11 +57,10 @@ class AliasDataTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as data_home:
             with (
                 patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
-                patch.object(core, "Flatpak", SimpleNamespace(Installation=installation_api)),
                 patch.object(
                     core,
-                    "find_refs",
-                    side_effect=lambda installation: user_refs if installation is user_installation else system_refs,
+                    "_get_installed_refs",
+                    return_value=installed_refs,
                 ),
                 patch.object(core, "_read_manifest_or_empty", side_effect=load_manifest),
                 patch.object(core, "load_metainfo", return_value=None),
@@ -83,6 +78,7 @@ class AliasDataTests(unittest.TestCase):
                 for record in records
             ],
             [
+                ("app.override", "stable", "/user", "user"),
                 ("app.override", "beta", "/user", "user"),
                 ("app.system-only", "stable", "/system", "system"),
             ],
@@ -113,22 +109,13 @@ class AliasDataTests(unittest.TestCase):
                 return "stable"
 
         ref = Ref()
-        installation = SimpleNamespace(
-            get_path=lambda: SimpleNamespace(get_path=lambda: "/system"),
-            get_current_installed_app=lambda _app_id, _cancellable: ref,
-        )
-        installation_api = SimpleNamespace(new_system=lambda: installation)
+        installed_ref = _InstalledRef(ref, SimpleNamespace(), "/system", "system")
         with tempfile.TemporaryDirectory() as data_home:
             config = core.AliasConfig(data_home, scope="system")
             config.set_default_policy("none")
             config.set_custom_alias("app.system", "custom", "custom-command")
             with (
-                patch.object(
-                    core,
-                    "Flatpak",
-                    SimpleNamespace(Installation=installation_api),
-                ),
-                patch.object(core, "find_refs", return_value=[ref]),
+                patch.object(core, "_get_installed_refs", return_value=[installed_ref]),
                 patch.object(
                     core,
                     "_read_manifest_or_empty",

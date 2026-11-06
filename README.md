@@ -178,11 +178,15 @@ The supported commands are `flatshell` for the CLI and `flatlink` for the GUI.
 ### Inspect and export
 
 ```console
-# List aliases for a particular user-installed app
+# List refs for an app across user and system installations
 flatshell list org.gimp.GIMP
 
 # List aliases for all discovered user and system refs
 flatshell list --all
+
+# Limit listing to refs in one installation
+flatshell list --all --user
+flatshell list --all --system
 
 # Include the Flatpak command behind each alias
 flatshell list --all --complete
