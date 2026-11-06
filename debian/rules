@@ -15,4 +15,4 @@ override_dh_auto_build:
 	$(MAKE) completion
 
 override_dh_installsystemd:
-	dh_installsystemd -pflatpak-command-exporter flatpak-command-exporter-system.path
+	dh_installsystemd -pflatpak-command-exporter flatpak-command-exporter-system.timer

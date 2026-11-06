@@ -59,12 +59,12 @@ install -Dpm 0644 resources/xyz.kowalski7cc.FlatpakCommandExporter.service \
     %{buildroot}%{_datadir}/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service
 install -Dpm 0644 resources/xyz.kowalski7cc.flatpak-command-exporter.policy \
     %{buildroot}%{_datadir}/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy
-install -Dpm 0644 resources/flatpak-command-exporter-system.path \
-    %{buildroot}%{_unitdir}/flatpak-command-exporter-system.path
+install -Dpm 0644 resources/flatpak-command-exporter-system.timer \
+    %{buildroot}%{_unitdir}/flatpak-command-exporter-system.timer
 install -Dpm 0644 resources/flatpak-command-exporter-system.service \
     %{buildroot}%{_unitdir}/flatpak-command-exporter-system.service
-install -Dpm 0644 resources/flatpak-command-exporter-user.path \
-    %{buildroot}%{_userunitdir}/flatpak-command-exporter-user.path
+install -Dpm 0644 resources/flatpak-command-exporter-user.timer \
+    %{buildroot}%{_userunitdir}/flatpak-command-exporter-user.timer
 install -Dpm 0644 resources/flatpak-command-exporter-user.service \
     %{buildroot}%{_userunitdir}/flatpak-command-exporter-user.service
 install -Dpm 0644 resources/flatpak-command-exporter-system.preset \
@@ -76,16 +76,16 @@ install -Dpm 0644 resources/flatpak-command-exporter-user.preset \
 PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 
 %post
-%systemd_post flatpak-command-exporter-system.path
-%systemd_user_post flatpak-command-exporter-user.path
+%systemd_post flatpak-command-exporter-system.timer
+%systemd_user_post flatpak-command-exporter-user.timer
 
 %preun
-%systemd_preun flatpak-command-exporter-system.path
-%systemd_user_preun flatpak-command-exporter-user.path
+%systemd_preun flatpak-command-exporter-system.timer
+%systemd_user_preun flatpak-command-exporter-user.timer
 
 %postun
-%systemd_postun flatpak-command-exporter-system.path
-%systemd_user_postun flatpak-command-exporter-user.path
+%systemd_postun flatpak-command-exporter-system.timer
+%systemd_user_postun flatpak-command-exporter-user.timer
 
 %files -f %{pyproject_files}
 %doc README.md
@@ -102,10 +102,10 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %config(noreplace) %{_sysconfdir}/profile.d/flatpak-exported-commands.sh
 %{_datadir}/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service
 %{_datadir}/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy
-%{_unitdir}/flatpak-command-exporter-system.path
+%{_unitdir}/flatpak-command-exporter-system.timer
 %{_unitdir}/flatpak-command-exporter-system.service
 %{_prefix}/lib/systemd/system-preset/80-flatpak-command-exporter.preset
-%{_userunitdir}/flatpak-command-exporter-user.path
+%{_userunitdir}/flatpak-command-exporter-user.timer
 %{_userunitdir}/flatpak-command-exporter-user.service
 %{_prefix}/lib/systemd/user-preset/80-flatpak-command-exporter.preset
 

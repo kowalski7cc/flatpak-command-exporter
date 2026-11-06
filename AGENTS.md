@@ -19,8 +19,8 @@ intentional, and update this guide when the project conventions change.
   launcher. Export public library types from `__init__.py`.
 - CLI and GUI entry points are declared in `pyproject.toml`. Debian package
   contents are controlled by files in `debian/`; RPM contents are controlled
-  by `flatpak-command-exporter.spec`. Profile integration and systemd watcher
-  units live in `resources/`.
+  by `flatpak-command-exporter.spec`. Profile integration and systemd refresh
+  timer/service units live in `resources/`.
 - The established application ID and icon prefix is
   `xyz.kowalski7cc`. Preserve it for application identity and installed
   resource names.
@@ -37,9 +37,9 @@ intentional, and update this guide when the project conventions change.
   paths from the default system Flatpak installation returned by
   `Flatpak.Installation.new_system()`: aliases are stored in its `aliases/`
   directory and system launchers in the sibling `<installation>-commands`
-  directory (normally `/var/lib/flatpak-commands`). Route system mutations
-  through the root-owned system-bus helper and authorize each operation with
-  PolicyKit.
+  directory (normally `/var/lib/flatpak-commands`). System-scope CLI mutations
+  require elevated filesystem permissions; Flatlink only changes user
+  configuration.
 - System-wide command export is disabled by default. User launcher directories
   must precede system launcher directories on `PATH`; a disabled user alias
   masks an enabled system launcher of the same name.
@@ -64,15 +64,12 @@ intentional, and update this guide when the project conventions change.
   `make completion`; keep `shtab` as a build-time dependency only. Debian and
   RPM packages install the generated file under
   `/usr/share/bash-completion/completions/`.
-- Keep the system and user Flatpak watchers strictly scoped: the system unit
-  must refresh system exports only, and the user unit must refresh that user's
-  exports only. The system service runs as root through the direct
-  `system_export` entry point; do not route it through the interactive
-  PolicyKit CLI.
-- Treat path-unit coverage as best-effort. The units watch default Flatpak
-  exported directories non-recursively; update the units, package manifests,
-  documentation, and `tests/test_systemd_units.py` together if watch paths or
-  unit behavior change.
+- Keep system and user Flatpak refresh timers strictly scoped: the system
+  service must refresh system exports only, and the user service must refresh
+  that user's exports only. The system service runs as root through the direct
+  `system_export` entry point.
+- Keep timer schedules, unit files, package manifests, documentation, and
+  `tests/test_systemd_units.py` synchronized when changing refresh behavior.
 
 ## Tests and verification
 
@@ -99,8 +96,8 @@ intentional, and update this guide when the project conventions change.
   the Python `shtab` package before running `make completion`.
 
 - Validate systemd unit files with `systemd-analyze verify` when changing the
-  watcher units. RPM packaging uses systemd RPM macros and presets; build it
-  with `make rpm` where `rpmbuild` is available.
+  timer or service units. RPM packaging uses systemd RPM macros and presets;
+  build it with `make rpm` where `rpmbuild` is available.
 
 - Run `git diff --check` before finishing. Mention any validation that could
   not be run and why.

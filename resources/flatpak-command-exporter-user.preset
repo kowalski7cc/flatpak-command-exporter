@@ -1,1 +1,1 @@
-enable flatpak-command-exporter-user.path
+enable flatpak-command-exporter-user.timer

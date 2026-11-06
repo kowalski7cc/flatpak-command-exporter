@@ -8,42 +8,47 @@ RESOURCES = Path(__file__).parents[1] / "resources"
 
 
 class SystemdUnitTests(unittest.TestCase):
-    def test_system_watcher_is_limited_to_system_flatpak_exports(self):
-        path_unit = (RESOURCES / "flatpak-command-exporter-system.path").read_text(
-            encoding="utf-8"
-        )
+    def test_system_timer_runs_after_boot_and_daily(self):
+        timer_unit = (
+            RESOURCES / "flatpak-command-exporter-system.timer"
+        ).read_text(encoding="utf-8")
         service_unit = (
             RESOURCES / "flatpak-command-exporter-system.service"
         ).read_text(encoding="utf-8")
 
+        self.assertIn("OnBootSec=15min", timer_unit)
+        self.assertIn("OnUnitActiveSec=1d", timer_unit)
         self.assertIn(
-            "PathChanged=/var/lib/flatpak/exports/share/applications",
-            path_unit,
+            "Unit=flatpak-command-exporter-system.service",
+            timer_unit,
         )
-        self.assertNotIn("%h/", path_unit)
+        self.assertIn("WantedBy=timers.target", timer_unit)
         self.assertIn(
             "ExecStart=/usr/bin/python3 -m flatpak_command_exporter.system_export",
             service_unit,
         )
-        self.assertNotIn("ExecStart=/usr/bin/flatshell export\n", service_unit)
+        self.assertNotIn("ExecStart=/usr/bin/flatshell export", service_unit)
+        self.assertNotIn("--user", service_unit)
 
-    def test_user_watcher_is_limited_to_user_flatpak_exports(self):
-        path_unit = (RESOURCES / "flatpak-command-exporter-user.path").read_text(
-            encoding="utf-8"
-        )
+    def test_user_timer_runs_after_boot_and_daily_for_user_exports(self):
+        timer_unit = (
+            RESOURCES / "flatpak-command-exporter-user.timer"
+        ).read_text(encoding="utf-8")
         service_unit = (
             RESOURCES / "flatpak-command-exporter-user.service"
         ).read_text(encoding="utf-8")
 
+        self.assertIn("OnBootSec=15min", timer_unit)
+        self.assertIn("OnUnitActiveSec=1d", timer_unit)
+        self.assertIn("Unit=flatpak-command-exporter-user.service", timer_unit)
+        self.assertIn("WantedBy=timers.target", timer_unit)
         self.assertIn(
-            "PathChanged=%h/.local/share/flatpak/exports/share/applications",
-            path_unit,
+            "ExecStart=/usr/bin/flatshell export --user\n",
+            service_unit,
         )
-        self.assertNotIn("/var/lib/flatpak/", path_unit)
-        self.assertIn("ExecStart=/usr/bin/flatshell export --user\n", service_unit)
         self.assertNotIn("--system", service_unit)
 
-    def test_scope_units_are_enabled_by_package_presets(self):
+    def test_scope_timers_are_enabled_by_package_presets(self):
         system_preset = (
             RESOURCES / "flatpak-command-exporter-system.preset"
         ).read_text(encoding="utf-8")
@@ -53,11 +58,11 @@ class SystemdUnitTests(unittest.TestCase):
 
         self.assertEqual(
             system_preset.strip(),
-            "enable flatpak-command-exporter-system.path",
+            "enable flatpak-command-exporter-system.timer",
         )
         self.assertEqual(
             user_preset.strip(),
-            "enable flatpak-command-exporter-user.path",
+            "enable flatpak-command-exporter-user.timer",
         )
 
     def test_system_service_entrypoint_exports_only_system_scope(self):

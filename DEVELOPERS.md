@@ -163,25 +163,21 @@ custom user data directory should be used.
 
 ### Automatic Flatpak export refresh
 
-The Debian and RPM packages install separate systemd path/service pairs for
+The Debian and RPM packages install separate systemd timer/service pairs for
 the default Flatpak installations:
 
-- `flatpak-command-exporter-system.path` watches system Flatpak exports under
-  `/var/lib/flatpak/exports/`. Its service runs the direct
-  `flatpak_command_exporter.system_export` entry point as root, which exports
+- `flatpak-command-exporter-system.timer` starts its service 15 minutes after
+  boot and once per day thereafter. The service runs the direct
+  `flatpak_command_exporter.system_export` entry point as root and exports
   system-installed apps only.
-- `flatpak-command-exporter-user.path` watches each user's exports under
-  `~/.local/share/flatpak/exports/`. Its service runs `flatshell export` in
-  that user's session, which exports user-installed apps only.
+- `flatpak-command-exporter-user.timer` uses the same schedule. Its service
+  runs `flatshell export --user` in that user's session and refreshes only that
+  user's launchers.
 
-Both path units are enabled by default by Debian/RPM packaging. The service
-adds a short delay to coalesce events during transactions. Path units monitor
-direct filesystem changes, not recursive changes, so this is best-effort and
-does not cover custom installation paths or a non-default `XDG_DATA_HOME`.
-Keep the unit files, Debian and RPM install/enablement rules, and the scope
-regression tests synchronized when changing this integration. The system
-export service must use the direct system-scope API rather than invoking the
-interactive CLI/PolicyKit route.
+Both timers are enabled by default by Debian/RPM packaging. Keep the timer and
+service files, Debian and RPM install/enablement rules, and scope regression
+tests synchronized when changing this integration. The system export service
+must use the direct system-scope API rather than the interactive CLI.
 
 ## Shell CLI
 
@@ -192,17 +188,16 @@ flatshell list --all
 flatshell list org.gimp.GIMP
 flatshell list --all --complete
 
-flatshell config default-export none
-flatshell enable org.gimp.GIMP gimp
-flatshell disable org.gimp.GIMP
+flatshell config default-export none --user
+flatshell enable org.gimp.GIMP gimp --user
+flatshell disable org.gimp.GIMP --user
 
-flatshell add org.gimp.GIMP my-gimp gimp
-flatshell add --system org.example.App my-command command
-flatshell remove org.gimp.GIMP my-gimp
-flatshell export
-flatshell export --system
+flatshell add org.gimp.GIMP my-gimp gimp --user
+flatshell remove org.gimp.GIMP my-gimp --user
+flatshell export --user
+sudo flatshell export
 flatshell install-profile --user
-flatshell install-profile --system
+sudo flatshell install-profile --system
 ```
 
 Use `flatshell --help` and `flatshell COMMAND --help` for current command

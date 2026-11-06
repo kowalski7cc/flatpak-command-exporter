@@ -4,6 +4,7 @@ usr/lib/python3.*/dist-packages/flatpak_command_exporter/__init__.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/__main__.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/application.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/cli_parser.py
+usr/lib/python3.*/dist-packages/flatpak_command_exporter/api/
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/cli.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/defaults.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/config.py
@@ -16,8 +17,8 @@ usr/lib/python3.*/dist-packages/flatpak_command_exporter-*.dist-info
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/flatpak-exported-commands.sh etc/profile.d/
 resources/xyz.kowalski7cc.flatpak-command-exporter.policy usr/share/polkit-1/actions/
 resources/xyz.kowalski7cc.FlatpakCommandExporter.service usr/share/dbus-1/system-services/
-resources/flatpak-command-exporter-system.path usr/lib/systemd/system/
+resources/flatpak-command-exporter-system.timer usr/lib/systemd/system/
 resources/flatpak-command-exporter-system.service usr/lib/systemd/system/
-resources/flatpak-command-exporter-user.path usr/lib/systemd/user/
+resources/flatpak-command-exporter-user.timer usr/lib/systemd/user/
 resources/flatpak-command-exporter-user.service usr/lib/systemd/user/
 resources/flatpak-command-exporter-user.preset usr/lib/systemd/user-preset/

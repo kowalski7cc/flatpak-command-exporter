@@ -42,12 +42,12 @@ EOF
         "$pkgdir/usr/share/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service"
     install -Dm644 resources/xyz.kowalski7cc.flatpak-command-exporter.policy \
         "$pkgdir/usr/share/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy"
-    install -Dm644 resources/flatpak-command-exporter-system.path \
-        "$pkgdir/usr/lib/systemd/system/flatpak-command-exporter-system.path"
+    install -Dm644 resources/flatpak-command-exporter-system.timer \
+        "$pkgdir/usr/lib/systemd/system/flatpak-command-exporter-system.timer"
     install -Dm644 resources/flatpak-command-exporter-system.service \
         "$pkgdir/usr/lib/systemd/system/flatpak-command-exporter-system.service"
-    install -Dm644 resources/flatpak-command-exporter-user.path \
-        "$pkgdir/usr/lib/systemd/user/flatpak-command-exporter-user.path"
+    install -Dm644 resources/flatpak-command-exporter-user.timer \
+        "$pkgdir/usr/lib/systemd/user/flatpak-command-exporter-user.timer"
     install -Dm644 resources/flatpak-command-exporter-user.service \
         "$pkgdir/usr/lib/systemd/user/flatpak-command-exporter-user.service"
     install -Dm644 resources/flatpak-command-exporter-system.preset \

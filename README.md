@@ -29,7 +29,7 @@ aliases in a graphical interface.
 - Add your own aliases for commands inside user- or system-installed Flatpaks.
 - Search and toggle apps and aliases in Flatlink.
 - Refresh user command exports from Flatlink after installing an app.
-- Automatically refresh user and system exports when Flatpak changes app exports.
+- Periodically refresh user and system exports with scope-specific systemd timers.
 - Keep generated launchers on your `PATH` using the included profile script.
 
 ## Quick start
@@ -108,12 +108,12 @@ make apk
 
 The resulting `.pkg.tar.zst` packages are written to the repository root.
 Install the core package and, if desired, the GUI package with `pacman -U`.
-The PKGBUILD installs the system and user systemd watcher units and their
-presets. Enable the watchers for the scopes you want:
+The PKGBUILD installs the system and user systemd timer units and their
+presets. Enable the timers for the scopes you want:
 
 ```console
-sudo systemctl enable --now flatpak-command-exporter-system.path
-systemctl --user enable --now flatpak-command-exporter-user.path
+sudo systemctl enable --now flatpak-command-exporter-system.timer
+systemctl --user enable --now flatpak-command-exporter-user.timer
 ```
 
 ### Development containers
@@ -130,48 +130,41 @@ includes `base-devel`, `namcap`, and `python-shtab` for `make apk`.
 - Flatpak and Python 3.13 or newer.
 - PyGObject and the Flatpak GObject introspection bindings for the CLI and
   exporter.
-- systemd for automatic export refresh when Flatpak application exports change.
-- System-scope operations use the system D-Bus and Polkit; the Debian, Fedora,
-  and Arch core packages install the service and its authorization policy.
+- systemd for periodic export refresh.
+- System-scope CLI operations require elevated filesystem permissions. Debian,
+  Fedora, and Arch packages install separate system and user refresh timers.
 - GTK 4, libadwaita, and their introspection data to run Flatlink.
 
 ### Automatic export refresh
 
-The Debian and RPM packages install and enable separate systemd path watchers
-for the default system and per-user Flatpak installations. The system watcher
-runs a privileged system-scope export as root and only monitors
-`/var/lib/flatpak/exports/`. Each user's watcher runs `flatshell export` as that
-user and only monitors
-`~/.local/share/flatpak/exports/`. A short delay coalesces bursts of export
-changes during Flatpak transactions. Arch packages install the same units and
-presets; enable the watchers manually as described in the Arch Linux
-installation section.
+The Debian and RPM packages install and enable separate systemd timers for the
+default system and per-user Flatpak installations. Each timer first runs 15
+minutes after boot and then once per day. The system service runs the direct
+system-scope export as root; each user's service runs `flatshell export --user`
+in that user's session. Each service refreshes only its own scope. Arch
+packages install the same timer units and presets; enable the timers manually
+as described in the Arch Linux installation section.
 
-The watchers observe direct changes in Flatpak's exported application,
-metadata, MIME, and service directories. systemd path units are not recursive,
-so this is best-effort: apps without files in those locations, nested icon-only
-changes, custom Flatpak installation locations, and a non-default
-`XDG_DATA_HOME` may not trigger a refresh. The watchers do not monitor one
-scope to refresh the other.
-
-To disable the system watcher:
+The timers refresh periodically rather than reacting to individual Flatpak
+changes, so a newly installed app may not be exported until the next scheduled
+refresh. To disable the system timer:
 
 ```console
-sudo systemctl disable --now flatpak-command-exporter-system.path
+sudo systemctl disable --now flatpak-command-exporter-system.timer
 ```
 
-To disable the per-user watcher (the package enables it by default for user
+To disable the per-user timer (the package enables it by default for user
 sessions):
 
 ```console
-systemctl --user mask --now flatpak-command-exporter-user.path
+systemctl --user mask --now flatpak-command-exporter-user.timer
 ```
 
-Undo the user mask and start watching again with:
+Undo the user mask and start the timer again with:
 
 ```console
-systemctl --user unmask flatpak-command-exporter-user.path
-systemctl --user start flatpak-command-exporter-user.path
+systemctl --user unmask flatpak-command-exporter-user.timer
+systemctl --user start flatpak-command-exporter-user.timer
 ```
 
 ## CLI
@@ -422,10 +415,12 @@ choose a reproducible date for new entries.
 - Added app and alias enable/disable settings, default export policies, and
   custom aliases.
 - Added the `flatshell` CLI configuration commands and Flatlink controls,
-  including app-level defaults, a scope-aware global-default button, export
-  refresh, and About window.
+  including app-level defaults, user-only app and alias overrides, a Settings
+  page, export refresh, and About window.
 - Updated Debian packaging to install the renamed profile script
   automatically.
+- Replaced Flatpak path watchers with boot-plus-daily system and user refresh
+  timers.
 - Kept the existing application ID prefix, `xyz.kowalski7cc`, and standardized
   the GUI command name as lowercase `flatlink`.
 
