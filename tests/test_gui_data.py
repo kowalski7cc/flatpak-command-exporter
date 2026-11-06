@@ -1,4 +1,5 @@
 import os
+import runpy
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,9 +9,12 @@ from unittest.mock import patch
 from flatpak_command_exporter import FlatpakCommandExporter
 from flatpak_command_exporter import application as core
 from flatpak_command_exporter.gui import (
+    find_desktop_file,
     get_exported_icon,
     get_project_details,
+    main,
 )
+from flatpak_command_exporter.gui.menu import create_main_menu
 
 
 class AliasDataTests(unittest.TestCase):
@@ -188,6 +192,43 @@ class ProjectMetadataTests(unittest.TestCase):
                 get_project_details(project_file),
                 ("1.2.3", ("First Author", "Second Author")),
             )
+
+    def test_existing_module_keeps_main_and_default_metadata_imports(self):
+        project_file = Path(__file__).resolve().parents[1] / "pyproject.toml"
+
+        self.assertTrue(callable(main))
+        self.assertEqual(get_project_details(), get_project_details(project_file))
+
+    def test_existing_module_exports_desktop_file_helper(self):
+        self.assertTrue(callable(find_desktop_file))
+
+
+class MainMenuTests(unittest.TestCase):
+    def test_settings_and_about_are_direct_menu_items_in_order(self):
+        class Menu:
+            def __init__(self):
+                self.items = []
+
+            def append(self, label, action):
+                self.items.append((label, action))
+
+        gio = SimpleNamespace(Menu=Menu)
+
+        menu = create_main_menu(gio)
+
+        self.assertEqual(
+            menu.items,
+            [("Settings", "app.settings"), ("About", "app.about")],
+        )
+
+    def test_module_launcher_calls_gui_main(self):
+        with patch("flatpak_command_exporter.gui.main") as main:
+            runpy.run_module(
+                "flatpak_command_exporter.gui.__main__",
+                run_name="__main__",
+            )
+
+        main.assert_called_once_with()
 
 
 if __name__ == "__main__":

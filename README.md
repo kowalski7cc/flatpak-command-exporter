@@ -265,6 +265,7 @@ installs a user copy and sources it from `~/.profile`.
 1. The exporter enumerates installed Flatpak app refs and reads their
    `files/manifest.json` command declarations. A built-in command map supplies
    aliases for known apps whose manifests do not declare them.
+   The map includes GNOME and KDE Flathub apps with conventional host commands.
 2. For each app, it combines the declared commands with custom aliases from
    that installation's configuration and applies the global, app, and alias
    settings.

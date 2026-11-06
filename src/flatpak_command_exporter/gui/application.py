@@ -1,114 +1,9 @@
-import configparser
-from importlib.metadata import metadata as distribution_metadata
 import logging
 import os
 import sys
-import tomllib
-from pathlib import Path
-
-
-def find_desktop_file(record, data_dirs=None):
-	"""Find the exported desktop entry for a Flatpak alias record."""
-	application_dirs = []
-	installation_path = getattr(record, "installation_path", None)
-	if installation_path:
-		application_dirs.append(os.path.join(
-			installation_path, "exports", "share", "applications"
-		))
-
-	if data_dirs is None:
-		data_home = os.environ.get(
-			"XDG_DATA_HOME", os.path.join(os.path.expanduser("~"), ".local", "share")
-		)
-		data_dirs = [os.path.join(data_home, "flatpak", "exports", "share")]
-		data_dirs.extend(filter(None, os.environ.get(
-			"XDG_DATA_DIRS", "/usr/local/share:/usr/share"
-		).split(os.pathsep)))
-		data_dirs.extend((
-			"/var/lib/flatpak/exports/share",
-			"/usr/local/share/flatpak/exports/share",
-		))
-
-	for data_dir in data_dirs:
-		if os.path.basename(data_dir) == "share":
-			application_dirs.append(os.path.join(data_dir, "applications"))
-		else:
-			application_dirs.append(os.path.join(data_dir, "share", "applications"))
-
-	desktop_ids = [getattr(record, "desktop_id", None), f"{record.app_id}.desktop"]
-	for desktop_id in dict.fromkeys(filter(None, desktop_ids)):
-		for application_dir in dict.fromkeys(application_dirs):
-			desktop_file = os.path.join(application_dir, desktop_id)
-			if os.path.isfile(desktop_file):
-				return desktop_file
-	return None
-
-
-def get_exported_icon(record, data_dirs=None):
-	desktop_file = find_desktop_file(record, data_dirs)
-	if desktop_file is None:
-		return None
-
-	desktop_entry = configparser.ConfigParser(interpolation=None, strict=False)
-	try:
-		with open(desktop_file, encoding="utf-8") as desktop_file_handle:
-			desktop_entry.read_file(desktop_file_handle)
-		return desktop_entry.get("Desktop Entry", "Icon", fallback=None)
-	except (OSError, configparser.Error) as error:
-		return None
-
-
-def get_project_details(project_file=None):
-	project_file = Path(project_file) if project_file else (
-		Path(__file__).resolve().parents[2] / "pyproject.toml"
-	)
-	if project_file.is_file():
-		with project_file.open("rb") as project_file_handle:
-			project = tomllib.load(project_file_handle)["project"]
-		return (
-			project["version"],
-			tuple(author["name"] for author in project.get("authors", ())),
-		)
-
-	project_metadata = distribution_metadata("flatpak-command-exporter")
-	return (
-		project_metadata["Version"],
-		tuple(project_metadata.get_all("Author") or ()),
-	)
-
-
-def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):
-	icon_name = get_exported_icon(record)
-	installation_path = getattr(record, "installation_path", None)
-	if installation_path:
-		icon_theme.add_search_path(os.path.join(
-			installation_path, "exports", "share", "icons"
-		))
-
-	if icon_name and os.path.isabs(icon_name) and os.path.isfile(icon_name):
-		try:
-			texture = Gdk.Texture.new_from_filename(icon_name)
-			return Gtk.Image.new_from_paintable(texture)
-		except GLib.Error:
-			pass
-
-	if icon_name:
-		candidate_names = [icon_name]
-		if os.path.splitext(icon_name)[1]:
-			candidate_names.append(os.path.splitext(icon_name)[0])
-		for candidate_name in candidate_names:
-			if icon_theme.has_icon(candidate_name):
-				paintable = icon_theme.lookup_icon(
-					candidate_name,
-					None,
-					48,
-					1,
-					Gtk.TextDirection.NONE,
-					Gtk.IconLookupFlags.FORCE_REGULAR,
-				)
-				return Gtk.Image.new_from_paintable(paintable)
-
-	return Gtk.Image.new_from_icon_name("application-x-executable-symbolic")
+from .data import _make_app_icon, get_project_details
+from .menu import create_main_menu
+from .settings import show_settings
 
 
 def main():
@@ -127,8 +22,8 @@ def main():
 			"The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
 		) from error
 
-	from . import FlatpakCommandExporter
-	from .config import AliasConfig, GlobalExportSettings
+	from .. import FlatpakCommandExporter
+	from ..config import AliasConfig, GlobalExportSettings
 
 	exporter = FlatpakCommandExporter()
 	global_export_settings = GlobalExportSettings()
@@ -224,8 +119,7 @@ def main():
 			export_button = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
 			export_button.set_tooltip_text("Export all user commands")
 
-			menu_model = Gio.Menu()
-			menu_model.append("Settings", "app.settings")
+			menu_model = create_main_menu(Gio)
 			menu_button = Gtk.MenuButton()
 			menu_button.set_icon_name("open-menu-symbolic")
 			menu_button.set_menu_model(menu_model)
@@ -501,7 +395,7 @@ def main():
 						requested_state = toggle.get_active()
 						toggle.set_sensitive(False)
 						try:
-							from .system_bus import call_system_method_async
+							from ..system_bus import call_system_method_async
 
 							def finish_system_update(connection, result, _user_data=None):
 								try:
@@ -569,7 +463,7 @@ def main():
 					if record.installation_scope == "system":
 						toggle.set_sensitive(False)
 						try:
-							from .system_bus import call_system_method_async
+							from ..system_bus import call_system_method_async
 
 							def finish_system_update(
 								connection, result, _user_data=None
@@ -689,7 +583,7 @@ def main():
 					return
 
 				try:
-					from .system_bus import call_system_method_async
+					from ..system_bus import call_system_method_async
 
 					def finish_system_update(connection, result, _user_data=None):
 						try:
@@ -725,62 +619,19 @@ def main():
 				"notify::active", update_global_export
 			)
 
-			def show_settings(_action, _parameter):
-				preferences_window = Adw.PreferencesWindow(
-					transient_for=window,
-					modal=True,
+			def open_settings(_action, _parameter):
+				show_settings(
+					window,
+					global_export_settings,
+					global_default_scope,
+					update_global_button_style,
+					report_error,
+					Adw,
 				)
-				preferences_window.set_title("Settings")
-				page = Adw.PreferencesPage()
-				group = Adw.PreferencesGroup(title="Global export default")
-				scope_row = Adw.SwitchRow(
-					title="Apply to system installations",
-					subtitle=(
-						"Also change the system default when toggling the global "
-						"export setting. System changes require authorization."
-					),
-				)
-				scope_row.set_active(global_default_scope[0] == "both")
-				group.add(scope_row)
-				page.add(group)
-
-				about_group = Adw.PreferencesGroup(title="About")
-				about_row = Adw.ActionRow(title="About Flatlink")
-				about_row.set_activatable(True)
-				about_row.connect("activated", self.show_about)
-				about_group.add(about_row)
-				page.add(about_group)
-
-				preferences_window.add(page)
-
-				handler_id = [None]
-
-				def update_global_default_scope(row, _property):
-					requested_scope = "both" if row.get_active() else "user"
-					if requested_scope == global_default_scope[0]:
-						return
-					try:
-						global_export_settings.set_global_default_scope(
-							requested_scope
-						)
-					except (OSError, ValueError) as error:
-						row.handler_block(handler_id[0])
-						row.set_active(global_default_scope[0] == "both")
-						row.handler_unblock(handler_id[0])
-						report_error("Could not save global export scope", error)
-						return
-
-					global_default_scope[0] = requested_scope
-					update_global_button_style()
-
-				handler_id[0] = scope_row.connect(
-					"notify::active", update_global_default_scope
-				)
-				preferences_window.present()
 
 			self.remove_action("settings")
 			settings_action = Gio.SimpleAction.new("settings", None)
-			settings_action.connect("activate", show_settings)
+			settings_action.connect("activate", open_settings)
 			self.add_action(settings_action)
 
 			def export_user_commands(_button):
