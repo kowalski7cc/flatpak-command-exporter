@@ -23,10 +23,7 @@ def main():
 		) from error
 
 	from ..api import FlatpakCommandExporter
-	from ..config import AliasConfig, GlobalExportSettings
-
 	exporter = FlatpakCommandExporter()
-	global_export_settings = GlobalExportSettings()
 
 	Adw.init()
 
@@ -55,9 +52,6 @@ def main():
 			about_window.present()
 
 		def on_activate(self, _application):
-			global_default_scope = [
-				global_export_settings.global_default_scope()
-			]
 			all_records = exporter.get_exported_aliases()
 			row_records = {}
 			row_scopes = {}
@@ -97,17 +91,6 @@ def main():
 			toolbar = Adw.ToolbarView()
 			header = Adw.HeaderBar()
 			header.set_title_widget(Adw.WindowTitle(title="Exported Commands", subtitle=None))
-			global_export_button = Gtk.ToggleButton()
-			global_export_icon = Gtk.Image()
-			global_export_button.set_child(global_export_icon)
-			global_export_button.set_valign(Gtk.Align.CENTER)
-			global_export_button.set_active(
-				exporter.config.default_policy() == "all"
-			)
-			global_export_button.set_tooltip_text(
-				"Toggle whether new user and system commands are exported by default"
-			)
-
 			export_button = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
 			export_button.set_tooltip_text("Export all user commands")
 
@@ -117,7 +100,6 @@ def main():
 			menu_button.set_menu_model(menu_model)
 			menu_button.set_tooltip_text("Main Menu")
 			header.pack_end(menu_button)
-			header.pack_end(global_export_button)
 			header.pack_end(export_button)
 			search_entry = Gtk.SearchEntry()
 			search_entry.set_placeholder_text("Search apps and commands")
@@ -141,7 +123,10 @@ def main():
 			rows = []
 			alias_switches = []
 			alias_switch_handlers = {}
+			alias_saved_states = {}
 			app_switches = []
+			app_switch_handlers = {}
+			app_saved_states = {}
 			app_groups = {}
 			for key, record in records:
 				group_key = (
@@ -195,14 +180,9 @@ def main():
 				header.append(app_icon)
 				header.append(labels)
 
-				group_config = (
-					exporter.config
-					if record.installation_scope == "user"
-					else AliasConfig(scope="system")
-				)
-				app_setting = group_config.app_enabled(record.app_id)
+				app_setting = exporter.config.app_enabled(record.app_id)
 				if app_setting is None:
-					app_setting = group_config.default_policy() == "all"
+					app_setting = exporter.config.default_policy() == "all"
 				app_switch = Gtk.Switch()
 				app_switch.set_active(app_setting)
 				app_switch.set_valign(Gtk.Align.CENTER)
@@ -245,12 +225,13 @@ def main():
 					command_row.append(command_labels)
 
 					alias_switch = Gtk.Switch()
-					alias_switch.set_active(command_record.enabled)
-					alias_switch.set_valign(Gtk.Align.CENTER)
-					alias_switch.set_sensitive(
-						command_record.configurable
-						or command_record.installation_scope == "system"
+					alias_switch.set_active(
+						exporter.config.is_alias_enabled(
+							command_record.app_id, command_record.alias
+						)
 					)
+					alias_switch.set_valign(Gtk.Align.CENTER)
+					alias_switch.set_sensitive(True)
 					command_row.append(alias_switch)
 					alias_switches.append((alias_switch, command_record))
 					command_list.append(command_row)
@@ -358,28 +339,69 @@ def main():
 				logging.error("%s: %s", message, error)
 				toast_overlay.add_toast(Adw.Toast.new(f"{message}: {error}"))
 
-			def refresh_alias_switches(scope):
-				config = (
-					exporter.config
-					if scope == "user"
-					else AliasConfig(scope="system")
-				)
+			def update_user_control_widgets():
 				for alias_switch, record in alias_switches:
-					if record.installation_scope != scope:
-						continue
 					handler_id = alias_switch_handlers[
-						(scope, record.app_id, record.alias)
+						(
+							record.installation_scope,
+							record.app_id,
+							record.arch,
+							record.branch,
+							record.alias,
+						)
 					]
-					state = config.is_alias_enabled(record.app_id, record.alias)
+					state = exporter.config.is_alias_enabled(
+						record.app_id, record.alias
+					)
 					alias_switch.handler_block(handler_id)
 					try:
 						alias_switch.set_active(state)
+						alias_saved_states[
+							(
+								record.installation_scope,
+								record.app_id,
+								record.arch,
+								record.branch,
+								record.alias,
+							)
+						][0] = state
 					finally:
 						alias_switch.handler_unblock(handler_id)
+				for app_switch, record in app_switches:
+					handler_id = app_switch_handlers[
+						(
+							record.installation_scope,
+							record.app_id,
+							record.branch,
+							record.arch,
+						)
+					]
+					app_setting = exporter.config.app_enabled(record.app_id)
+					if app_setting is None:
+						app_setting = exporter.config.default_policy() == "all"
+					app_switch.handler_block(handler_id)
+					try:
+						app_switch.set_active(app_setting)
+						app_saved_states[
+							(
+								record.installation_scope,
+								record.app_id,
+								record.branch,
+								record.arch,
+							)
+						][0] = app_setting
+					finally:
+						app_switch.handler_unblock(handler_id)
+
+			def refresh_user_controls():
+				try:
+					update_user_control_widgets()
+				except (OSError, ValueError) as error:
+					report_error("Could not refresh user settings", error)
 
 			for alias_switch, record in alias_switches:
 				handler_id = [None]
-				saved_state = [record.enabled]
+				saved_state = [alias_switch.get_active()]
 
 				def update_alias(
 					toggle,
@@ -388,42 +410,10 @@ def main():
 					handler_id=handler_id,
 					saved_state=saved_state,
 				):
-					if record.installation_scope == "system":
-						requested_state = toggle.get_active()
-						toggle.set_sensitive(False)
-						try:
-							from ..system_bus import call_system_method_async
-
-							def finish_system_update(connection, result, _user_data=None):
-								try:
-									connection.call_finish(result)
-								except GLib.Error as error:
-									toggle.handler_block(handler_id[0])
-									toggle.set_active(saved_state[0])
-									toggle.handler_unblock(handler_id[0])
-									report_error(
-										"Could not save system alias setting", error
-									)
-								else:
-									saved_state[0] = requested_state
-								toggle.set_sensitive(True)
-
-							call_system_method_async(
-								"SetAliasEnabled",
-								(record.app_id, record.alias, requested_state),
-								finish_system_update,
-							)
-						except GLib.Error as error:
-							toggle.handler_block(handler_id[0])
-							toggle.set_active(saved_state[0])
-							toggle.handler_unblock(handler_id[0])
-							toggle.set_sensitive(True)
-							report_error("Could not start system alias update", error)
-						return
-
+					requested_state = toggle.get_active()
 					try:
 						exporter.config.set_alias_enabled(
-							record.app_id, record.alias, toggle.get_active()
+							record.app_id, record.alias, requested_state
 						)
 					except (OSError, ValueError) as error:
 						toggle.handler_block(handler_id[0])
@@ -432,18 +422,34 @@ def main():
 						report_error("Could not save alias setting", error)
 						return
 
-					saved_state[0] = toggle.get_active()
+					saved_state[0] = requested_state
 					try:
 						exporter.export_commands()
 					except (OSError, ValueError, GLib.Error) as error:
 						report_error("Alias setting saved, but export failed", error)
+					refresh_user_controls()
 
 				handler_id[0] = alias_switch.connect(
 					"notify::active", update_alias
 				)
 				alias_switch_handlers[
-					(record.installation_scope, record.app_id, record.alias)
+					(
+						record.installation_scope,
+						record.app_id,
+						record.arch,
+						record.branch,
+						record.alias,
+					)
 				] = handler_id[0]
+				alias_saved_states[
+					(
+						record.installation_scope,
+						record.app_id,
+						record.arch,
+						record.branch,
+						record.alias,
+					)
+				] = saved_state
 
 			for app_switch, record in app_switches:
 				handler_id = [None]
@@ -457,47 +463,6 @@ def main():
 					saved_state=saved_state,
 				):
 					requested_state = toggle.get_active()
-					if record.installation_scope == "system":
-						toggle.set_sensitive(False)
-						try:
-							from ..system_bus import call_system_method_async
-
-							def finish_system_update(
-								connection, result, _user_data=None
-							):
-								try:
-									connection.call_finish(result)
-								except GLib.Error as error:
-									toggle.handler_block(handler_id[0])
-									toggle.set_active(saved_state[0])
-									toggle.handler_unblock(handler_id[0])
-									report_error(
-										"Could not save system app setting", error
-									)
-								else:
-									saved_state[0] = requested_state
-									try:
-										refresh_alias_switches("system")
-									except (OSError, ValueError) as error:
-										report_error(
-											"Could not refresh system alias settings",
-											error,
-										)
-								toggle.set_sensitive(True)
-
-							call_system_method_async(
-								"SetAppEnabled",
-								(record.app_id, requested_state),
-								finish_system_update,
-							)
-						except (GLib.Error, OSError, ValueError) as error:
-							toggle.handler_block(handler_id[0])
-							toggle.set_active(saved_state[0])
-							toggle.handler_unblock(handler_id[0])
-							toggle.set_sensitive(True)
-							report_error("Could not start system app update", error)
-						return
-
 					try:
 						exporter.config.set_app_enabled(
 							record.app_id, requested_state
@@ -514,117 +479,41 @@ def main():
 						exporter.export_commands()
 					except (OSError, ValueError, GLib.Error) as error:
 						report_error("App setting saved, but export failed", error)
-					try:
-						refresh_alias_switches("user")
-					except (OSError, ValueError) as error:
-						report_error("Could not refresh alias settings", error)
+					refresh_user_controls()
 
 				handler_id[0] = app_switch.connect(
 					"notify::active", update_app
 				)
-
-			def update_global_button_style(system_update_failed=False):
-				global_export_icon.set_from_icon_name(
-					"system-run-symbolic"
-					if global_export_button.get_active()
-					else "system-shutdown-symbolic"
-				)
-				if system_update_failed:
-					global_export_button.add_css_class("warning")
-					global_export_button.set_tooltip_text(
-						"Global default applies to user commands only because the "
-						"system update was not authorized"
+				app_switch_handlers[
+					(
+						record.installation_scope,
+						record.app_id,
+						record.branch,
+						record.arch,
 					)
-				elif global_default_scope[0] == "user":
-					global_export_button.remove_css_class("warning")
-					global_export_button.set_tooltip_text(
-						"Toggle the global default for user commands only"
+				] = handler_id[0]
+				app_saved_states[
+					(
+						record.installation_scope,
+						record.app_id,
+						record.branch,
+						record.arch,
 					)
-				else:
-					global_export_button.remove_css_class("warning")
-					global_export_button.set_tooltip_text(
-						"Toggle the global default for user and system commands; "
-						"system updates require authorization"
-					)
-
-			update_global_button_style()
-			global_export_button_handler = [None]
-			global_export_state = [global_export_button.get_active()]
-
-			def update_global_export(toggle, _property):
-				requested_policy = "all" if toggle.get_active() else "none"
-				toggle.set_sensitive(False)
-				try:
-					exporter.config.set_default_policy(requested_policy)
-				except (OSError, ValueError) as error:
-					toggle.handler_block(global_export_button_handler[0])
-					toggle.set_active(global_export_state[0])
-					toggle.handler_unblock(global_export_button_handler[0])
-					toggle.set_sensitive(True)
-					report_error("Could not save global export setting", error)
-					return
-
-				global_export_state[0] = toggle.get_active()
-				update_global_button_style()
-				try:
-					exporter.export_commands()
-				except (OSError, ValueError, GLib.Error) as error:
-					report_error("Global setting saved, but export failed", error)
-				try:
-					refresh_alias_switches("user")
-				except (OSError, ValueError) as error:
-					report_error("Could not refresh alias settings", error)
-
-				if global_default_scope[0] == "user":
-					toggle.set_sensitive(True)
-					return
-
-				try:
-					from ..system_bus import call_system_method_async
-
-					def finish_system_update(connection, result, _user_data=None):
-						try:
-							connection.call_finish(result)
-						except GLib.Error as error:
-							update_global_button_style(system_update_failed=True)
-							report_error(
-								"System default was not changed; user default applied",
-								error,
-							)
-						else:
-							update_global_button_style()
-							try:
-								refresh_alias_switches("system")
-							except (OSError, ValueError) as error:
-								report_error(
-									"Could not refresh system alias settings", error
-								)
-						toggle.set_sensitive(True)
-
-					call_system_method_async(
-						"SetDefaultPolicy", (requested_policy,), finish_system_update
-					)
-				except (GLib.Error, OSError, ValueError) as error:
-					update_global_button_style(system_update_failed=True)
-					toggle.set_sensitive(True)
-					report_error(
-						"System default was not changed; user default applied",
-						error,
-					)
-
-			global_export_button_handler[0] = global_export_button.connect(
-				"notify::active", update_global_export
-			)
+				] = saved_state
 
 			def open_settings(_action, _parameter):
-				show_settings(
-					window,
-					global_export_settings,
-					global_default_scope,
-					update_global_button_style,
-					report_error,
-					Adw,
-				)
+				try:
+					show_settings(
+						window,
+						exporter,
+						refresh_user_controls,
+						report_error,
+						Adw,
+						Gtk,
+						GLib,
+					)
+				except (OSError, ValueError, GLib.Error) as error:
+					report_error("Could not open settings", error)
 
 			self.remove_action("settings")
 			settings_action = Gio.SimpleAction.new("settings", None)

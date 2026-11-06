@@ -75,6 +75,25 @@ def get_project_details(project_file=None):
 	)
 
 
+def get_app_ref_choices(exporter):
+	"""Return unique installed app refs for Flatlink's override selector."""
+	refs = {}
+	for record in exporter.get_exported_aliases():
+		key = (
+			record.installation_scope,
+			record.app_id,
+			record.branch,
+			record.arch,
+		)
+		refs[key] = (
+			f"{record.app_name} ({record.app_id}, "
+			f"{record.branch}/{record.arch}, "
+			f"{record.installation_scope} installation)",
+			record.app_id,
+		)
+	return sorted(refs.values(), key=lambda choice: choice[0].casefold())
+
+
 def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):
 	icon_name = get_exported_icon(record)
 	installation_path = getattr(record, "installation_path", None)

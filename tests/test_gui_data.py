@@ -16,10 +16,56 @@ from flatpak_command_exporter.gui import (
     get_project_details,
     main,
 )
+from flatpak_command_exporter.gui.data import get_app_ref_choices
 from flatpak_command_exporter.gui.menu import create_main_menu
 
 
 class AliasDataTests(unittest.TestCase):
+    def test_app_ref_choices_are_unique_and_include_installation_scope(self):
+        records = [
+            SimpleNamespace(
+                app_id="org.example.App",
+                app_name="Example",
+                arch="x86_64",
+                branch="stable",
+                installation_scope="system",
+                alias="first",
+            ),
+            SimpleNamespace(
+                app_id="org.example.App",
+                app_name="Example",
+                arch="x86_64",
+                branch="stable",
+                installation_scope="system",
+                alias="second",
+            ),
+            SimpleNamespace(
+                app_id="org.example.App",
+                app_name="Example",
+                arch="aarch64",
+                branch="beta",
+                installation_scope="user",
+                alias="first",
+            ),
+        ]
+        exporter = SimpleNamespace(
+            get_exported_aliases=lambda: records,
+        )
+
+        self.assertEqual(
+            get_app_ref_choices(exporter),
+            [
+                (
+                    "Example (org.example.App, beta/aarch64, user installation)",
+                    "org.example.App",
+                ),
+                (
+                    "Example (org.example.App, stable/x86_64, system installation)",
+                    "org.example.App",
+                ),
+            ],
+        )
+
     def test_current_user_ref_overrides_system_and_system_only_app_remains(self):
         class Ref:
             def __init__(self, app_id, branch="stable"):

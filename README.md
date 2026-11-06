@@ -14,9 +14,9 @@ aliases in a graphical interface.
 > installation's `aliases/` directory (normally `/var/lib/flatpak/aliases/`).
 > System launchers are written beside that installation (normally
 > `/var/lib/flatpak-commands/`) and require elevated filesystem permissions.
-> Flatlink currently uses a root-owned system-bus helper with PolicyKit for
-> system changes. System-scope `flatshell` changes operate directly and require
-> elevated filesystem permissions; use `--user` for per-user changes.
+> Flatlink only changes user configuration, including when managing system-app
+> refs. System-scope `flatshell` changes operate directly and require elevated
+> filesystem permissions; use `--user` for per-user changes.
 
 ## What you can do
 
@@ -274,19 +274,16 @@ The window lists discovered apps in expandable rows, grouped by app and
 installation scope. Each app has a switch for its default setting; individual
 alias settings take precedence over the app and global defaults. Expand an app
 to see each alias, its command, and its enable/disable switch. Use the search
-field and the All/User/System filter to narrow the list. Changing a
-system-installed app or alias requests PolicyKit authorization.
+field and the All/User/System filter to narrow the list. Changes to aliases
+and app switches are stored as user overrides, including for system-installed
+apps, and refresh user launchers without requesting system authorization.
 
-The global-default button controls whether new commands are exported by
-default. Its scope is configured from **Settings** in the hamburger menu: it
-can apply to both user and system installations (the default), or to user
-installations only. System updates use PolicyKit authorization. The refresh
-button exports all user commands, like `flatshell export`. The hamburger menu
-opens Settings, which includes the About window with version and author
-information from the project metadata. Changes to aliases and export defaults
-refresh the generated launchers; changing the scope preference affects future
-global default toggles. The core package installs the PolicyKit action and
-system-bus helper.
+The hamburger menu's **Settings** page controls the global default and lists
+enabled and disabled app overrides. Add an override by selecting an installed
+app ref; it applies to every ref of that app. Reset removes the app override
+and returns to the global default. The refresh button exports all user
+commands, like `flatshell export --user`. Settings also includes the About
+window with version and author information from the project metadata.
 
 ## Configuration and files
 
@@ -305,17 +302,6 @@ resolved through the Flatpak API (normally):
 /var/lib/flatpak/aliases/
 ├── global
 └── <app_id>
-```
-
-Flatlink's global-default scope preference is stored in
-`${XDG_CONFIG_HOME:-$HOME/.config}/flatpak/settings`. It applies to the
-global-default button when toggled; `flatshell` commands that explicitly select
-a scope continue to affect that scope. If the preference is absent, Flatlink
-uses both user and system scopes.
-
-```ini
-[flatpak-command-exporter]
-global-default-scope = user
 ```
 
 The files use an INI/GKeyFile-style format. For example:

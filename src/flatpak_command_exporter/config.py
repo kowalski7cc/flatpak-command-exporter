@@ -22,67 +22,6 @@ class AliasConfigError(ValueError):
     """Raised when alias configuration is invalid or cannot be read."""
 
 
-class GlobalExportSettings:
-    """Read and update Flatlink's user-level preferences."""
-
-    def __init__(self, config_home=None):
-        if config_home is None:
-            config_home = os.environ.get("XDG_CONFIG_HOME") or os.path.join(
-                os.path.expanduser("~"), ".config"
-            )
-        self.directory = Path(config_home) / "flatpak"
-        self.settings_path = self.directory / "settings"
-
-    def _read(self):
-        parser = configparser.ConfigParser(interpolation=None, strict=False)
-        try:
-            with self.settings_path.open(encoding="utf-8") as settings_file:
-                parser.read_file(settings_file)
-        except FileNotFoundError:
-            return parser
-        except (OSError, UnicodeError, configparser.Error) as error:
-            raise AliasConfigError(
-                f"Could not read {self.settings_path}: {error}"
-            ) from error
-        return parser
-
-    def global_default_scope(self):
-        parser = self._read()
-        scope = parser.get(
-            "flatpak-command-exporter", "global-default-scope", fallback="both"
-        )
-        if scope not in {"both", "user"}:
-            raise AliasConfigError(
-                f"Invalid global default scope in {self.settings_path}: {scope!r}"
-            )
-        return scope
-
-    def set_global_default_scope(self, scope):
-        if not isinstance(scope, str) or scope not in {"both", "user"}:
-            raise AliasConfigError(
-                "Global default scope must be 'both' or 'user'"
-            )
-        parser = self._read()
-        if not parser.has_section("flatpak-command-exporter"):
-            parser.add_section("flatpak-command-exporter")
-        parser.set("flatpak-command-exporter", "global-default-scope", scope)
-
-        self.directory.mkdir(parents=True, exist_ok=True)
-        descriptor, temporary_path = tempfile.mkstemp(
-            prefix=f".{self.settings_path.name}.",
-            dir=self.directory,
-            text=True,
-        )
-        try:
-            with os.fdopen(descriptor, "w", encoding="utf-8") as settings_file:
-                parser.write(settings_file)
-            os.chmod(temporary_path, 0o600)
-            os.replace(temporary_path, self.settings_path)
-        finally:
-            if os.path.exists(temporary_path):
-                os.unlink(temporary_path)
-
-
 class AliasConfig:
     """Read and update the user's Flatpak command alias configuration."""
 
@@ -211,6 +150,25 @@ class AliasConfig:
             raise AliasConfigError(
                 f"Invalid app enabled value for {app_id}: {error}"
             ) from error
+
+    def app_overrides(self):
+        try:
+            config_paths = list(self.directory.iterdir())
+        except FileNotFoundError:
+            return {}
+
+        overrides = {}
+        for path in config_paths:
+            if (
+                not path.is_file()
+                or path.name == "global"
+                or path.name.startswith(".")
+            ):
+                continue
+            enabled = self.app_enabled(path.name)
+            if enabled is not None:
+                overrides[path.name] = enabled
+        return overrides
 
     def set_app_enabled(self, app_id, enabled):
         if enabled is not None and not isinstance(enabled, bool):
