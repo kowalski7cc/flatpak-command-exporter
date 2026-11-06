@@ -16,7 +16,7 @@ def main():
 
 		gi.require_version("Gtk", "4.0")
 		gi.require_version("Adw", "1")
-		from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+		from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango
 	except (ImportError, ValueError) as error:
 		raise SystemExit(
 			"The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed."
@@ -511,6 +511,7 @@ def main():
 						Adw,
 						Gtk,
 						Gdk,
+						Pango,
 						GLib,
 						icon_theme,
 					)

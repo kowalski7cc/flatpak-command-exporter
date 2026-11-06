@@ -76,22 +76,36 @@ def get_project_details(project_file=None):
 
 
 def get_app_ref_choices(exporter):
-	"""Return unique installed app refs and their display labels."""
-	refs = {}
+	"""Return one representative installed ref per app ID."""
+	records_by_app_id = {}
 	for record in exporter.get_exported_aliases():
-		key = (
+		current = records_by_app_id.get(record.app_id)
+		record_key = (
+			record.app_name.casefold(),
+			record.app_id.casefold(),
+			record.branch.casefold(),
+			record.arch.casefold(),
+			record.alias.casefold(),
 			record.installation_scope,
-			record.app_id,
-			record.branch,
-			record.arch,
 		)
-		refs[key] = (
-			f"{record.app_name} ({record.app_id}, "
-			f"{record.branch}/{record.arch}, "
-			f"{record.installation_scope} installation)",
-			record,
-		)
-	return sorted(refs.values(), key=lambda choice: choice[0].casefold())
+		current_key = (
+			current.app_name.casefold(),
+			current.app_id.casefold(),
+			current.branch.casefold(),
+			current.arch.casefold(),
+			current.alias.casefold(),
+			current.installation_scope,
+		) if current else None
+		if current is None or record_key < current_key:
+			records_by_app_id[record.app_id] = record
+
+	return sorted(
+		[
+			(f"{record.app_name} ({record.app_id})", record)
+			for record in records_by_app_id.values()
+		],
+		key=lambda choice: choice[0].casefold(),
+	)
 
 
 def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):

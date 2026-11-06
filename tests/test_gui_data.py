@@ -19,13 +19,15 @@ from flatpak_command_exporter.gui import (
 from flatpak_command_exporter.gui.data import get_app_ref_choices
 from flatpak_command_exporter.gui.menu import create_main_menu
 from flatpak_command_exporter.gui.settings import (
+    _configure_responsive_label,
     _handle_app_selection,
     _make_icon_button,
+    _make_app_override_row,
 )
 
 
 class AliasDataTests(unittest.TestCase):
-    def test_app_ref_choices_are_unique_and_include_installation_scope(self):
+    def test_app_ref_choices_merge_refs_by_app_id(self):
         records = [
             SimpleNamespace(
                 app_id="org.example.App",
@@ -57,6 +59,16 @@ class AliasDataTests(unittest.TestCase):
                 desktop_id="org.example.App.desktop",
                 alias="first",
             ),
+            SimpleNamespace(
+                app_id="org.example.Other",
+                app_name="Another",
+                arch="x86_64",
+                branch="stable",
+                installation_scope="user",
+                installation_path="/user",
+                desktop_id="org.example.Other.desktop",
+                alias="other",
+            ),
         ]
         exporter = SimpleNamespace(
             get_exported_aliases=lambda: records,
@@ -67,8 +79,8 @@ class AliasDataTests(unittest.TestCase):
         self.assertEqual(
             [label for label, _record in choices],
             [
-                "Example (org.example.App, beta/aarch64, user installation)",
-                "Example (org.example.App, stable/x86_64, system installation)",
+                "Another (org.example.Other)",
+                "Example (org.example.App)",
             ],
         )
         self.assertEqual(
@@ -81,10 +93,73 @@ class AliasDataTests(unittest.TestCase):
                 for _label, record in choices
             ],
             [
+                ("user", "/user", "org.example.Other.desktop"),
                 ("user", "/user", "org.example.App.desktop"),
-                ("system", "/system", "org.example.App.desktop"),
             ],
         )
+        self.assertEqual(
+            get_app_ref_choices(SimpleNamespace(
+                get_exported_aliases=lambda: list(reversed(records))
+            )),
+            choices,
+        )
+
+    def test_override_row_shows_app_name_id_icon_and_remove_button(self):
+        class ActionRow:
+            def __init__(self, title, subtitle):
+                self.title = title
+                self.subtitle = subtitle
+                self.prefixes = []
+                self.suffixes = []
+
+            def add_prefix(self, widget):
+                self.prefixes.append(widget)
+
+            def add_suffix(self, widget):
+                self.suffixes.append(widget)
+
+        icon = object()
+        remove_button = object()
+        adw = SimpleNamespace(ActionRow=ActionRow)
+
+        row = _make_app_override_row(
+            adw, "org.example.App", "Example", icon, remove_button
+        )
+
+        self.assertEqual(row.title, "Example")
+        self.assertEqual(row.subtitle, "org.example.App")
+        self.assertEqual(row.prefixes, [icon])
+        self.assertEqual(row.suffixes, [remove_button])
+
+    def test_chooser_labels_are_single_line_and_ellipsized(self):
+        class Label:
+            def set_xalign(self, value):
+                self.xalign = value
+
+            def set_hexpand(self, value):
+                self.hexpand = value
+
+            def set_single_line_mode(self, value):
+                self.single_line = value
+
+            def set_max_width_chars(self, value):
+                self.max_width_chars = value
+
+            def set_ellipsize(self, mode):
+                self.ellipsize = mode
+
+        end = object()
+        label = Label()
+
+        _configure_responsive_label(
+            label, SimpleNamespace(EllipsizeMode=SimpleNamespace(END=end))
+        )
+
+        self.assertEqual(label.xalign, 0)
+        self.assertTrue(label.hexpand)
+        self.assertTrue(label.single_line)
+        self.assertEqual(label.max_width_chars, 40)
+        self.assertIs(label.ellipsize, end)
 
     def test_override_action_buttons_use_symbolic_icons_and_accessible_labels(self):
         class Button:

@@ -273,7 +273,8 @@ apps, and refresh user launchers without requesting system authorization.
 
 The hamburger menu's **Settings** page controls the global default and lists
 enabled and disabled app overrides. Use the plus button to choose an installed
-app from a list; selecting it applies the override to every ref of that app.
+app from a list showing one entry per app with its name and ID; selecting it
+applies the override to every ref of that app.
 The remove button clears the app override and returns to the global default.
 The refresh button exports all user commands, like `flatshell export --user`.
 Settings also includes the About window with version and author information

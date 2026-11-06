@@ -11,6 +11,21 @@ def _make_icon_button(Gtk, icon_name, accessible_label):
 	return button
 
 
+def _configure_responsive_label(label, Pango):
+	label.set_xalign(0)
+	label.set_hexpand(True)
+	label.set_single_line_mode(True)
+	label.set_max_width_chars(40)
+	label.set_ellipsize(Pango.EllipsizeMode.END)
+
+
+def _make_app_override_row(Adw, app_id, app_name, app_icon, remove_button):
+	row = Adw.ActionRow(title=app_name, subtitle=app_id)
+	row.add_prefix(app_icon)
+	row.add_suffix(remove_button)
+	return row
+
+
 def _handle_app_selection(
 	row,
 	records_by_row,
@@ -36,6 +51,7 @@ def show_settings(
 	Adw,
 	Gtk,
 	Gdk,
+	Pango,
 	GLib,
 	icon_theme,
 ):
@@ -64,20 +80,40 @@ def show_settings(
 		page.add(group)
 
 	def refresh_override_rows():
+		choices_by_app_id = {
+			record.app_id: record for _label, record in get_app_ref_choices(exporter)
+		}
 		for enabled, group in override_groups.items():
 			for row in override_rows[enabled]:
 				group.remove(row)
 			override_rows[enabled] = []
 
-		for app_id, enabled in sorted(exporter.config.app_overrides().items()):
-			row = Adw.ActionRow(
-				title=app_id,
-				subtitle="Override the global default for this app",
+		app_overrides = exporter.config.app_overrides()
+		for app_id, enabled in sorted(
+			app_overrides.items(),
+			key=lambda item: (
+				choices_by_app_id[item[0]].app_name.casefold()
+				if item[0] in choices_by_app_id
+				else item[0].casefold(),
+				item[0].casefold(),
+			),
+		):
+			record = choices_by_app_id.get(app_id)
+			app_name = record.app_name if record else app_id
+			app_icon = (
+				_make_app_icon(record, Gtk, Gdk, GLib, icon_theme)
+				if record
+				else Gtk.Image.new_from_icon_name(
+					"application-x-executable-symbolic"
+				)
 			)
+			app_icon.set_pixel_size(32)
 			reset_button = _make_icon_button(
 				Gtk, "list-remove-symbolic", "Remove app override"
 			)
-			row.add_suffix(reset_button)
+			row = _make_app_override_row(
+				Adw, app_id, app_name, app_icon, reset_button
+			)
 			override_groups[enabled].add(row)
 			override_rows[enabled].append(row)
 
@@ -99,7 +135,7 @@ def show_settings(
 			report_error("App override saved, but export failed", error)
 		try:
 			refresh_override_rows()
-		except (OSError, ValueError) as error:
+		except (OSError, ValueError, GLib.Error) as error:
 			report_error("App override saved, but settings could not be refreshed", error)
 		refresh_user_controls()
 		return True
@@ -119,7 +155,6 @@ def show_settings(
 
 		dialog = Adw.Dialog()
 		dialog.set_title("Select an installed app")
-		dialog.set_content_width(520)
 		dialog.set_content_height(480)
 		toolbar = Adw.ToolbarView()
 		header = Adw.HeaderBar()
@@ -151,6 +186,7 @@ def show_settings(
 				orientation=Gtk.Orientation.HORIZONTAL,
 				spacing=12,
 			)
+			row_content.set_hexpand(True)
 			row_content.set_margin_top(8)
 			row_content.set_margin_bottom(8)
 			row_content.set_margin_start(8)
@@ -165,18 +201,13 @@ def show_settings(
 			)
 			labels.set_hexpand(True)
 			app_name = Gtk.Label(label=record.app_name)
-			app_name.set_xalign(0)
+			_configure_responsive_label(app_name, Pango)
 			app_name.add_css_class("heading")
-			ref_details = Gtk.Label(
-				label=(
-					f"{record.app_id} | {record.branch}/{record.arch} | "
-					f"{record.installation_scope.capitalize()} installation"
-				)
-			)
-			ref_details.set_xalign(0)
-			ref_details.add_css_class("dim-label")
+			app_id = Gtk.Label(label=record.app_id)
+			_configure_responsive_label(app_id, Pango)
+			app_id.add_css_class("dim-label")
 			labels.append(app_name)
-			labels.append(ref_details)
+			labels.append(app_id)
 			row_content.append(labels)
 
 			selected_mark = Gtk.Image.new_from_icon_name(
@@ -248,6 +279,6 @@ def show_settings(
 	preferences_window.add(page)
 	try:
 		refresh_override_rows()
-	except (OSError, ValueError) as error:
+	except (OSError, ValueError, GLib.Error) as error:
 		report_error("Could not load app overrides", error)
 	preferences_window.present()
