@@ -1,6 +1,6 @@
 BASE ?= flatpak-command-exporter
 
-.PHONY: changelog metainfo spec release deb rpm completion tests clean
+.PHONY: changelog metainfo spec release deb rpm apk completion tests clean
 
 changelog:
 	@version=$$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])'); \
@@ -28,6 +28,16 @@ deb:
 
 rpm:
 	rpmbuild -bb --build-in-place $(BASE).spec
+
+apk:
+	@set -eu; \
+	version=$$(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])'); \
+	source_archive=".flatpak-command-exporter-$$version.tar.gz"; \
+	trap 'rm -f "$$source_archive" .PKGBUILD' EXIT; \
+	sed "s/^pkgver=.*/pkgver=$$version/" PKGBUILD > .PKGBUILD; \
+	git ls-files -z --cached --others --exclude-standard \
+		| tar --null -T - --transform="s,^,$(BASE)-$$version/," -czf "$$source_archive"; \
+	makepkg --force -p .PKGBUILD
 
 completion:
 	mkdir -p build/bash-completion

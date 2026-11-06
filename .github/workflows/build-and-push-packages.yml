@@ -108,3 +108,55 @@ jobs:
               -T "$package" \
               "${GITEA_SERVER_URL}/api/packages/${REGISTRY_OWNER}/rpm/upload"
           done
+
+  build-and-publish-arch:
+    name: Build and publish Arch Linux packages
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    steps:
+      - name: Install Arch package build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            curl \
+            dbus \
+            flatpak \
+            git \
+            gobject-introspection \
+            hicolor-icon-theme \
+            gtk4 \
+            libadwaita \
+            nodejs \
+            polkit \
+            python \
+            python-gobject \
+            python-pip \
+            python-setuptools \
+            python-shtab
+
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Build Arch Linux packages
+        run: |
+          useradd --create-home --shell /bin/bash builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          runuser -u builder -- make apk
+
+      - name: Publish Arch Linux packages to Gitea
+        env:
+          REGISTRY_OWNER: ${{ github.repository_owner }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          GITEA_SERVER_URL: ${{ github.server_url }}
+        run: |
+          : "${REGISTRY_TOKEN:?Set the REGISTRY_TOKEN repository or organization secret}"
+          for package in ./*.pkg.tar.zst; do
+            [ -f "$package" ] || {
+              echo "No Arch package found at $package" >&2
+              exit 1
+            }
+            curl --fail --show-error --silent \
+              -u "${REGISTRY_OWNER}:${REGISTRY_TOKEN}" \
+              -T "$package" \
+              "${GITEA_SERVER_URL}/api/packages/${REGISTRY_OWNER}/arch/stable/$(basename "$package")"
+          done

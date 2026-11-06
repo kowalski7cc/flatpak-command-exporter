@@ -10,6 +10,7 @@ RUN pacman -Syu --noconfirm --needed \
         flatpak \
         git \
         gobject-introspection \
+        hicolor-icon-theme \
         gtk4 \
         libadwaita \
         namcap \
@@ -17,6 +18,7 @@ RUN pacman -Syu --noconfirm --needed \
         python \
         python-gobject \
         python-pip \
+        python-shtab \
         python-setuptools \
         shadow \
     && pacman -Scc --noconfirm

@@ -407,6 +407,10 @@ debian/*
 dist/*
 out/*
 pkg/*
+/src/flatpak-command-exporter-*/
+/.flatpak-command-exporter-*.tar.gz
+/src/.flatpak-command-exporter-*.tar.gz
+/.PKGBUILD
 
 *.pkg.tar.zst
 *.buildinfo

@@ -29,9 +29,9 @@ aliases in a graphical interface.
 
 ## Quick start
 
-After installing the Debian packages, open a new login session so the profile
-script can add user and system launcher directories to `PATH`. Then list
-available aliases and export them:
+After installing a package, open a new login session so the profile script can
+add user and system launcher directories to `PATH`. Then list available aliases
+and export them:
 
 ```console
 flatshell list --all
@@ -46,7 +46,7 @@ gimp
 
 Use `flatlink` to browse and toggle aliases with the GUI. Settings changed in
 either the GUI or the CLI are saved and the corresponding export scope is
-refreshed. The Debian and RPM packages also install Bash completion for
+refreshed. The Debian, RPM, and Arch packages also install Bash completion for
 `flatshell`; it is loaded automatically when `bash-completion` is enabled.
 
 ## Install
@@ -89,6 +89,28 @@ The spec derives its version from `pyproject.toml` and builds a core RPM plus
 an optional `flatpak-command-exporter-gui` RPM. `rpmbuild` writes the packages
 under `~/rpmbuild/RPMS/noarch/` by default.
 
+### Arch Linux
+
+On Arch Linux, install the packaging tools and dependencies used by both
+packages, then build the core package and optional GUI package from a source
+checkout:
+
+```console
+sudo pacman -S --needed base-devel dbus flatpak git gtk4 hicolor-icon-theme \
+  libadwaita polkit python python-gobject python-shtab
+make apk
+```
+
+The resulting `.pkg.tar.zst` packages are written to the repository root.
+Install the core package and, if desired, the GUI package with `pacman -U`.
+The PKGBUILD installs the system and user systemd watcher units and their
+presets. Enable the watchers for the scopes you want:
+
+```console
+sudo systemctl enable --now flatpak-command-exporter-system.path
+systemctl --user enable --now flatpak-command-exporter-user.path
+```
+
 ### Development containers
 
 The `.devcontainer/` directory includes configurations for Fedora 45 RPM in
@@ -96,7 +118,7 @@ The `.devcontainer/` directory includes configurations for Fedora 45 RPM in
 and Debian 13 (trixie) package development in `.devcontainer/debian-trixie/`.
 In VS Code, reopen the repository in a container and choose the desired
 configuration. The Debian container supports `make deb`; the Arch container
-includes `base-devel` and `namcap`.
+includes `base-devel`, `namcap`, and `python-shtab` for `make apk`.
 
 ### Requirements
 
@@ -104,8 +126,8 @@ includes `base-devel` and `namcap`.
 - PyGObject and the Flatpak GObject introspection bindings for the CLI and
   exporter.
 - systemd for automatic export refresh when Flatpak application exports change.
-- System-scope operations use the system D-Bus and Polkit; the Debian core
-  package installs the service and its authorization policy.
+- System-scope operations use the system D-Bus and Polkit; the Debian, Fedora,
+  and Arch core packages install the service and its authorization policy.
 - GTK 4, libadwaita, and their introspection data to run Flatlink.
 
 ### Automatic export refresh
@@ -116,7 +138,9 @@ runs a privileged system-scope export as root and only monitors
 `/var/lib/flatpak/exports/`. Each user's watcher runs `flatshell export` as that
 user and only monitors
 `~/.local/share/flatpak/exports/`. A short delay coalesces bursts of export
-changes during Flatpak transactions.
+changes during Flatpak transactions. Arch packages install the same units and
+presets; enable the watchers manually as described in the Arch Linux
+installation section.
 
 The watchers observe direct changes in Flatpak's exported application,
 metadata, MIME, and service directories. systemd path units are not recursive,
