@@ -312,14 +312,27 @@ def main() -> None:
 		def on_activate(self, _application: object) -> None:
 			aliases_by_scope = get_aliases_by_scope(exporter)
 			app_groups = _group_app_aliases(aliases_by_scope)
+			window = getattr(self, "window", None)
+			search_text = (
+				self.search_entry.get_text()
+				if hasattr(self, "search_entry")
+				else ""
+			)
+			selected_scope = (
+				self.scope_filter.get_selected()
+				if hasattr(self, "scope_filter")
+				else 0
+			)
 
 			display = Gdk.Display.get_default()
 			icon_theme = Gtk.IconTheme.get_for_display(display)
 			icon_theme.add_search_path(os.path.join(sys.prefix, "share", "icons"))
 
-			window = Adw.ApplicationWindow(application=self, title="Flatlink")
+			if window is None:
+				window = Adw.ApplicationWindow(
+					application=self, title="Flatlink"
+				)
 			window.set_default_size(720, 640)
-			#window.set_default_size(1000, 700)
 			window.set_icon_name("xyz.kowalski7cc.flatpak-command-exporter")
 			self.window = window
 
@@ -348,9 +361,13 @@ def main() -> None:
 			)
 			search_entry.set_hexpand(True)
 			search_entry.set_size_request(-1, 40)
+			search_entry.set_text(search_text)
+			self.search_entry = search_entry
 			scope_filter = Gtk.DropDown.new_from_strings(
 				[_("All apps"), _("User apps"), _("System apps")]
 			)
+			scope_filter.set_selected(selected_scope)
+			self.scope_filter = scope_filter
 			scope_filter.set_size_request(-1, 40)
 			scope_filter.set_tooltip_text(_("Filter by Flatpak installation"))
 			set_accessible_label(
@@ -658,7 +675,6 @@ def main() -> None:
 				error: Exception | None = None,
 				error_message: str = _("Could not remove custom alias"),
 			) -> None:
-				window.close()
 				self.on_activate(self)
 				if error is not None:
 					report_error(error_message, error)
