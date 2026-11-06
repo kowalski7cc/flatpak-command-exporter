@@ -57,6 +57,54 @@ class AliasConfigTests(unittest.TestCase):
         self.assertIsNone(self.config.app_enabled("org.example.SystemApp"))
         self.assertEqual(self.config.app_overrides(), {})
 
+    def test_clear_overrides_removes_app_and_alias_settings(self):
+        self.config.set_app_enabled("org.example.App", False)
+        self.config.set_alias_enabled("org.example.App", "command", True)
+        self.config.set_custom_alias(
+            "org.example.App", "custom", "custom-command"
+        )
+        self.config.set_alias_enabled("org.example.AliasOnly", "other", False)
+
+        self.config.clear_overrides()
+
+        self.assertIsNone(self.config.app_enabled("org.example.App"))
+        self.assertIsNone(self.config.alias_enabled("org.example.App", "command"))
+        self.assertEqual(self.config.app_overrides(), {})
+        self.assertEqual(
+            self.config.custom_aliases("org.example.App"),
+            {"custom": "custom-command"},
+        )
+        self.assertIsNone(
+            self.config.alias_enabled("org.example.AliasOnly", "other")
+        )
+
+    def test_bulk_alias_setting_does_not_change_app_override(self):
+        self.config.set_app_enabled("org.example.App", False)
+        self.config.set_alias_enabled("org.example.App", "unrelated", True)
+
+        self.config.set_aliases_enabled(
+            "org.example.App",
+            ["first", "second", "first"],
+            True,
+        )
+
+        self.assertFalse(self.config.app_enabled("org.example.App"))
+        self.assertEqual(
+            self.config.app_overrides(),
+            {"org.example.App": False},
+        )
+        self.assertTrue(self.config.is_alias_enabled("org.example.App", "first"))
+        self.assertTrue(self.config.is_alias_enabled("org.example.App", "second"))
+        self.assertTrue(self.config.is_alias_enabled("org.example.App", "unrelated"))
+
+        self.config.set_aliases_enabled(
+            "org.example.App", ["first", "second"], False
+        )
+
+        self.assertFalse(self.config.is_alias_enabled("org.example.App", "first"))
+        self.assertFalse(self.config.is_alias_enabled("org.example.App", "second"))
+        self.assertEqual(self.config.app_overrides(), {"org.example.App": False})
+
     def test_custom_aliases_round_trip_in_flatpak_keyfile_format(self):
         self.config.set_custom_alias("org.example.App", "myapp", "/app/bin/app")
         self.config.set_alias_enabled("org.example.App", "myapp", True)

@@ -23,10 +23,83 @@ from flatpak_command_exporter.gui.settings import (
     _handle_app_selection,
     _make_icon_button,
     _make_app_override_row,
+    _reset_factory_preferences,
+)
+from flatpak_command_exporter.gui.application import (
+    _app_commands_enabled,
+    _set_app_commands_enabled,
 )
 
 
 class AliasDataTests(unittest.TestCase):
+    def test_app_switch_state_uses_all_command_states(self):
+        records = [
+            SimpleNamespace(
+                app_id="org.example.App",
+                alias="first",
+                installation_scope="user",
+                branch="stable",
+            ),
+            SimpleNamespace(
+                app_id="org.example.App",
+                alias="second",
+                installation_scope="system",
+                branch="beta",
+            ),
+            SimpleNamespace(
+                app_id="org.example.App",
+                alias="first",
+                installation_scope="system",
+                branch="stable",
+            ),
+        ]
+        with tempfile.TemporaryDirectory() as data_home:
+            config = core.AliasConfig(data_home)
+            config.set_app_enabled("org.example.App", False)
+            config.set_alias_enabled("org.example.App", "first", True)
+            config.set_alias_enabled("org.example.App", "second", True)
+
+            self.assertTrue(_app_commands_enabled(config, records))
+            config.set_alias_enabled("org.example.App", "second", False)
+            self.assertFalse(_app_commands_enabled(config, records))
+
+            _set_app_commands_enabled(config, records, True)
+
+            self.assertTrue(_app_commands_enabled(config, records))
+            self.assertFalse(config.app_enabled("org.example.App"))
+
+    def test_reset_factory_preferences_clears_app_and_alias_overrides(self):
+        with tempfile.TemporaryDirectory() as data_home:
+            config = core.AliasConfig(data_home)
+            config.set_default_policy("none")
+            config.set_app_enabled("org.example.Enabled", True)
+            config.set_app_enabled("org.example.Disabled", False)
+            config.set_alias_enabled("org.example.App", "command", False)
+            config.set_custom_alias("org.example.App", "custom", "custom-command")
+
+            default_policy = _reset_factory_preferences(config)
+
+            self.assertEqual(default_policy, "all")
+            self.assertEqual(config.default_policy(), "all")
+            self.assertEqual(config.app_overrides(), {})
+            self.assertIsNone(config.alias_enabled("org.example.App", "command"))
+            self.assertEqual(
+                config.custom_aliases("org.example.App"),
+                {"custom": "custom-command"},
+            )
+
+    def test_reset_factory_preferences_uses_system_default(self):
+        with tempfile.TemporaryDirectory() as data_home:
+            config = core.AliasConfig(data_home, scope="system")
+            config.set_default_policy("all")
+            config.set_app_enabled("org.example.App", True)
+
+            default_policy = _reset_factory_preferences(config)
+
+            self.assertEqual(default_policy, "none")
+            self.assertEqual(config.default_policy(), "none")
+            self.assertEqual(config.app_overrides(), {})
+
     def test_app_ref_choices_merge_refs_by_app_id(self):
         records = [
             SimpleNamespace(

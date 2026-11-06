@@ -170,6 +170,29 @@ class AliasConfig:
                 overrides[path.name] = enabled
         return overrides
 
+    def clear_overrides(self):
+        try:
+            config_paths = list(self.directory.iterdir())
+        except FileNotFoundError:
+            return
+
+        for path in config_paths:
+            if (
+                not path.is_file()
+                or path.name == "global"
+                or path.name.startswith(".")
+            ):
+                continue
+            parser = self._read(path)
+            changed = (
+                parser.remove_option("app", "enabled")
+                if parser.has_option("app", "enabled")
+                else False
+            )
+            changed = parser.remove_section("aliases") or changed
+            if changed:
+                self._write(path, parser)
+
     def set_app_enabled(self, app_id, enabled):
         if enabled is not None and not isinstance(enabled, bool):
             raise AliasConfigError("App enabled setting must be true, false, or None")
@@ -202,6 +225,23 @@ class AliasConfig:
         if not parser.has_section("aliases"):
             parser.add_section("aliases")
         parser.set("aliases", alias, str(bool(enabled)).lower())
+        self._write(self.app_path(app_id), parser)
+
+    def set_aliases_enabled(self, app_id, aliases, enabled):
+        if not isinstance(enabled, bool):
+            raise AliasConfigError("Alias enabled setting must be true or false")
+        aliases = tuple(dict.fromkeys(aliases))
+        for alias in aliases:
+            self._validate_alias(alias)
+        if not aliases:
+            return
+
+        parser = self._app_config(app_id)
+        if not parser.has_section("aliases"):
+            parser.add_section("aliases")
+        value = str(enabled).lower()
+        for alias in aliases:
+            parser.set("aliases", alias, value)
         self._write(self.app_path(app_id), parser)
 
     def custom_aliases(self, app_id):

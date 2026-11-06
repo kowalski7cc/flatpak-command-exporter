@@ -49,6 +49,11 @@ intentional, and update this guide when the project conventions change.
   Keep global, app, and alias precedence consistent across the CLI, GUI, and
   export flow. Persist settings before refreshing exports, and report refresh
   failures to the caller.
+- In Flatlink, the main-window app switch toggles every discovered command for
+  that app by setting per-alias values; it must not change the app-level
+  override. The Settings factory reset restores the scope's default policy and
+  clears app and alias enable/disable overrides while preserving custom alias
+  definitions.
 - Validate app IDs and aliases before using them as filenames or launcher
   paths. Be careful when generating shell scripts: preserve argument
   forwarding and safely handle values that could alter shell syntax.

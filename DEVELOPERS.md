@@ -130,6 +130,12 @@ except (OSError, ValueError) as error:
     raise SystemExit(f"Could not update Flatpak command exports: {error}") from error
 ```
 
+In Flatlink, the main-window app switch enables or disables all discovered
+commands for that app together by writing per-alias settings. It does not
+change the app-level override. The Settings factory reset restores the default
+export policy and clears app-level and per-alias enable/disable settings;
+custom alias definitions are preserved.
+
 ### Configuration location
 
 By default, user configuration is stored in

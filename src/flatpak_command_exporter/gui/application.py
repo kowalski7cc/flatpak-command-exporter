@@ -6,6 +6,23 @@ from .menu import create_main_menu
 from .settings import show_settings
 
 
+def _app_commands_enabled(config, records):
+	return all(
+		config.is_alias_enabled(record.app_id, record.alias)
+		for record in records
+	)
+
+
+def _set_app_commands_enabled(config, records, enabled):
+	if not records:
+		return
+	config.set_aliases_enabled(
+		records[0].app_id,
+		list(dict.fromkeys(record.alias for record in records)),
+		enabled,
+	)
+
+
 def main():
 	logging.basicConfig(
 		level=os.environ.get("LOGLEVEL", "INFO").upper(),
@@ -128,7 +145,11 @@ def main():
 			app_switch_handlers = {}
 			app_saved_states = {}
 			app_groups = {}
+			app_commands = {}
 			for key, record in records:
+				app_commands.setdefault(record.app_id, {})[
+					record.alias
+				] = record
 				group_key = (
 					record.app_id,
 					record.installation_scope,
@@ -146,6 +167,9 @@ def main():
 
 			for group in app_groups.values():
 				record = group["record"]
+				command_records = [
+					command_record for _, command_record in group["records"]
+				]
 				row = Gtk.ListBoxRow()
 				row.set_selectable(False)
 				row.set_activatable(False)
@@ -180,17 +204,22 @@ def main():
 				header.append(app_icon)
 				header.append(labels)
 
-				app_setting = exporter.config.app_enabled(record.app_id)
-				if app_setting is None:
-					app_setting = exporter.config.default_policy() == "all"
+				app_setting = _app_commands_enabled(
+					exporter.config,
+					list(app_commands[record.app_id].values()),
+				)
 				app_switch = Gtk.Switch()
 				app_switch.set_active(app_setting)
 				app_switch.set_valign(Gtk.Align.CENTER)
 				app_switch.set_tooltip_text(
-					"Set the default export setting for every command in this app"
+					"Enable or disable every exported command in this app"
 				)
 				header.append(app_switch)
-				app_switches.append((app_switch, record))
+				app_switches.append((
+					app_switch,
+					list(app_commands[record.app_id].values()),
+					record,
+				))
 				expander.set_label_widget(header)
 
 				command_list = Gtk.Box(
@@ -367,27 +396,27 @@ def main():
 						][0] = state
 					finally:
 						alias_switch.handler_unblock(handler_id)
-				for app_switch, record in app_switches:
+				for app_switch, command_records, switch_record in app_switches:
 					handler_id = app_switch_handlers[
 						(
-							record.installation_scope,
-							record.app_id,
-							record.branch,
-							record.arch,
+							switch_record.installation_scope,
+							switch_record.app_id,
+							switch_record.branch,
+							switch_record.arch,
 						)
 					]
-					app_setting = exporter.config.app_enabled(record.app_id)
-					if app_setting is None:
-						app_setting = exporter.config.default_policy() == "all"
+					app_setting = _app_commands_enabled(
+						exporter.config, command_records
+					)
 					app_switch.handler_block(handler_id)
 					try:
 						app_switch.set_active(app_setting)
 						app_saved_states[
 							(
-								record.installation_scope,
-								record.app_id,
-								record.branch,
-								record.arch,
+								switch_record.installation_scope,
+								switch_record.app_id,
+								switch_record.branch,
+								switch_record.arch,
 							)
 						][0] = app_setting
 					finally:
@@ -451,34 +480,37 @@ def main():
 					)
 				] = saved_state
 
-			for app_switch, record in app_switches:
+			for app_switch, command_records, switch_record in app_switches:
 				handler_id = [None]
 				saved_state = [app_switch.get_active()]
 
 				def update_app(
 					toggle,
 					_property,
-					record=record,
+					command_records=command_records,
 					handler_id=handler_id,
 					saved_state=saved_state,
 				):
 					requested_state = toggle.get_active()
 					try:
-						exporter.config.set_app_enabled(
-							record.app_id, requested_state
+						_set_app_commands_enabled(
+							exporter.config, command_records, requested_state
 						)
 					except (OSError, ValueError) as error:
 						toggle.handler_block(handler_id[0])
 						toggle.set_active(saved_state[0])
 						toggle.handler_unblock(handler_id[0])
-						report_error("Could not save app setting", error)
+						report_error("Could not save app command settings", error)
 						return
 
 					saved_state[0] = requested_state
 					try:
 						exporter.export_commands()
 					except (OSError, ValueError, GLib.Error) as error:
-						report_error("App setting saved, but export failed", error)
+						report_error(
+							"App command settings saved, but export failed",
+							error,
+						)
 					refresh_user_controls()
 
 				handler_id[0] = app_switch.connect(
@@ -486,18 +518,18 @@ def main():
 				)
 				app_switch_handlers[
 					(
-						record.installation_scope,
-						record.app_id,
-						record.branch,
-						record.arch,
+						switch_record.installation_scope,
+						switch_record.app_id,
+						switch_record.branch,
+						switch_record.arch,
 					)
 				] = handler_id[0]
 				app_saved_states[
 					(
-						record.installation_scope,
-						record.app_id,
-						record.branch,
-						record.arch,
+						switch_record.installation_scope,
+						switch_record.app_id,
+						switch_record.branch,
+						switch_record.arch,
 					)
 				] = saved_state
 

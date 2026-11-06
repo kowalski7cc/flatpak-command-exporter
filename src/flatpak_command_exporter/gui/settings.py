@@ -26,6 +26,13 @@ def _make_app_override_row(Adw, app_id, app_name, app_icon, remove_button):
 	return row
 
 
+def _reset_factory_preferences(config):
+	config.clear_overrides()
+	default_policy = "none" if config.scope == "system" else "all"
+	config.set_default_policy(default_policy)
+	return default_policy
+
+
 def _handle_app_selection(
 	row,
 	records_by_row,
@@ -70,6 +77,15 @@ def show_settings(
 	default_row.set_active(exporter.config.default_policy() == "all")
 	default_group.add(default_row)
 	page.add(default_group)
+
+	reset_row = Adw.ActionRow(
+		title="Reset to factory defaults",
+		subtitle="Restore the default export policy and clear app overrides.",
+	)
+	reset_button = Gtk.Button(label="Reset")
+	reset_button.set_valign(Gtk.Align.CENTER)
+	reset_row.add_suffix(reset_button)
+	default_group.add(reset_row)
 
 	override_groups = {
 		True: Adw.PreferencesGroup(title="Enabled app overrides"),
@@ -276,6 +292,57 @@ def show_settings(
 	default_row_handler[0] = default_row.connect(
 		"notify::active", update_default_export
 	)
+
+	def reset_settings():
+		try:
+			default_policy = _reset_factory_preferences(exporter.config)
+		except (OSError, ValueError) as error:
+			report_error("Could not reset settings", error)
+			return
+
+		try:
+			exporter.export_commands()
+		except (OSError, ValueError, GLib.Error) as error:
+			report_error("Settings reset, but export failed", error)
+
+		default_row.handler_block(default_row_handler[0])
+		default_row.set_active(default_policy == "all")
+		default_row.handler_unblock(default_row_handler[0])
+		try:
+			refresh_override_rows()
+		except (OSError, ValueError, GLib.Error) as error:
+			report_error("Settings reset, but overrides could not be refreshed", error)
+		refresh_user_controls()
+
+	def confirm_reset(_button):
+		dialog = Adw.AlertDialog(
+			heading="Reset settings?",
+			body=(
+				"This restores the default export policy and clears app overrides. "
+				"Alias-specific settings and custom aliases are not changed."
+			),
+		)
+		dialog.add_response("cancel", "Cancel")
+		dialog.add_response("reset", "Reset")
+		dialog.set_response_appearance(
+			"reset", Adw.ResponseAppearance.DESTRUCTIVE
+		)
+		dialog.set_default_response("cancel")
+		dialog.set_close_response("cancel")
+
+		def reset_response(alert_dialog, result):
+			try:
+				response = alert_dialog.choose_finish(result)
+			except GLib.Error as error:
+				report_error("Could not confirm settings reset", error)
+				return
+			if response == "reset":
+				reset_settings()
+
+		dialog.choose(preferences_window, None, reset_response)
+
+	reset_button.connect("clicked", confirm_reset)
+
 	preferences_window.add(page)
 	try:
 		refresh_override_rows()

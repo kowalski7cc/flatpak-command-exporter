@@ -267,15 +267,20 @@ The window lists discovered apps in expandable rows, grouped by app and
 installation scope. Each app has a switch for its default setting; individual
 alias settings take precedence over the app and global defaults. Expand an app
 to see each alias, its command, and its enable/disable switch. Use the search
-field and the All/User/System filter to narrow the list. Changes to aliases
-and app switches are stored as user overrides, including for system-installed
-apps, and refresh user launchers without requesting system authorization.
+field and the All/User/System filter to narrow the list. Alias switches store
+per-command user overrides. The app switch enables or disables all commands
+in that app together without changing its app-level override. These settings
+also apply to system-installed apps and refresh user launchers without
+requesting system authorization.
 
 The hamburger menu's **Settings** page controls the global default and lists
 enabled and disabled app overrides. Use the plus button to choose an installed
 app from a list showing one entry per app with its name and ID; selecting it
 applies the override to every ref of that app.
 The remove button clears the app override and returns to the global default.
+Use **Reset to factory defaults** to restore the default export policy and
+clear app and command-level enable/disable overrides. Custom alias definitions
+are preserved.
 The refresh button exports all user commands, like `flatshell export --user`.
 Settings also includes the About window with version and author information
 from the project metadata.
