@@ -3,15 +3,10 @@
 import logging
 import shlex
 
-import gi
-
 from ..config import AliasConfig
 from ..defaults import COMMAND_TEMPLATE
 from .metadata import _read_manifest_or_empty, manifest_exported_commands
-from .refs import find_refs, get_current_ref
-
-gi.require_version("Flatpak", "1.0")
-from gi.repository import Flatpak, GLib
+from .refs import _get_installed_refs, get_current_ref
 
 
 def _launcher_path(alias, *, scope="user"):
@@ -55,10 +50,24 @@ def remove_launcher(export, *, scope="user"):
         logging.info("Removed launcher for alias %s at %s", export, path)
 
 
+def _create_disabled_launcher(alias):
+    path = _launcher_path(alias)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    message = shlex.quote(
+        f"Flatpak command {alias!r} is disabled by the user configuration."
+    )
+    path.write_text(
+        f"#!/bin/sh\nprintf '%s\\n' {message} >&2\nexit 127\n",
+        encoding="utf-8",
+    )
+    path.chmod(0o755)
+    logging.info("Created user mask for disabled system alias %s at %s", alias, path)
+
+
 def export_commands(
     config: AliasConfig | None = None,
     *,
-    include_system: bool = False,
+    include_system: bool = True,
     scope: str | None = None,
     system: bool = False,
 ) -> None:
@@ -75,66 +84,91 @@ def export_commands(
         scope_name = "system"
     logging.info("Exporting Flatpak commands for %s scope", scope_name)
 
-    installation_factories: list[object] = []
-    if scope_name == "system":
-        installation_factories = [Flatpak.Installation.new_system]
-    else:
-        installation_factories = [Flatpak.Installation.new_user]
-        if include_system:
-            installation_factories.append(Flatpak.Installation.new_system)
+    installed_refs = _get_installed_refs(
+        scope=scope_name,
+        include_system=include_system,
+    )
+    refs_by_app_id: dict[str, dict[str, list[object]]] = {}
+    for installed_ref in installed_refs:
+        refs_by_app_id.setdefault(installed_ref.ref.get_name(), {}).setdefault(
+            installed_ref.scope, []
+        ).append(installed_ref)
 
-    refs_by_app_id: dict[str, object] = {}
     launchers: dict[str, tuple[str, str, str, str]] = {}
     disabled_aliases: set[str] = set()
-
-    for installation_factory in installation_factories:
-        logging.debug("Collecting refs from a Flatpak installation")
-        installation = installation_factory()
-        if installation is None:
-            continue
-        for ref in find_refs(installation):
-            refs_by_app_id[ref.get_name()] = ref
     logging.info(
         "Preparing launchers for %d installed applications",
         len(refs_by_app_id),
     )
 
-    for app_id, fallback_ref in refs_by_app_id.items():
-        install_factory = (
-            Flatpak.Installation.new_system
-            if scope_name == "system"
-            else Flatpak.Installation.new_user
+    for app_id, refs_by_scope in refs_by_app_id.items():
+        preferred_scope = (
+            "user"
+            if scope_name != "system" and refs_by_scope.get("user")
+            else "system"
         )
-        installation = install_factory()
-        if installation is None:
-            continue
-        installation_path = installation.get_path().get_path()
-        ref = get_current_ref(installation, app_id, fallback_ref)
-
-        manifest = _read_manifest_or_empty(
-            installation_path, ref.get_name(), ref.get_arch(), ref.get_branch()
+        preferred_refs = refs_by_scope[preferred_scope]
+        selected_installation_ref = preferred_refs[-1]
+        current_ref = get_current_ref(
+            selected_installation_ref.installation,
+            app_id,
+            selected_installation_ref.ref,
         )
-        if manifest is None:
-            continue
+        current_ref_key = (current_ref.get_arch(), current_ref.get_branch())
+        refs_to_export = [current_ref]
+        refs_to_export.extend(
+            installed_ref.ref
+            for installed_ref in preferred_refs
+            if (
+                installed_ref.ref.get_arch(),
+                installed_ref.ref.get_branch(),
+            )
+            != current_ref_key
+        )
 
-        exported_commands = manifest_exported_commands(ref.get_name(), manifest)
-        exported_commands = {**exported_commands, **config.custom_aliases(app_id)}
-        for export, command in exported_commands.items():
-            if not config.is_alias_enabled(app_id, export):
-                logging.debug("Skipping disabled alias %s for %s", export, app_id)
-                disabled_aliases.add(export)
-                continue
-            logging.debug("Scheduling launcher for alias %s from %s", export, app_id)
-            launchers[export] = (
+        for ref in refs_to_export:
+            manifest = _read_manifest_or_empty(
+                selected_installation_ref.installation_path,
                 ref.get_name(),
-                command,
                 ref.get_arch(),
                 ref.get_branch(),
             )
+            if manifest is None:
+                continue
+
+            exported_commands = manifest_exported_commands(ref.get_name(), manifest)
+            exported_commands = {**exported_commands, **config.custom_aliases(app_id)}
+            for export, command in exported_commands.items():
+                if not config.is_alias_enabled(app_id, export):
+                    logging.debug("Skipping disabled alias %s for %s", export, app_id)
+                    disabled_aliases.add(export)
+                    continue
+                logging.debug("Scheduling launcher for alias %s from %s", export, app_id)
+                launchers.setdefault(
+                    export,
+                    (
+                        ref.get_name(),
+                        command,
+                        ref.get_arch(),
+                        ref.get_branch(),
+                    ),
+                )
 
     removed_count = 0
+    system_export_directory = (
+        AliasConfig(scope="system").export_directory
+        if scope_name == "user" and disabled_aliases
+        else None
+    )
     for export in disabled_aliases - launchers.keys():
-        if scope_name == "user":
+        AliasConfig._validate_alias(export)
+        if (
+            scope_name == "user"
+            and system_export_directory is not None
+            and (system_export_directory / export).is_file()
+        ):
+            _create_disabled_launcher(export)
+        elif scope_name == "user":
             remove_launcher(export)
         else:
             remove_launcher(export, scope=scope_name)

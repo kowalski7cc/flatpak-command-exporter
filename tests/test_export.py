@@ -1,10 +1,15 @@
 import os
+import subprocess
 import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import call, patch
+
+from gi.repository import GLib
 
 from flatpak_command_exporter.api import launchers as core
+from flatpak_command_exporter.api.refs import _InstalledRef
 
 
 class ExportCommandsTests(unittest.TestCase):
@@ -27,15 +32,13 @@ class ExportCommandsTests(unittest.TestCase):
             get_path=lambda: SimpleNamespace(get_path=lambda: "/user"),
             get_current_installed_app=current_ref,
         )
+        installed_refs = [
+            _InstalledRef(ref, installation, "/user", "user") for ref in refs
+        ]
         with tempfile.TemporaryDirectory() as data_home:
             with (
                 patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
-                patch.object(
-                    core,
-                    "Flatpak",
-                    SimpleNamespace(Installation=SimpleNamespace(new_user=lambda: installation)),
-                ),
-                patch.object(core, "find_refs", return_value=refs),
+                patch.object(core, "_get_installed_refs", return_value=installed_refs),
                 patch.object(
                     core,
                     "_read_manifest_or_empty",
@@ -90,7 +93,7 @@ class ExportCommandsTests(unittest.TestCase):
         beta_ref = self.Ref("app.test", "beta")
 
         def lookup_error(_app_id, _cancellable):
-            raise core.GLib.Error("current ref unavailable")
+            raise GLib.Error("current ref unavailable")
 
         create_launcher, _remove_launcher = self.run_export(
             [stable_ref, beta_ref],
@@ -157,12 +160,11 @@ class ExportCommandsTests(unittest.TestCase):
             with (
                 patch.object(
                     core,
-                    "Flatpak",
-                    SimpleNamespace(
-                        Installation=SimpleNamespace(new_system=lambda: installation)
-                    ),
+                    "_get_installed_refs",
+                    return_value=[
+                        _InstalledRef(ref, installation, "/system", "system")
+                    ],
                 ),
-                patch.object(core, "find_refs", return_value=[ref]),
                 patch.object(
                     core,
                     "_read_manifest_or_empty",
@@ -189,12 +191,11 @@ class ExportCommandsTests(unittest.TestCase):
             with (
                 patch.object(
                     core,
-                    "Flatpak",
-                    SimpleNamespace(
-                        Installation=SimpleNamespace(new_system=lambda: installation)
-                    ),
+                    "_get_installed_refs",
+                    return_value=[
+                        _InstalledRef(ref, installation, "/system", "system")
+                    ],
                 ),
-                patch.object(core, "find_refs", return_value=[ref]),
                 patch.object(
                     core,
                     "_read_manifest_or_empty",
@@ -213,6 +214,173 @@ class ExportCommandsTests(unittest.TestCase):
             "stable",
             scope="system",
         )
+
+    def test_user_export_merges_system_refs_and_prefers_user_alias_collision(self):
+        user_ref = self.Ref("app.user", "stable")
+        system_ref = self.Ref("app.system", "stable")
+        user_installation = SimpleNamespace(
+            get_current_installed_app=lambda _app_id, _cancellable: user_ref,
+        )
+        system_installation = SimpleNamespace(
+            get_current_installed_app=lambda _app_id, _cancellable: system_ref,
+        )
+        installed_refs = [
+            _InstalledRef(user_ref, user_installation, "/user", "user"),
+            _InstalledRef(system_ref, system_installation, "/system", "system"),
+        ]
+
+        with tempfile.TemporaryDirectory() as data_home:
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "_get_installed_refs", return_value=installed_refs),
+                patch.object(
+                    core,
+                    "_read_manifest_or_empty",
+                    side_effect=lambda _path, app_id, _arch, _branch: {
+                        "x-export-commands": {
+                            "shared": app_id,
+                            f"{app_id}-command": app_id,
+                        }
+                    },
+                ),
+                patch.object(core, "create_launcher") as create_launcher,
+            ):
+                core.export_commands()
+
+        create_launcher.assert_has_calls(
+            [
+                call(
+                    "app.user",
+                    "shared",
+                    "app.user",
+                    "x86_64",
+                    "stable",
+                ),
+                call(
+                    "app.user",
+                    "app.user-command",
+                    "app.user",
+                    "x86_64",
+                    "stable",
+                ),
+                call(
+                    "app.system",
+                    "app.system-command",
+                    "app.system",
+                    "x86_64",
+                    "stable",
+                ),
+            ],
+            any_order=True,
+        )
+        self.assertEqual(create_launcher.call_count, 3)
+
+    def test_user_export_visits_all_branches_and_prefers_the_current_ref(self):
+        stable_ref = self.Ref("app.test", "stable")
+        beta_ref = self.Ref("app.test", "beta")
+        installation = SimpleNamespace(
+            get_current_installed_app=lambda _app_id, _cancellable: beta_ref,
+        )
+        installed_refs = [
+            _InstalledRef(stable_ref, installation, "/user", "user"),
+            _InstalledRef(beta_ref, installation, "/user", "user"),
+        ]
+
+        with tempfile.TemporaryDirectory() as data_home:
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "_get_installed_refs", return_value=installed_refs),
+                patch.object(
+                    core,
+                    "_read_manifest_or_empty",
+                    side_effect=lambda _path, _app_id, _arch, branch: {
+                        "x-export-commands": (
+                            {
+                                "shared": "beta-command",
+                                "beta-only": "beta-command",
+                            }
+                            if branch == "beta"
+                            else {
+                                "shared": "stable-command",
+                                "stable-only": "stable-command",
+                            }
+                        )
+                    },
+                ),
+                patch.object(core, "create_launcher") as create_launcher,
+            ):
+                core.export_commands()
+
+        self.assertEqual(create_launcher.call_count, 3)
+        create_launcher.assert_has_calls(
+            [
+                call(
+                    "app.test",
+                    "shared",
+                    "beta-command",
+                    "x86_64",
+                    "beta",
+                ),
+                call(
+                    "app.test",
+                    "beta-only",
+                    "beta-command",
+                    "x86_64",
+                    "beta",
+                ),
+                call(
+                    "app.test",
+                    "stable-only",
+                    "stable-command",
+                    "x86_64",
+                    "stable",
+                ),
+            ],
+            any_order=True,
+        )
+
+    def test_disabled_user_override_masks_system_export(self):
+        ref = self.Ref("app.test", "stable")
+        installation = SimpleNamespace(
+            get_current_installed_app=lambda _app_id, _cancellable: ref,
+        )
+        installed_ref = _InstalledRef(ref, installation, "/user", "user")
+
+        with tempfile.TemporaryDirectory() as data_home:
+            system_export_directory = Path(data_home) / "system-commands"
+            system_export_directory.mkdir()
+            (system_export_directory / "alias").write_text("# system launcher\n")
+            config = core.AliasConfig(data_home)
+            config.set_default_policy("none")
+            real_config = core.AliasConfig
+
+            def config_factory(data_home=None, *, scope="user"):
+                if scope == "system":
+                    return SimpleNamespace(export_directory=system_export_directory)
+                return real_config(data_home, scope=scope)
+
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "AliasConfig", side_effect=config_factory),
+                patch.object(core, "_get_installed_refs", return_value=[installed_ref]),
+                patch.object(
+                    core,
+                    "_read_manifest_or_empty",
+                    return_value={"x-export-commands": {"alias": "command"}},
+                ),
+            ):
+                core.export_commands(config)
+
+            mask_path = Path(data_home) / "flatpak-commands" / "alias"
+            result = subprocess.run(
+                [str(mask_path)],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+        self.assertEqual(result.returncode, 127)
+        self.assertIn("is disabled by the user configuration", result.stderr)
 
 
 if __name__ == "__main__":

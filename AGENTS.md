@@ -40,6 +40,9 @@ intentional, and update this guide when the project conventions change.
   directory (normally `/var/lib/flatpak-commands`). Route system mutations
   through the root-owned system-bus helper and authorize each operation with
   PolicyKit.
+- System-wide command export is disabled by default. User launcher directories
+  must precede system launcher directories on `PATH`; a disabled user alias
+  masks an enabled system launcher of the same name.
 - User alias settings live under `flatpak/aliases/`; system settings live under
   the system Flatpak installation's `aliases/` directory. Both use
   INI/GKeyFile-style files.

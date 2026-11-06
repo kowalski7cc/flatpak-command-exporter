@@ -23,6 +23,8 @@ aliases in a graphical interface.
   `x-export-commands` and `export-commands`.
 - Choose whether aliases are exported by default, then override that choice for
   individual apps or aliases.
+- Keep system-wide command export disabled by default; user overrides take
+  precedence over system launchers.
 - Add your own aliases for commands inside user- or system-installed Flatpaks.
 - Search and toggle apps and aliases in Flatlink.
 - Refresh user command exports from Flatlink after installing an app.
@@ -191,7 +193,7 @@ flatshell list --all --system
 # Include the Flatpak command behind each alias
 flatshell list --all --complete
 
-# Generate or refresh enabled user launchers
+# Generate or refresh enabled user launchers for user and system refs
 flatshell export
 
 # Generate or refresh system launchers (requests PolicyKit if needed)
@@ -341,8 +343,10 @@ Settings are resolved from most specific to least specific:
 2. The app-level `enabled` setting.
 3. The global `default-export` policy.
 
-`all` enables aliases by default; `none` disables them by default. An explicit
-app or alias setting takes precedence over the less-specific setting.
+`all` enables aliases by default; `none` disables them by default. New system
+configurations default to `none`, while new user configurations default to
+`all`. An explicit app or alias setting takes precedence over the
+less-specific setting.
 
 Generated launcher scripts are stored in:
 
@@ -351,7 +355,10 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/
 /var/lib/flatpak-commands/
 ```
 
-The profile script adds both user and system launcher directories to `PATH`.
+The profile script resolves the system installation dynamically and adds both
+launcher directories to `PATH`, with the user directory first. If a user
+override disables a command that has a system launcher, a user-side mask
+prevents the system command from taking effect.
 Debian installs it in `/etc/profile.d/`; `flatshell install-profile --user`
 installs a user copy and sources it from `~/.profile`.
 
@@ -361,13 +368,18 @@ installs a user copy and sources it from `~/.profile`.
    `files/manifest.json` command declarations. A built-in command map supplies
    aliases for known apps whose manifests do not declare them.
    The map includes GNOME and KDE Flathub apps with conventional host commands.
-2. For each app, it combines the declared commands with custom aliases from
-   that installation's configuration and applies the global, app, and alias
-   settings.
-3. For enabled aliases, it writes an executable launcher that invokes
-   `flatpak run` with the app ID, branch, architecture, and command. Disabled
-   launchers are removed from the export directory.
-4. The profile script exposes that directory on `PATH`, so commands can be
+2. The API and list commands retain each distinct branch and architecture,
+   preferring the user installation when the same ref exists in both scopes.
+   Export tries the current ref first and falls back to the last enumerated ref
+   when resolving launcher name collisions.
+3. For each selected ref, it combines declared commands with custom aliases
+   and applies the selected configuration. User exports include system refs;
+   system exports are disabled by default.
+4. For enabled aliases, it writes an executable launcher that invokes
+   `flatpak run` with the app ID, branch, architecture, and command. User
+   launchers take precedence over system launchers; disabled user aliases mask
+   system launchers with the same name.
+5. The profile script exposes the directories on `PATH`, so commands can be
    started directly from a terminal.
 
 Flatlink and `flatshell` use the same configuration and export implementation,

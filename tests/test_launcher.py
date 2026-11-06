@@ -1,5 +1,6 @@
 import os
 import stat
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,6 +11,7 @@ from flatpak_command_exporter.application import (
     create_launcher,
     remove_launcher,
 )
+from flatpak_command_exporter.api import launchers as launcher_api
 
 
 class LauncherTests(unittest.TestCase):
@@ -54,6 +56,25 @@ class LauncherTests(unittest.TestCase):
                 )
 
             self.assertIn("--command='tool\"; touch /tmp/unexpected; echo \"'", path.read_text())
+
+    def test_disabled_user_alias_masks_existing_system_launcher(self):
+        with tempfile.TemporaryDirectory() as data_home:
+            path = Path(data_home) / "flatpak-commands" / "example"
+            with patch.dict(os.environ, {"XDG_DATA_HOME": data_home}):
+                launcher_api._create_disabled_launcher("example")
+
+            self.assertTrue(path.stat().st_mode & stat.S_IXUSR)
+            result = subprocess.run(
+                [str(path)],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            self.assertEqual(result.returncode, 127)
+            self.assertIn(
+                "is disabled by the user configuration",
+                result.stderr,
+            )
 
 
 if __name__ == "__main__":
