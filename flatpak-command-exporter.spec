@@ -82,5 +82,8 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %{_datadir}/icons/hicolor/symbolic/apps/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg
 
 %changelog
+* Fri Nov 06 2026 Kowalski Dragon <kowalski7cc@users.noreply.github.com> - 0.8.0-1
+- Release 0.8.0.
+
 * Thu Nov 05 2026 Kowalski Dragon <kowalski7cc@users.noreply.github.com> - 0.6.0-1
 - Add Fedora RPM packages
