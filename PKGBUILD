@@ -1,6 +1,6 @@
 # Maintainer: Kowalski Dragon <kowalski7cc@users.noreply.github.com>
 pkgname=('flatpak-command-exporter' 'flatpak-command-exporter-gui')
-pkgver=0.11.0
+pkgver=$(python3 -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
 pkgrel=1
 pkgdesc='Export commands provided by installed Flatpak applications'
 arch=('any')
