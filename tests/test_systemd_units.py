@@ -40,7 +40,7 @@ class SystemdUnitTests(unittest.TestCase):
             path_unit,
         )
         self.assertNotIn("/var/lib/flatpak/", path_unit)
-        self.assertIn("ExecStart=/usr/bin/flatshell export\n", service_unit)
+        self.assertIn("ExecStart=/usr/bin/flatshell export --user\n", service_unit)
         self.assertNotIn("--system", service_unit)
 
     def test_scope_units_are_enabled_by_package_presets(self):

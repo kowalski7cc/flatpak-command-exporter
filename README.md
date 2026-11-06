@@ -13,9 +13,10 @@ aliases in a graphical interface.
 > and system alias configuration lives in the default system Flatpak
 > installation's `aliases/` directory (normally `/var/lib/flatpak/aliases/`).
 > System launchers are written beside that installation (normally
-> `/var/lib/flatpak-commands/`) when authorized.
-> Flatlink and `flatshell` use a root-owned system-bus helper with PolicyKit
-> authorization for system changes.
+> `/var/lib/flatpak-commands/`) and require elevated filesystem permissions.
+> Flatlink currently uses a root-owned system-bus helper with PolicyKit for
+> system changes. System-scope `flatshell` changes operate directly and require
+> elevated filesystem permissions; use `--user` for per-user changes.
 
 ## What you can do
 
@@ -39,7 +40,7 @@ and export them:
 
 ```console
 flatshell list --all
-flatshell export
+flatshell export --user
 ```
 
 Run an exported command by its alias, just as you would run any other command:
@@ -71,9 +72,9 @@ core package and, if desired, the GUI package with your package manager. The
 core package installs `flatpak-exported-commands.sh` into `/etc/profile.d/`;
 start a new login session after installation for the `PATH` change to take
 effect. Non-Debian installations can run `flatshell install-profile --user` to
-set up shell integration for the current user, or `flatshell install-profile
---system` to install it in `/etc/profile.d/`. The system command is authorized
-by the PolicyKit-backed system-bus helper. The user installation updates
+set up shell integration for the current user, or
+`sudo flatshell install-profile --system` to install it in `/etc/profile.d/`.
+The user installation updates
 `~/.profile` and applies to login shells that read that file.
 
 ### Fedora RPM
@@ -194,54 +195,55 @@ flatshell list --all --system
 flatshell list --all --complete
 
 # Generate or refresh enabled user launchers for user and system refs
-flatshell export
+flatshell export --user
 
-# Generate or refresh system launchers (requests PolicyKit if needed)
-flatshell export --system
+# Generate or refresh system launchers (system scope is the default)
+sudo flatshell export
 ```
 
 ### Configure defaults and apps
 
-By default, aliases are enabled unless an app or alias has an explicit setting.
-Set the global default to export all aliases or none:
+New user configurations enable aliases by default; new system configurations
+disable them by default. System scope is the CLI default and requires root;
+add `--user` for per-user settings:
 
 ```console
-flatshell config default-export all
-flatshell config default-export none
+sudo flatshell config default-export all
+flatshell config default-export none --user
 ```
 
 Enable or disable every alias for one app, or override a single alias:
 
 ```console
-# App-level setting
-flatshell enable org.gimp.GIMP
-flatshell disable org.gimp.GIMP
+# User app-level setting
+flatshell enable org.gimp.GIMP --user
+flatshell disable org.gimp.GIMP --user
 
-# Alias-level setting
-flatshell enable org.gimp.GIMP gimp
-flatshell disable org.gimp.GIMP gimp
+# User alias-level setting
+flatshell enable org.gimp.GIMP gimp --user
+flatshell disable org.gimp.GIMP gimp --user
 ```
 
-These settings affect the selected installation. Use `--user` for per-user
-settings or `--system` for system settings; the system-bus helper requests
-PolicyKit authorization.
+System settings are the default; pass `--user` to change the current user's
+settings. System changes write configuration and launchers directly, so run
+`flatshell` with the required elevated permissions.
 
 ### Add a custom alias
 
 Custom aliases map a new command name to a command available inside an
-installed Flatpak. Use `--system` to add an alias for a system-installed app;
-system changes are handled by the system-bus helper with PolicyKit:
+installed Flatpak. System scope is the default; use `--user` for user settings.
+System changes require elevated permissions:
 
 ```console
-flatshell add org.gimp.GIMP my-gimp gimp
-flatshell add --system org.example.App my-command command
+flatshell add org.gimp.GIMP my-gimp gimp --user
+sudo flatshell add org.example.App my-command command
 ```
 
 Remove a custom alias and disable that alias:
 
 ```console
-flatshell remove org.gimp.GIMP my-gimp
-flatshell remove --system org.example.App my-command
+flatshell remove org.gimp.GIMP my-gimp --user
+sudo flatshell remove org.example.App my-command
 ```
 
 ### Logging
@@ -251,7 +253,7 @@ operational details or troubleshooting output:
 
 ```console
 LOGLEVEL=INFO flatshell list --all
-LOGLEVEL=DEBUG flatshell export
+LOGLEVEL=DEBUG flatshell export --user
 ```
 
 Supported levels are `DEBUG`, `INFO`, `WARNING`, `ERROR`, and `CRITICAL`.

@@ -54,7 +54,7 @@ class ConfigurationCliTests(unittest.TestCase):
 
     def test_cli_logs_operation_lifecycle(self):
         with (
-            patch.object(sys, "argv", ["flatshell", "export"]),
+            patch.object(sys, "argv", ["flatshell", "export", "--user"]),
             patch.object(cli, "FlatpakCommandExporter") as exporter_factory,
             self.assertLogs(level="INFO") as logs,
         ):
@@ -65,13 +65,13 @@ class ConfigurationCliTests(unittest.TestCase):
         self.assertIn("Completed export command for user scope", logs.output[-1])
 
     def test_config_command_updates_global_default_and_exports(self):
-        self.run_cli("config", "default-export", "none")
+        self.run_cli("config", "default-export", "none", "--user")
 
         self.assertEqual(AliasConfig().default_policy(), "none")
         api_exporter.export_commands.assert_called_once()
 
     def test_add_command_creates_and_enables_custom_alias(self):
-        self.run_cli("add", "org.example.App", "myapp", "/app/bin/app")
+        self.run_cli("add", "org.example.App", "myapp", "/app/bin/app", "--user")
 
         config = AliasConfig()
         self.assertEqual(
@@ -98,7 +98,7 @@ class ConfigurationCliTests(unittest.TestCase):
         self.assertEqual(config.default_policy(), "none")
         api_exporter.export_commands.assert_called_once_with(config)
 
-    def test_system_add_uses_the_system_bus(self):
+    def test_system_add_runs_directly_in_system_scope(self):
         with (
             patch.object(
                 sys,
@@ -112,12 +112,13 @@ class ConfigurationCliTests(unittest.TestCase):
                     "--system",
                 ],
             ),
-            patch.object(cli, "call_system_method") as call,
+            patch.object(cli, "FlatpakCommandExporter") as exporter_factory,
         ):
             cli.main()
 
-        call.assert_called_once_with(
-            "AddCustomAlias", "org.example.App", "myapp", "app"
+        exporter_factory.assert_called_once_with(scope="system")
+        exporter_factory.return_value.add_custom_alias.assert_called_once_with(
+            "org.example.App", "myapp", "app"
         )
 
     def test_user_profile_install_runs_without_escalation(self):
@@ -129,34 +130,38 @@ class ConfigurationCliTests(unittest.TestCase):
 
         install.assert_called_once_with("user")
 
-    def test_system_profile_install_uses_system_bus(self):
+    def test_system_profile_install_runs_directly(self):
         with (
             patch.object(
                 sys, "argv", ["flatshell", "install-profile", "--system"]
             ),
-            patch.object(cli, "call_system_method") as call,
+            patch.object(cli, "install_profile") as install,
         ):
             cli.main()
 
-        call.assert_called_once_with("InstallProfile")
+        install.assert_called_once_with("system")
 
-    def test_system_operations_use_fixed_dbus_methods(self):
+    def test_system_operations_run_directly_with_system_scope(self):
         cases = (
             (
                 ["export", "--system"],
-                ("Export",),
+                "export_commands",
+                (),
             ),
             (
                 ["enable", "org.example.App", "example", "--system"],
-                ("SetAliasEnabled", "org.example.App", "example", True),
+                "set_alias_enabled",
+                ("org.example.App", "example", True),
             ),
             (
                 ["disable", "org.example.App", "--system"],
-                ("SetAppEnabled", "org.example.App", False),
+                "set_app_enabled",
+                ("org.example.App", False),
             ),
             (
                 ["config", "default-export", "none", "--system"],
-                ("SetDefaultPolicy", "none"),
+                "set_default_policy",
+                ("none",),
             ),
             (
                 [
@@ -165,18 +170,36 @@ class ConfigurationCliTests(unittest.TestCase):
                     "example",
                     "--system",
                 ],
-                ("RemoveCustomAlias", "org.example.App", "example"),
+                "remove_custom_alias",
+                ("org.example.App", "example"),
             ),
         )
-        for arguments, expected_call in cases:
+        for arguments, method_name, expected_call in cases:
             with (
                 self.subTest(arguments=arguments),
                 patch.object(sys, "argv", ["flatshell", *arguments]),
-                patch.object(cli, "call_system_method") as call,
+                patch.object(cli, "FlatpakCommandExporter") as exporter_factory,
             ):
                 cli.main()
 
-            call.assert_called_once_with(*expected_call)
+            exporter_factory.assert_called_once_with(scope="system")
+            getattr(exporter_factory.return_value, method_name).assert_called_once_with(
+                *expected_call
+            )
+
+    def test_mutations_default_to_system_scope(self):
+        with (
+            patch.object(
+                sys,
+                "argv",
+                ["flatshell", "config", "default-export", "none"],
+            ),
+            patch.object(cli, "FlatpakCommandExporter") as exporter_factory,
+        ):
+            cli.main()
+
+        exporter_factory.assert_called_once_with(scope="system")
+        exporter_factory.return_value.set_default_policy.assert_called_once_with("none")
 
 
 if __name__ == "__main__":
