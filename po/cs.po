@@ -16,6 +16,9 @@ msgstr "Grafické rozhraní vyžaduje PyGObject, GTK 4 a libadwaita s nainstalov
 msgid "Exported Commands"
 msgstr "Exportované příkazy"
 
+msgid "Export"
+msgstr "Exportovat"
+
 msgid "Export all user commands"
 msgstr "Exportovat všechny uživatelské příkazy"
 

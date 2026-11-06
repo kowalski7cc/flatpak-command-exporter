@@ -11,7 +11,7 @@ LOCALE_DIR = (
     / "locale"
 )
 LANGUAGES = ("it", "fr", "de", "es", "ja", "hu", "pl", "cs")
-MESSAGE_COUNT = 60
+MESSAGE_COUNT = 61
 
 
 class GuiLocalizationTests(unittest.TestCase):
@@ -47,6 +47,7 @@ class GuiLocalizationTests(unittest.TestCase):
             languages=["fr"],
         )
         self.assertEqual(french.gettext("Settings"), "Paramètres")
+        self.assertEqual(french.gettext("Export"), "Exporter")
         self.assertEqual(
             french.gettext("Exported Commands"),
             "Commandes exportées",

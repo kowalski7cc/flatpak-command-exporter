@@ -108,6 +108,17 @@ def get_app_ref_choices(exporter):
 	)
 
 
+def get_aliases_by_scope(exporter):
+	"""Return merged refs and refs filtered to each installation scope."""
+	return {
+		"all": exporter.get_exported_aliases(),
+		"user": exporter.get_exported_aliases(
+			include_system=False, scope="user"
+		),
+		"system": exporter.get_exported_aliases(scope="system"),
+	}
+
+
 def _make_app_icon(record, Gtk, Gdk, GLib, icon_theme):
 	icon_name = get_exported_icon(record)
 	installation_path = getattr(record, "installation_path", None)

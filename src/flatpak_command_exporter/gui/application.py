@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from .accessibility import set_accessible_label, set_decorative
-from .data import _make_app_icon, get_project_details
+from .data import _make_app_icon, get_aliases_by_scope, get_project_details
 from .i18n import _
 from .menu import create_main_menu
 from .settings import show_settings
@@ -71,20 +71,20 @@ def main():
 			about_window.present()
 
 		def on_activate(self, _application):
-			all_records = exporter.get_exported_aliases()
+			aliases_by_scope = get_aliases_by_scope(exporter)
 			row_records = {}
 			row_scopes = {}
-			for record in all_records:
-				key = (
-					record.installation_scope,
-					record.app_id,
-					record.arch,
-					record.branch,
-					record.alias,
-				)
-				row_records[key] = record
-				row_scopes.setdefault(key, set()).add("all")
-				row_scopes[key].add(record.installation_scope)
+			for filter_scope, scope_records in aliases_by_scope.items():
+				for record in scope_records:
+					key = (
+						record.installation_scope,
+						record.app_id,
+						record.arch,
+						record.branch,
+						record.alias,
+					)
+					row_records[key] = record
+					row_scopes.setdefault(key, set()).add(filter_scope)
 			records = sorted(
 				row_records.items(),
 				key=lambda item: (
@@ -110,7 +110,8 @@ def main():
 			toolbar = Adw.ToolbarView()
 			header = Adw.HeaderBar()
 			header.set_title_widget(Adw.WindowTitle(title=_("Exported Commands"), subtitle=None))
-			export_button = Gtk.Button.new_from_icon_name("view-refresh-symbolic")
+			export_button = Gtk.Button.new_with_label(_("Export"))
+			export_button.add_css_class("suggested-action")
 			export_button.set_tooltip_text(_("Export all user commands"))
 			set_accessible_label(
 				export_button, Gtk, _("Export all user commands")
@@ -122,8 +123,8 @@ def main():
 			menu_button.set_menu_model(menu_model)
 			menu_button.set_tooltip_text(_("Main Menu"))
 			set_accessible_label(menu_button, Gtk, _("Main Menu"))
+			header.pack_start(export_button)
 			header.pack_end(menu_button)
-			header.pack_end(export_button)
 			search_entry = Gtk.SearchEntry()
 			search_entry.set_placeholder_text(_("Search apps and commands"))
 			set_accessible_label(
@@ -203,20 +204,7 @@ def main():
 				title = Gtk.Label(label=record.app_name)
 				title.set_xalign(0)
 				title.add_css_class("heading")
-				scope_name = (
-					_("User")
-					if record.installation_scope == "user"
-					else _("System")
-				)
-				subtitle_text = _(
-					"%(app_id)s - %(branch)s (%(arch)s) - %(scope)s installation"
-				) % {
-					"app_id": record.app_id,
-					"branch": record.branch,
-					"arch": record.arch,
-					"scope": scope_name,
-				}
-				subtitle = Gtk.Label(label=subtitle_text)
+				subtitle = Gtk.Label(label=record.app_id)
 				subtitle.set_xalign(0)
 				subtitle.add_css_class("dim-label")
 				labels.append(title)

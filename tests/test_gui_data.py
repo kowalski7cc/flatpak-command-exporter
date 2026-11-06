@@ -20,7 +20,10 @@ from flatpak_command_exporter.gui.accessibility import (
     set_accessible_label,
     set_decorative,
 )
-from flatpak_command_exporter.gui.data import get_app_ref_choices
+from flatpak_command_exporter.gui.data import (
+    get_aliases_by_scope,
+    get_app_ref_choices,
+)
 from flatpak_command_exporter.gui.menu import create_main_menu
 from flatpak_command_exporter.gui.settings import (
     _configure_responsive_label,
@@ -36,6 +39,37 @@ from flatpak_command_exporter.gui.application import (
 
 
 class AliasDataTests(unittest.TestCase):
+    def test_aliases_by_scope_use_merged_and_installation_specific_refs(self):
+        merged_records = [object()]
+        user_records = [object()]
+        system_records = [object()]
+        calls = []
+
+        def get_exported_aliases(*, include_system=True, scope=None):
+            calls.append((include_system, scope))
+            if scope == "system":
+                return system_records
+            if scope == "user" and not include_system:
+                return user_records
+            return merged_records
+
+        aliases_by_scope = get_aliases_by_scope(
+            SimpleNamespace(get_exported_aliases=get_exported_aliases)
+        )
+
+        self.assertEqual(
+            aliases_by_scope,
+            {
+                "all": merged_records,
+                "user": user_records,
+                "system": system_records,
+            },
+        )
+        self.assertEqual(
+            calls,
+            [(True, None), (False, "user"), (True, "system")],
+        )
+
     def test_app_switch_state_uses_all_command_states(self):
         records = [
             SimpleNamespace(

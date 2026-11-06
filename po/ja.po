@@ -16,6 +16,9 @@ msgstr "GUIを使用するには、PyGObject、GTK 4、およびイントロス�
 msgid "Exported Commands"
 msgstr "エクスポート済みコマンド"
 
+msgid "Export"
+msgstr "エクスポート"
+
 msgid "Export all user commands"
 msgstr "ユーザーコマンドをすべてエクスポート"
 

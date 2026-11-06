@@ -16,6 +16,9 @@ msgstr "A grafikus felülethez telepített PyGObject, GTK 4 és introspekciós a
 msgid "Exported Commands"
 msgstr "Exportált parancsok"
 
+msgid "Export"
+msgstr "Exportálás"
+
 msgid "Export all user commands"
 msgstr "Az összes felhasználói parancs exportálása"
 

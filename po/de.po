@@ -16,6 +16,9 @@ msgstr "Die grafische Oberfläche benötigt PyGObject, GTK 4 und libadwaita mit 
 msgid "Exported Commands"
 msgstr "Exportierte Befehle"
 
+msgid "Export"
+msgstr "Exportieren"
+
 msgid "Export all user commands"
 msgstr "Alle Benutzerbefehle exportieren"
 
