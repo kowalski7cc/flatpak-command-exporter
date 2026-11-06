@@ -1,3 +1,9 @@
+flatpak-command-exporter (0.14.0-1) unstable; urgency=medium
+
+  * Release 0.14.0.
+
+ -- Kowalski Dragon <kowalski7cc@penguin>  Fri, 06 Nov 2026 16:49:51 +0000
+
 flatpak-command-exporter (0.13.0-1) unstable; urgency=medium
 
   * Release 0.13.0.
