@@ -108,6 +108,7 @@ DEFAULT_EXPORT_COMMANDS = {
     "org.gnome.Mines": {"gnome-mines": "gnome-mines"},
     "org.gnome.Music": {"gnome-music": "gnome-music"},
     "org.gnome.Nautilus": {"nautilus": "nautilus"},
+    "org.nongnu.enigma": {"enigma": "enigma"},
     "org.gnome.NetworkDisplays": {"gnome-network-displays": "gnome-network-displays"},
     "org.gnome.Nibbles": {"gnome-nibbles": "gnome-nibbles"},
     "org.gnome.Notes": {"bijiben": "bijiben"},

@@ -80,8 +80,8 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %systemd_user_preun flatpak-command-exporter-user.path
 
 %postun
-%systemd_postun
-%systemd_user_postun
+%systemd_postun flatpak-command-exporter-system.path
+%systemd_user_postun flatpak-command-exporter-user.path
 
 %files -f %{pyproject_files}
 %doc README.md

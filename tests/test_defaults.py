@@ -9,6 +9,9 @@ class DefaultExportCommandTests(unittest.TestCase):
             "org.gnome.Calculator": {
                 "gnome-calculator": "gnome-calculator",
             },
+            "org.nongnu.enigma": {
+                "enigma": "enigma",
+            },
             "org.kde.kate": {
                 "kate": "kate",
             },
