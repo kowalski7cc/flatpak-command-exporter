@@ -33,7 +33,7 @@ completion:
 	mkdir -p build/bash-completion
 	PYTHONPATH=src shtab --shell=bash -u \
 		flatpak_command_exporter.cli_parser.build_parser \
-		-o build/bash-completion/flatshell
+		> build/bash-completion/flatshell
 
 tests:
 	PYTHONPATH=src python3 -m unittest discover -s tests -v

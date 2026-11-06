@@ -16,7 +16,8 @@ gui = [
     "PyGObject"
 ]
 dev = [
-    "PyGObject"
+    "PyGObject",
+    "shtab",
 ]
 
 [build-system]
