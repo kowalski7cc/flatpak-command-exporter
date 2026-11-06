@@ -27,7 +27,6 @@ jobs:
             python3-gi \
             python3-shtab \
             gir1.2-flatpak-1.0 \
-            gir1.2-polkit-1.0 \
             python3-setuptools
 
       - name: Check out repository
@@ -75,7 +74,6 @@ jobs:
             libadwaita \
             make \
             nodejs \
-            polkit \
             pyproject-rpm-macros \
             python3-devel \
             python3-shtab \
@@ -119,7 +117,6 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed \
             curl \
-            dbus \
             flatpak \
             git \
             gobject-introspection \
@@ -127,7 +124,6 @@ jobs:
             gtk4 \
             libadwaita \
             nodejs \
-            polkit \
             python \
             python-gobject \
             python-pip \

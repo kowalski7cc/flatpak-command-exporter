@@ -11,14 +11,11 @@ RUN apt-get update \
         debhelper-compat \
         dh-sequence-python3 \
         dpkg-dev \
-        dbus \
         flatpak \
         gir1.2-adw-1 \
         gir1.2-flatpak-1.0 \
         gir1.2-gtk-4.0 \
-        gir1.2-polkit-1.0 \
         git \
-        polkitd \
         pybuild-plugin-pyproject \
         python3 \
         python3-dev \

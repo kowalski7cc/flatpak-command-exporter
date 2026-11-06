@@ -6,7 +6,7 @@ pkgdesc='Export commands provided by installed Flatpak applications'
 arch=('any')
 url='https://github.com/kowalski7cc/flatpak-command-exporter'
 license=('MIT')
-depends=('dbus' 'flatpak' 'polkit' 'python>=3.13' 'python-gobject')
+depends=('flatpak' 'python>=3.13' 'python-gobject')
 makedepends=('gtk4' 'hicolor-icon-theme' 'libadwaita' 'python-shtab')
 source=(".flatpak-command-exporter-$pkgver.tar.gz")
 sha256sums=('SKIP')
@@ -38,10 +38,6 @@ EOF
         "$pkgdir/usr/share/bash-completion/completions/flatshell"
     install -Dm644 src/flatpak_command_exporter/flatpak-exported-commands.sh \
         "$pkgdir/etc/profile.d/flatpak-exported-commands.sh"
-    install -Dm644 resources/xyz.kowalski7cc.FlatpakCommandExporter.service \
-        "$pkgdir/usr/share/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service"
-    install -Dm644 resources/xyz.kowalski7cc.flatpak-command-exporter.policy \
-        "$pkgdir/usr/share/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy"
     install -Dm644 resources/flatpak-command-exporter-system.timer \
         "$pkgdir/usr/lib/systemd/system/flatpak-command-exporter-system.timer"
     install -Dm644 resources/flatpak-command-exporter-system.service \

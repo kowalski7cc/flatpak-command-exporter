@@ -10,15 +10,12 @@ Source0:        %{name}-%{version}-%{release}.tar.xz
 BuildArch:      noarch
 
 BuildRequires:  flatpak-devel
-BuildRequires:  polkit
 BuildRequires:  pyproject-rpm-macros
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  python3-devel
 BuildRequires:  python3-shtab
 
-Requires:       dbus
 Requires:       flatpak
-Requires:       polkit
 %systemd_requires
 
 %description
@@ -55,10 +52,6 @@ install -Dpm 0644 build/bash-completion/flatshell \
 
 install -Dpm 0644 src/flatpak_command_exporter/flatpak-exported-commands.sh \
     %{buildroot}%{_sysconfdir}/profile.d/flatpak-exported-commands.sh
-install -Dpm 0644 resources/xyz.kowalski7cc.FlatpakCommandExporter.service \
-    %{buildroot}%{_datadir}/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service
-install -Dpm 0644 resources/xyz.kowalski7cc.flatpak-command-exporter.policy \
-    %{buildroot}%{_datadir}/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy
 install -Dpm 0644 resources/flatpak-command-exporter-system.timer \
     %{buildroot}%{_unitdir}/flatpak-command-exporter-system.timer
 install -Dpm 0644 resources/flatpak-command-exporter-system.service \
@@ -100,8 +93,6 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %exclude %{_datadir}/icons/hicolor/scalable/apps/xyz.kowalski7cc.flatpak-command-exporter.svg
 %exclude %{_datadir}/icons/hicolor/symbolic/apps/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg
 %config(noreplace) %{_sysconfdir}/profile.d/flatpak-exported-commands.sh
-%{_datadir}/dbus-1/system-services/xyz.kowalski7cc.FlatpakCommandExporter.service
-%{_datadir}/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy
 %{_unitdir}/flatpak-command-exporter-system.timer
 %{_unitdir}/flatpak-command-exporter-system.service
 %{_prefix}/lib/systemd/system-preset/80-flatpak-command-exporter.preset

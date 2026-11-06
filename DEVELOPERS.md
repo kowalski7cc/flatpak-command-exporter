@@ -138,9 +138,11 @@ launchers are stored in `${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/`
 System-scoped configuration uses the default system Flatpak installation path
 reported by `Flatpak.Installation.new_system()` (normally
 `/var/lib/flatpak/aliases/`); system launchers are stored in the sibling
-`flatpak-commands/` directory (normally `/var/lib/flatpak-commands/`). System
-mutations go through the root-owned system-bus helper, which authorizes each
-operation through PolicyKit.
+`flatpak-commands/` directory (normally `/var/lib/flatpak-commands/`).
+System-scope CLI operations use the system installation by default and write
+directly to its configuration and launcher paths, so run them with elevated
+filesystem permissions. Use `--user` to limit CLI changes to the current user;
+Flatlink always stores changes in user configuration.
 
 For configuration-only tests or tools that need a separate settings directory,
 pass an `AliasConfig`:

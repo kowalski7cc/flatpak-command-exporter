@@ -1,4 +1,0 @@
-[D-BUS Service]
-Name=xyz.kowalski7cc.FlatpakCommandExporter
-Exec=/usr/bin/python3 -m flatpak_command_exporter.system_service
-User=root

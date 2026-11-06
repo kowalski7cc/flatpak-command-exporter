@@ -6,7 +6,6 @@ ARG USER_GID=${USER_UID}
 
 RUN pacman -Syu --noconfirm --needed \
         base-devel \
-        dbus \
         flatpak \
         git \
         gobject-introspection \
@@ -14,7 +13,6 @@ RUN pacman -Syu --noconfirm --needed \
         gtk4 \
         libadwaita \
         namcap \
-        polkit \
         python \
         python-gobject \
         python-pip \

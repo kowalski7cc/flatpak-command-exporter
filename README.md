@@ -83,7 +83,7 @@ On Fedora 44 or 45, install the RPM build and project dependencies, then build
 directly from the source checkout:
 
 ```console
-sudo dnf install flatpak-devel gtk4 libadwaita make polkit \
+sudo dnf install flatpak-devel gtk4 libadwaita make \
   pyproject-rpm-macros python3-devel python3-gobject python3-shtab \
   systemd-rpm-macros \
   python3-pip python3-setuptools rpm-build
@@ -101,8 +101,8 @@ packages, then build the core package and optional GUI package from a source
 checkout:
 
 ```console
-sudo pacman -S --needed base-devel dbus flatpak git gtk4 hicolor-icon-theme \
-  libadwaita polkit python python-gobject python-shtab
+sudo pacman -S --needed base-devel flatpak git gtk4 hicolor-icon-theme \
+  libadwaita python python-gobject python-shtab
 make apk
 ```
 
