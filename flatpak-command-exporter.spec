@@ -4,8 +4,7 @@ Name:           flatpak-command-exporter
 Version:        %(python3 -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
 Release:        1%{?dist}
 Summary:        Export commands provided by installed Flatpak applications
-# Replace with the project's confirmed SPDX identifier when available.
-License:        LicenseRef-Unknown
+License:        MIT
 URL:            https://github.com/kowalski7cc/flatpak-command-exporter
 Source0:        %{name}-%{version}-%{release}.tar.xz
 BuildArch:      noarch
@@ -60,6 +59,7 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 
 %files -f %{pyproject_files}
 %doc README.md
+%license LICENSE
 %{_bindir}/flatpak-command-exporter
 %{_bindir}/flatshell
 %exclude %{python3_sitelib}/flatpak_command_exporter/gui.py

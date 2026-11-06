@@ -154,6 +154,7 @@ def main():
 				version=version,
 				developer_name=authors[0] if authors else "",
 				developers=list(authors),
+				license_type=Gtk.License.MIT_X11,
 			)
 			about_window.set_transient_for(self.window)
 			about_window.present()

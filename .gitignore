@@ -402,6 +402,7 @@ debian/*
 !debian/rules
 !debian/*.install
 !debian/not-installed
+!debian/copyright
 
 dist/*
 out/*

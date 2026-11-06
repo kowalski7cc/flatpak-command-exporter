@@ -323,3 +323,8 @@ operations, and Flatpak alias discovery.
   automatically.
 - Kept the existing application ID prefix, `xyz.kowalski7cc`, and retained the
   previous CLI and GUI command names for compatibility.
+
+## License
+
+Flatpak Command Exporter is distributed under the MIT License. See
+[LICENSE](LICENSE) for the full text.
