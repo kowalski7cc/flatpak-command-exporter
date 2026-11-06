@@ -61,8 +61,8 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %doc README.md
 %license LICENSE
 %{_bindir}/flatshell
-%exclude %{python3_sitelib}/flatpak_command_exporter/gui.py
-%exclude %{python3_sitelib}/flatpak_command_exporter/__pycache__/gui*.pyc
+%exclude %{python3_sitelib}/flatpak_command_exporter/gui/*.py
+%exclude %{python3_sitelib}/flatpak_command_exporter/gui/__pycache__/*.pyc
 %exclude %{_bindir}/flatlink
 %exclude %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
 %exclude %{_datadir}/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml
@@ -73,8 +73,7 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %{_datadir}/polkit-1/actions/xyz.kowalski7cc.flatpak-command-exporter.policy
 
 %files gui
-%{python3_sitelib}/flatpak_command_exporter/gui.py
-%{python3_sitelib}/flatpak_command_exporter/__pycache__/gui*.pyc
+%{python3_sitelib}/flatpak_command_exporter/gui/
 %{_bindir}/flatlink
 %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
 %{_datadir}/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml
