@@ -34,12 +34,15 @@ intentional, and update this guide when the project conventions change.
   unless a dependency is needed for a clear project requirement.
 - Configuration and generated launchers support both user and system scopes.
   Resolve user paths with `${XDG_DATA_HOME:-$HOME/.local/share}` and system
-  paths with `/usr/lib/flatpak/aliases` for system configuration and
-  `/usr/share/flatpak-commands` for generated launchers. Route system mutations
+  paths from the default system Flatpak installation returned by
+  `Flatpak.Installation.new_system()`: aliases are stored in its `aliases/`
+  directory and system launchers in the sibling `<installation>-commands`
+  directory (normally `/var/lib/flatpak-commands`). Route system mutations
   through the root-owned system-bus helper and authorize each operation with
   PolicyKit.
 - User alias settings live under `flatpak/aliases/`; system settings live under
-  `/usr/lib/flatpak/aliases/`. Both use INI/GKeyFile-style files.
+  the system Flatpak installation's `aliases/` directory. Both use
+  INI/GKeyFile-style files.
   Keep global, app, and alias precedence consistent across the CLI, GUI, and
   export flow. Persist settings before refreshing exports, and report refresh
   failures to the caller.

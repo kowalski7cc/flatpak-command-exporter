@@ -10,8 +10,10 @@ aliases in a graphical interface.
 
 > **Scope:** The exporter supports both user and system scopes. User
 > configuration and launchers live under `${XDG_DATA_HOME:-$HOME/.local/share}`
-> and system alias configuration lives under `/usr/lib/flatpak/aliases/`.
-> System launchers are written to `/usr/share/flatpak-commands` when authorized.
+> and system alias configuration lives in the default system Flatpak
+> installation's `aliases/` directory (normally `/var/lib/flatpak/aliases/`).
+> System launchers are written beside that installation (normally
+> `/var/lib/flatpak-commands/`) when authorized.
 > Flatlink and `flatshell` use a root-owned system-bus helper with PolicyKit
 > authorization for system changes.
 
@@ -288,10 +290,11 @@ ${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/aliases/
 └── <app_id>
 ```
 
-System configuration is stored at:
+System configuration is stored under the default system Flatpak installation,
+resolved through the Flatpak API (normally):
 
 ```text
-/usr/lib/flatpak/aliases/
+/var/lib/flatpak/aliases/
 ├── global
 └── <app_id>
 ```
@@ -341,7 +344,7 @@ Generated launcher scripts are stored in:
 
 ```text
 ${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/
-/usr/share/flatpak-commands/
+/var/lib/flatpak-commands/
 ```
 
 The profile script adds both user and system launcher directories to `PATH`.

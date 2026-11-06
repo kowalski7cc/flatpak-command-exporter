@@ -10,6 +10,7 @@ from flatpak_command_exporter.config import (
     AliasConfigError,
     GlobalExportSettings,
 )
+from flatpak_command_exporter import config as config_module
 
 
 class GlobalExportSettingsTests(unittest.TestCase):
@@ -154,13 +155,23 @@ class AliasConfigTests(unittest.TestCase):
         config = AliasConfig(self.temporary_directory.name, scope="system")
 
         self.assertEqual(config.directory, Path(self.temporary_directory.name) / "aliases")
-        self.assertEqual(str(config.export_directory), "/usr/share/flatpak-commands")
+        system_root = Path(self.temporary_directory.name)
+        self.assertEqual(
+            config.export_directory,
+            system_root.parent / f"{system_root.name}-commands",
+        )
         self.assertEqual(config.scope, "system")
 
-    def test_default_system_scope_uses_usr_lib_flatpak(self):
-        config = AliasConfig(scope="system")
+    def test_default_system_scope_uses_flatpak_api_path(self):
+        installation_path = Path("/var/lib/flatpak")
+        with patch.object(
+            config_module,
+            "_get_system_installation_path",
+            return_value=installation_path,
+        ):
+            config = AliasConfig(scope="system")
 
-        self.assertEqual(config.directory, Path("/usr/lib/flatpak/aliases"))
+        self.assertEqual(config.directory, installation_path / "aliases")
 
     def test_user_and_system_global_defaults_are_independent(self):
         user_config = AliasConfig(Path(self.temporary_directory.name) / "user")
@@ -176,6 +187,59 @@ class AliasConfigTests(unittest.TestCase):
         self.assertEqual(system_config.default_policy(), "all")
         self.assertFalse(user_config.is_alias_enabled("org.example.App", "command"))
         self.assertTrue(system_config.is_alias_enabled("org.example.App", "command"))
+
+    def test_system_scope_resolves_paths_from_flatpak_installation(self):
+        installation_path = Path("/custom/var/flatpak")
+        with patch.object(
+            config_module,
+            "_get_system_installation_path",
+            return_value=installation_path,
+        ):
+            config = AliasConfig(scope="system")
+
+        self.assertEqual(config.directory, installation_path / "aliases")
+        self.assertEqual(
+            config.export_directory,
+            installation_path.parent / "flatpak-commands",
+        )
+
+    def test_new_system_configuration_disables_exports_by_default(self):
+        config = AliasConfig(
+            Path(self.temporary_directory.name) / "system",
+            scope="system",
+        )
+
+        self.assertEqual(config.default_policy(), "none")
+        self.assertFalse(config.is_alias_enabled("org.example.App", "example"))
+
+    def test_legacy_system_settings_are_read_and_migrated_on_write(self):
+        installation_path = Path(self.temporary_directory.name) / "flatpak"
+        legacy_directory = Path(self.temporary_directory.name) / "legacy-aliases"
+        legacy_directory.mkdir()
+        (legacy_directory / "global").write_text(
+            "[core]\ndefault-export = all\n",
+            encoding="utf-8",
+        )
+
+        with (
+            patch.object(
+                config_module,
+                "_get_system_installation_path",
+                return_value=installation_path,
+            ),
+            patch.object(
+                config_module,
+                "LEGACY_SYSTEM_ALIAS_DIRECTORY",
+                legacy_directory,
+            ),
+        ):
+            config = AliasConfig(scope="system")
+            self.assertEqual(config.default_policy(), "all")
+            config.set_default_policy("none")
+
+        self.assertEqual(config.default_policy(), "none")
+        self.assertTrue(config.global_path.exists())
+        self.assertIn("default-export = all", (legacy_directory / "global").read_text())
 
 
 if __name__ == "__main__":

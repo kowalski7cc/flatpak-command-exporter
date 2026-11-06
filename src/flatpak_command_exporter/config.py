@@ -3,6 +3,20 @@ import os
 from pathlib import Path
 import tempfile
 
+LEGACY_SYSTEM_ALIAS_DIRECTORY = Path("/usr/lib/flatpak/aliases")
+
+
+def _get_system_installation_path():
+    import gi
+
+    gi.require_version("Flatpak", "1.0")
+    from gi.repository import Flatpak
+
+    installation = Flatpak.Installation.new_system()
+    if installation is None:
+        raise RuntimeError("Could not resolve the default system Flatpak installation")
+    return Path(installation.get_path().get_path())
+
 
 class AliasConfigError(ValueError):
     """Raised when alias configuration is invalid or cannot be read."""
@@ -74,13 +88,13 @@ class AliasConfig:
 
     def __init__(self, data_home=None, *, scope="user"):
         self.scope = scope
+        self._use_legacy_system_config = data_home is None and scope == "system"
         if data_home is None:
             if scope == "system":
-                data_home = "/usr/lib/flatpak"
+                data_home = _get_system_installation_path()
             else:
-                data_home = os.environ.get(
-                    "XDG_DATA_HOME",
-                    os.path.join(os.path.expanduser("~"), ".local", "share"),
+                data_home = os.environ.get("XDG_DATA_HOME") or os.path.join(
+                    os.path.expanduser("~"), ".local", "share"
                 )
         self.data_home = Path(data_home)
         self.directory = (
@@ -92,7 +106,7 @@ class AliasConfig:
     @property
     def export_directory(self):
         if self.scope == "system":
-            return Path("/usr/share/flatpak-commands")
+            return self.data_home.parent / f"{self.data_home.name}-commands"
         return self.data_home / "flatpak-commands"
 
     @property
@@ -129,12 +143,22 @@ class AliasConfig:
     def _read(self, path):
         parser = configparser.ConfigParser(interpolation=None, strict=False)
         parser.optionxform = str
-        if path.exists():
+        try:
+            with path.open(encoding="utf-8") as config_file:
+                parser.read_file(config_file)
+        except FileNotFoundError:
+            legacy_path = LEGACY_SYSTEM_ALIAS_DIRECTORY / path.name
+            if not self._use_legacy_system_config or not legacy_path.exists():
+                return parser
             try:
-                with path.open(encoding="utf-8") as config_file:
+                with legacy_path.open(encoding="utf-8") as config_file:
                     parser.read_file(config_file)
             except (OSError, UnicodeError, configparser.Error) as error:
-                raise AliasConfigError(f"Could not read {path}: {error}") from error
+                raise AliasConfigError(
+                    f"Could not read {legacy_path}: {error}"
+                ) from error
+        except (OSError, UnicodeError, configparser.Error) as error:
+            raise AliasConfigError(f"Could not read {path}: {error}") from error
         return parser
 
     def _write(self, path, parser):
@@ -154,7 +178,11 @@ class AliasConfig:
 
     def default_policy(self):
         parser = self._read(self.global_path)
-        policy = parser.get("core", "default-export", fallback="all")
+        policy = parser.get(
+            "core",
+            "default-export",
+            fallback="none" if self.scope == "system" else "all",
+        )
         if policy not in {"all", "none"}:
             raise AliasConfigError(
                 f"Invalid default-export value in {self.global_path}: {policy!r}"

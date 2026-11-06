@@ -131,9 +131,12 @@ except (OSError, ValueError) as error:
 By default, user configuration is stored in
 `${XDG_DATA_HOME:-$HOME/.local/share}/flatpak/aliases/` and generated user
 launchers are stored in `${XDG_DATA_HOME:-$HOME/.local/share}/flatpak-commands/`.
-System-scoped configuration uses `/usr/lib/flatpak/aliases/` and system
-launchers use `/usr/share/flatpak-commands/`. System mutations go through the
-root-owned system-bus helper, which authorizes each operation through PolicyKit.
+System-scoped configuration uses the default system Flatpak installation path
+reported by `Flatpak.Installation.new_system()` (normally
+`/var/lib/flatpak/aliases/`); system launchers are stored in the sibling
+`flatpak-commands/` directory (normally `/var/lib/flatpak-commands/`). System
+mutations go through the root-owned system-bus helper, which authorizes each
+operation through PolicyKit.
 
 For configuration-only tests or tools that need a separate settings directory,
 pass an `AliasConfig`:
