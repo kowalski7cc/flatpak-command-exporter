@@ -98,6 +98,14 @@ class ProfileInstallationTests(unittest.TestCase):
         self.assertEqual(path_entries.count(str(user_commands)), 1)
         self.assertEqual(path_entries.count(str(system_commands)), 1)
 
+    def test_system_install_rejects_non_directory_profile_directory(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            system_profile_directory = Path(temporary_directory) / "profile.d"
+            system_profile_directory.write_text("this is a file", encoding="utf-8")
+            with patch.object(profile, "SYSTEM_PROFILE_DIRECTORY", system_profile_directory):
+                with self.assertRaises(NotADirectoryError):
+                    profile.install_profile("system")
+
     def test_invalid_scope_is_rejected(self):
         with self.assertRaises(ValueError):
             profile.install_profile("global")

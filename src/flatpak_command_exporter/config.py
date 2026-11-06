@@ -60,11 +60,15 @@ class AliasConfig:
     @property
     def is_writable(self) -> bool:
         try:
-            directory = self.directory
-            candidate = directory
-            while not candidate.exists() and candidate.parent != candidate:
-                candidate = candidate.parent
-            return os.access(candidate, os.W_OK)
+            candidate = self.directory
+            while not candidate.exists():
+                parent = candidate.parent
+                if parent == candidate:
+                    return os.access(candidate, os.W_OK)
+                if parent.exists() and parent.is_file():
+                    return False
+                candidate = parent
+            return candidate.is_dir() and os.access(candidate, os.W_OK)
         except OSError:
             return False
 

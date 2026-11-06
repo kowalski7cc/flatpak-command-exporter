@@ -200,6 +200,14 @@ class AliasConfigTests(unittest.TestCase):
         self.assertEqual(config.default_policy(), "none")
         self.assertFalse(config.is_alias_enabled("org.example.App", "example"))
 
+    def test_is_writable_rejects_paths_with_non_directory_parents(self):
+        file_parent = Path(self.temporary_directory.name) / "not-a-directory"
+        file_parent.write_text("blocking", encoding="utf-8")
+
+        config = AliasConfig(file_parent / "flatpak" / "aliases")
+
+        self.assertFalse(config.is_writable)
+
     def test_legacy_system_settings_are_read_and_migrated_on_write(self):
         installation_path = Path(self.temporary_directory.name) / "flatpak"
         legacy_directory = Path(self.temporary_directory.name) / "legacy-aliases"

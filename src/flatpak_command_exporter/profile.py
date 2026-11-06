@@ -10,12 +10,32 @@ PROFILE_MARKER_END: Final[str] = "# <<< Flatpak Command Exporter <<<"
 SYSTEM_PROFILE_DIRECTORY: Final[Path] = Path("/etc/profile.d")
 
 
+def _ensure_writable_directory(directory: Path) -> None:
+    if directory.exists() and not directory.is_dir():
+        raise NotADirectoryError(f"{directory} is not a directory")
+
+    candidate = directory
+    while not candidate.exists():
+        parent = candidate.parent
+        if parent == candidate:
+            break
+        if parent.exists() and parent.is_file():
+            raise NotADirectoryError(f"{parent} is not a directory")
+        candidate = parent
+
+    if not candidate.exists() or not candidate.is_dir():
+        raise NotADirectoryError(f"{directory} does not resolve to a directory")
+    if not os.access(candidate, os.W_OK):
+        raise PermissionError(f"{candidate} is not writable")
+
+
 def install_profile(scope: str = "user") -> Path:
     script = files("flatpak_command_exporter").joinpath(PROFILE_SCRIPT).read_text(
         encoding="utf-8"
     )
     if scope == "system":
         destination = SYSTEM_PROFILE_DIRECTORY / PROFILE_SCRIPT
+        _ensure_writable_directory(destination.parent)
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_text(script, encoding="utf-8")
         destination.chmod(0o644)
@@ -35,7 +55,14 @@ def install_profile(scope: str = "user") -> Path:
         / "profile.d"
         / PROFILE_SCRIPT
     )
+    _ensure_writable_directory(destination.parent)
     profile_file = Path(os.path.expanduser("~")) / ".profile"
+    if profile_file.exists() and not profile_file.is_file():
+        raise NotADirectoryError(f"{profile_file} is not a regular file")
+    if profile_file.exists() and not os.access(profile_file, os.W_OK):
+        raise PermissionError(f"{profile_file} is not writable")
+    if not profile_file.exists():
+        _ensure_writable_directory(profile_file.parent)
     existing = profile_file.read_text(encoding="utf-8") if profile_file.exists() else ""
     source_path = (
         '"${XDG_CONFIG_HOME:-$HOME/.config}'
