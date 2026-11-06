@@ -22,6 +22,9 @@ aliases in a graphical interface.
 
 - Export commands declared in an app's Flatpak manifest, including
   `x-export-commands` and `export-commands`.
+- Supplement manifest commands with curated defaults for additional tools
+  shipped by some apps; commands explicitly declared by a manifest take
+  precedence when names conflict.
 - Choose whether aliases are exported by default, then override that choice for
   individual apps or aliases.
 - Keep system-wide command export disabled by default; user overrides take

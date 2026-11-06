@@ -134,7 +134,7 @@ def _read_manifest_or_empty(
 def manifest_exported_commands(
     app_id: str, manifest: dict[str, object]
 ) -> dict[str, str]:
-    commands: dict[str, str] = {}
+    commands = DEFAULT_EXPORT_COMMANDS.get(app_id, {}).copy()
     for schema_name in EXPORT_SCHEMA_NAMES:
         schema_commands = manifest.get(schema_name, {})
         if not isinstance(schema_commands, dict):

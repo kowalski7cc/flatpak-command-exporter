@@ -3,6 +3,64 @@ from typing import Final
 
 DEFAULT_EXPORT_COMMANDS: Final[dict[str, dict[str, str]]] = {
     "org.gimp.GIMP": {"gimp": "gimp"},
+    "org.keepassxc.KeePassXC": {
+        "keepassxc": "keepassxc-wrapper",
+        "keepassxc-cli": "keepassxc-cli",
+    },
+    "org.gnumeric.Gnumeric": {
+        "gnumeric": "gnumeric",
+        "ssconvert": "ssconvert",
+        "ssgrep": "ssgrep",
+        "ssindex": "ssindex",
+    },
+    "org.gnucash.GnuCash": {
+        "gnucash": "gnucash",
+        "gnucash-cli": "gnucash-cli",
+    },
+    "org.avidemux.Avidemux": {
+        "avidemux": "avidemux3_qt5",
+        "avidemux-cli": "avidemux3_cli",
+    },
+    "io.github.Qalculate": {
+        "qalculate-gtk": "qalculate-gtk",
+        "qalc": "qalc",
+    },
+    "org.kicad.KiCad": {
+        "kicad": "kicad-startup",
+        "eeschema": "eeschema-startup",
+        "pcbnew": "pcbnew-startup",
+        "kicad-cli": "kicad-cli",
+    },
+    "org.wireshark.Wireshark": {
+        "wireshark": "wireshark-wrapper",
+        "tshark": "tshark",
+        "capinfos": "capinfos",
+        "editcap": "editcap",
+        "mergecap": "mergecap",
+        "reordercap": "reordercap",
+        "text2pcap": "text2pcap",
+    },
+    "org.darktable.Darktable": {
+        "darktable": "darktable",
+        "darktable-cli": "darktable-cli",
+    },
+    "com.calibre_ebook.calibre": {
+        "calibre": "calibre",
+        "ebook-viewer": "ebook-viewer",
+        "ebook-edit": "ebook-edit",
+        "lrfviewer": "lrfviewer",
+        "ebook-convert": "ebook-convert",
+        "ebook-meta": "ebook-meta",
+        "calibredb": "calibredb",
+        "calibre-server": "calibre-server",
+        "calibre-smtp": "calibre-smtp",
+        "calibre-customize": "calibre-customize",
+        "calibre-debug": "calibre-debug",
+    },
+    "org.freecad.FreeCAD": {
+        "freecad": "FreeCAD",
+        "freecadcmd": "freecadcmd",
+    },
     "de.wwwtech.gitte": {"gitte": "gitte"},
     "org.audacityteam.Audacity": {"audacity": "audacity"},
     "org.milkytracker.MilkyTracker": {"milkytracker": "milkytracker"},
