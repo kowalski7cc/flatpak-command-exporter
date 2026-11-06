@@ -48,7 +48,10 @@ class BashCompletionTests(unittest.TestCase):
         ):
             with self.subTest(token=token):
                 self.assertIn(token, completion)
-        self.assertRegex(completion, r"_config_pos_1_choices=\(all none\)")
+        self.assertRegex(
+            completion,
+            r"_config_pos_1_choices=\((?:'all'|all) (?:'none'|none)\)",
+        )
 
     def test_completion_generation_is_repeatable_and_valid_bash(self):
         first = self.generate_completion()

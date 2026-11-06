@@ -19,6 +19,7 @@ RUN dnf install -y \
         pkgconf-pkg-config \
         python3 \
         python3-devel \
+        python3-shtab \
         python3-pip \
         python3-gobject \
         redhat-rpm-config \
