@@ -34,9 +34,7 @@
   <url type="vcs-browser">https://github.com/kowalski7cc/flatpak-command-exporter.git</url>
   <provides>
     <binary>flatshell</binary>
-    <binary>flatpak-command-exporter</binary>
-    <binary>Flatlink</binary>
-    <binary>flatpak-command-exporter-gui</binary>
+    <binary>flatlink</binary>
   </provides>
   <categories>
     <category>Utility</category>

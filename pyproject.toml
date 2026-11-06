@@ -37,6 +37,4 @@ flatpak_command_exporter = ["flatpak-exported-commands.sh"]
 
 [project.scripts]
 flatshell = "flatpak_command_exporter.__main__:main"
-flatpak-command-exporter = "flatpak_command_exporter.__main__:main"
-Flatlink = "flatpak_command_exporter.gui:main"
-flatpak-command-exporter-gui = "flatpak_command_exporter.gui:main"
+flatlink = "flatpak_command_exporter.gui:main"

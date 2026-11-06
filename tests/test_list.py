@@ -81,7 +81,7 @@ class ListAllCommandsTests(unittest.TestCase):
 
     def test_cli_allows_app_id_to_be_omitted_only_with_all(self):
         with (
-            patch.object(sys, "argv", ["flatpak-command-exporter", "list", "--all"]),
+            patch.object(sys, "argv", ["flatshell", "list", "--all"]),
             patch.object(cli.FlatpakCommandExporter, "get_command_groups") as get_groups,
         ):
             get_groups.return_value = []
@@ -91,7 +91,7 @@ class ListAllCommandsTests(unittest.TestCase):
 
     def test_cli_preserves_existing_app_specific_mode(self):
         with (
-            patch.object(sys, "argv", ["flatpak-command-exporter", "list", "app.test"]),
+            patch.object(sys, "argv", ["flatshell", "list", "app.test"]),
             patch.object(cli.FlatpakCommandExporter, "get_command_groups") as get_groups,
         ):
             get_groups.return_value = []
@@ -104,7 +104,7 @@ class ListAllCommandsTests(unittest.TestCase):
     def test_cli_requires_app_id_without_all(self):
         error = io.StringIO()
         with (
-            patch.object(sys, "argv", ["flatpak-command-exporter", "list"]),
+            patch.object(sys, "argv", ["flatshell", "list"]),
             contextlib.redirect_stderr(error),
             self.assertRaises(SystemExit) as exit_info,
         ):

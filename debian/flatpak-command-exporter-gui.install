@@ -1,5 +1,4 @@
-usr/bin/flatpak-command-exporter-gui
-usr/bin/Flatlink
+usr/bin/flatlink
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/gui.py
 usr/share/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
 usr/share/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml

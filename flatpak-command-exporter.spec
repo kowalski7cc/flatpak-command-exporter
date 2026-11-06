@@ -60,12 +60,10 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %files -f %{pyproject_files}
 %doc README.md
 %license LICENSE
-%{_bindir}/flatpak-command-exporter
 %{_bindir}/flatshell
 %exclude %{python3_sitelib}/flatpak_command_exporter/gui.py
 %exclude %{python3_sitelib}/flatpak_command_exporter/__pycache__/gui*.pyc
-%exclude %{_bindir}/Flatlink
-%exclude %{_bindir}/flatpak-command-exporter-gui
+%exclude %{_bindir}/flatlink
 %exclude %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
 %exclude %{_datadir}/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml
 %exclude %{_datadir}/icons/hicolor/scalable/apps/xyz.kowalski7cc.flatpak-command-exporter.svg
@@ -77,8 +75,7 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %files gui
 %{python3_sitelib}/flatpak_command_exporter/gui.py
 %{python3_sitelib}/flatpak_command_exporter/__pycache__/gui*.pyc
-%{_bindir}/Flatlink
-%{_bindir}/flatpak-command-exporter-gui
+%{_bindir}/flatlink
 %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
 %{_datadir}/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml
 %{_datadir}/icons/hicolor/scalable/apps/xyz.kowalski7cc.flatpak-command-exporter.svg

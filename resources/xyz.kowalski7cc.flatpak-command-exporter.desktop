@@ -2,7 +2,7 @@
 Type=Application
 Name=Flatlink
 Comment=Inspect exported Flatpak commands
-Exec=Flatlink
+Exec=flatlink
 Icon=xyz.kowalski7cc.flatpak-command-exporter
 Terminal=false
 Categories=Utility;

@@ -43,7 +43,7 @@ Run an exported command by its alias, just as you would run any other command:
 gimp
 ```
 
-Use `Flatlink` to browse and toggle aliases with the GUI. Settings changed in
+Use `flatlink` to browse and toggle aliases with the GUI. Settings changed in
 either the GUI or the CLI are saved and the corresponding export scope is
 refreshed.
 
@@ -97,9 +97,7 @@ under `~/rpmbuild/RPMS/noarch/` by default.
 
 ## CLI
 
-The primary command is `flatshell`. The previous
-`flatpak-command-exporter` and `flatpak-command-exporter-gui` entry points
-remain available as compatibility names.
+The supported commands are `flatshell` for the CLI and `flatlink` for the GUI.
 
 ### Inspect and export
 
@@ -166,10 +164,10 @@ flatshell remove --system org.example.App my-command
 
 ## Flatlink
 
-Launch the GUI with:
+Launch the GUI from the terminal with:
 
 ```console
-Flatlink
+flatlink
 ```
 
 ![Flatlink window showing exported Flatpak commands](screenshots/flatlink.png)
@@ -323,8 +321,8 @@ operations, and Flatpak alias discovery.
   refresh, and About window.
 - Updated Debian packaging to install the renamed profile script
   automatically.
-- Kept the existing application ID prefix, `xyz.kowalski7cc`, and retained the
-  previous CLI and GUI command names for compatibility.
+- Kept the existing application ID prefix, `xyz.kowalski7cc`, and standardized
+  the GUI command name as lowercase `flatlink`.
 
 ## License
 
