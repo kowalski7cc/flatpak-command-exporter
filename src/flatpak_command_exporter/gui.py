@@ -128,9 +128,10 @@ def main():
 		) from error
 
 	from . import FlatpakCommandExporter
-	from .config import AliasConfig
+	from .config import AliasConfig, GlobalExportSettings
 
 	exporter = FlatpakCommandExporter()
+	global_export_settings = GlobalExportSettings()
 
 	Adw.init()
 
@@ -158,6 +159,9 @@ def main():
 			about_window.present()
 
 		def on_activate(self, _application):
+			global_default_scope = [
+				global_export_settings.global_default_scope()
+			]
 			all_records = exporter.get_exported_aliases()
 			system_records = exporter.get_exported_aliases(scope="system")
 			row_records = {}
@@ -219,14 +223,14 @@ def main():
 			export_button.set_tooltip_text("Export all user commands")
 
 			menu_model = Gio.Menu()
-			menu_model.append("About Flatlink", "app.about")
+			menu_model.append("Settings", "app.settings")
 			menu_button = Gtk.MenuButton()
 			menu_button.set_icon_name("open-menu-symbolic")
 			menu_button.set_menu_model(menu_model)
 			menu_button.set_tooltip_text("Main Menu")
-			header.pack_start(menu_button)
-			header.pack_end(export_button)
+			header.pack_end(menu_button)
 			header.pack_end(global_export_button)
+			header.pack_end(export_button)
 			search_entry = Gtk.SearchEntry()
 			search_entry.set_placeholder_text("Search apps and commands")
 			search_entry.set_hexpand(True)
@@ -626,26 +630,31 @@ def main():
 					"notify::active", update_app
 				)
 
-			def update_global_button_style(user_only):
+			def update_global_button_style(system_update_failed=False):
 				global_export_icon.set_from_icon_name(
 					"system-run-symbolic"
 					if global_export_button.get_active()
 					else "system-shutdown-symbolic"
 				)
-				if user_only is True:
+				if system_update_failed:
 					global_export_button.add_css_class("warning")
 					global_export_button.set_tooltip_text(
 						"Global default applies to user commands only because the "
 						"system update was not authorized"
 					)
+				elif global_default_scope[0] == "user":
+					global_export_button.remove_css_class("warning")
+					global_export_button.set_tooltip_text(
+						"Toggle the global default for user commands only"
+					)
 				else:
 					global_export_button.remove_css_class("warning")
 					global_export_button.set_tooltip_text(
-						"Toggle the global default; the system setting is updated "
-						"when authorized"
+						"Toggle the global default for user and system commands; "
+						"system updates require authorization"
 					)
 
-			update_global_button_style(user_only=None)
+			update_global_button_style()
 			global_export_button_handler = [None]
 			global_export_state = [global_export_button.get_active()]
 
@@ -663,7 +672,7 @@ def main():
 					return
 
 				global_export_state[0] = toggle.get_active()
-				update_global_button_style(user_only=None)
+				update_global_button_style()
 				try:
 					exporter.export_commands()
 				except (OSError, ValueError, GLib.Error) as error:
@@ -673,6 +682,10 @@ def main():
 				except (OSError, ValueError) as error:
 					report_error("Could not refresh alias settings", error)
 
+				if global_default_scope[0] == "user":
+					toggle.set_sensitive(True)
+					return
+
 				try:
 					from .system_bus import call_system_method_async
 
@@ -680,13 +693,13 @@ def main():
 						try:
 							connection.call_finish(result)
 						except GLib.Error as error:
-							update_global_button_style(user_only=True)
+							update_global_button_style(system_update_failed=True)
 							report_error(
 								"System default was not changed; user default applied",
 								error,
 							)
 						else:
-							update_global_button_style(user_only=False)
+							update_global_button_style()
 							try:
 								refresh_alias_switches("system")
 							except (OSError, ValueError) as error:
@@ -699,7 +712,7 @@ def main():
 						"SetDefaultPolicy", (requested_policy,), finish_system_update
 					)
 				except (GLib.Error, OSError, ValueError) as error:
-					update_global_button_style(user_only=True)
+					update_global_button_style(system_update_failed=True)
 					toggle.set_sensitive(True)
 					report_error(
 						"System default was not changed; user default applied",
@@ -709,6 +722,64 @@ def main():
 			global_export_button_handler[0] = global_export_button.connect(
 				"notify::active", update_global_export
 			)
+
+			def show_settings(_action, _parameter):
+				preferences_window = Adw.PreferencesWindow(
+					transient_for=window,
+					modal=True,
+				)
+				preferences_window.set_title("Settings")
+				page = Adw.PreferencesPage()
+				group = Adw.PreferencesGroup(title="Global export default")
+				scope_row = Adw.SwitchRow(
+					title="Apply to system installations",
+					subtitle=(
+						"Also change the system default when toggling the global "
+						"export setting. System changes require authorization."
+					),
+				)
+				scope_row.set_active(global_default_scope[0] == "both")
+				group.add(scope_row)
+				page.add(group)
+
+				about_group = Adw.PreferencesGroup(title="About")
+				about_row = Adw.ActionRow(title="About Flatlink")
+				about_row.set_activatable(True)
+				about_row.connect("activated", self.show_about)
+				about_group.add(about_row)
+				page.add(about_group)
+
+				preferences_window.add(page)
+
+				handler_id = [None]
+
+				def update_global_default_scope(row, _property):
+					requested_scope = "both" if row.get_active() else "user"
+					if requested_scope == global_default_scope[0]:
+						return
+					try:
+						global_export_settings.set_global_default_scope(
+							requested_scope
+						)
+					except (OSError, ValueError) as error:
+						row.handler_block(handler_id[0])
+						row.set_active(global_default_scope[0] == "both")
+						row.handler_unblock(handler_id[0])
+						report_error("Could not save global export scope", error)
+						return
+
+					global_default_scope[0] = requested_scope
+					update_global_button_style()
+
+				handler_id[0] = scope_row.connect(
+					"notify::active", update_global_default_scope
+				)
+				preferences_window.present()
+
+			self.remove_action("settings")
+			settings_action = Gio.SimpleAction.new("settings", None)
+			settings_action.connect("activate", show_settings)
+			self.add_action(settings_action)
 
 			def export_user_commands(_button):
 				try:

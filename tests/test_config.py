@@ -1,9 +1,94 @@
+import configparser
 import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from flatpak_command_exporter.config import AliasConfig, AliasConfigError
+from flatpak_command_exporter.config import (
+    AliasConfig,
+    AliasConfigError,
+    GlobalExportSettings,
+)
+
+
+class GlobalExportSettingsTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        self.settings = GlobalExportSettings(self.temporary_directory.name)
+
+    def tearDown(self):
+        self.temporary_directory.cleanup()
+
+    def test_global_default_scope_defaults_to_both(self):
+        self.assertEqual(self.settings.global_default_scope(), "both")
+        self.assertEqual(
+            self.settings.settings_path,
+            Path(self.temporary_directory.name) / "flatpak" / "settings",
+        )
+
+    def test_global_default_scope_uses_xdg_config_home_or_home_fallback(self):
+        with patch.dict(
+            os.environ,
+            {
+                "XDG_CONFIG_HOME": self.temporary_directory.name,
+                "HOME": "/unused-home",
+            },
+        ):
+            settings = GlobalExportSettings()
+        self.assertEqual(
+            settings.directory,
+            Path(self.temporary_directory.name) / "flatpak",
+        )
+
+        with patch.dict(
+            os.environ,
+            {"HOME": self.temporary_directory.name},
+            clear=True,
+        ):
+            settings = GlobalExportSettings()
+        self.assertEqual(
+            settings.directory,
+            Path(self.temporary_directory.name) / ".config" / "flatpak",
+        )
+
+    def test_global_default_scope_round_trips_and_preserves_other_settings(self):
+        self.settings.directory.mkdir(parents=True)
+        self.settings.settings_path.write_text(
+            "[other]\nvalue = preserved\n",
+            encoding="utf-8",
+        )
+        self.settings.set_global_default_scope("user")
+        self.assertEqual(self.settings.global_default_scope(), "user")
+
+        self.settings.set_global_default_scope("both")
+        self.assertEqual(self.settings.global_default_scope(), "both")
+        parser = configparser.ConfigParser()
+        parser.read(self.settings.settings_path, encoding="utf-8")
+        self.assertEqual(parser.get("other", "value"), "preserved")
+        self.assertEqual(
+            parser.get("flatpak-command-exporter", "global-default-scope"),
+            "both",
+        )
+
+    def test_global_default_scope_configuration_is_private(self):
+        self.settings.set_global_default_scope("user")
+        self.assertEqual(
+            os.stat(self.settings.settings_path).st_mode & 0o777,
+            0o600,
+        )
+
+    def test_invalid_global_default_scope_values_raise(self):
+        with self.assertRaises(AliasConfigError):
+            self.settings.set_global_default_scope("system")
+
+        self.settings.directory.mkdir(parents=True)
+        self.settings.settings_path.write_text(
+            "[flatpak-command-exporter]\nglobal-default-scope = system\n",
+            encoding="utf-8",
+        )
+        with self.assertRaises(AliasConfigError):
+            self.settings.global_default_scope()
 
 
 class AliasConfigTests(unittest.TestCase):

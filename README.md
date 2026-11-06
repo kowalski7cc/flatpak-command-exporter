@@ -180,13 +180,15 @@ field and the All/User/System filter to narrow the list. Changing a
 system-installed app or alias requests PolicyKit authorization.
 
 The global-default button controls whether new commands are exported by
-default. It applies the setting to user scope and attempts the system update
-through PolicyKit; if the system update is denied or unavailable, the user
-setting is still saved and the button indicates user-only mode. The refresh
+default. Its scope is configured from **Settings** in the hamburger menu: it
+can apply to both user and system installations (the default), or to user
+installations only. System updates use PolicyKit authorization. The refresh
 button exports all user commands, like `flatshell export`. The hamburger menu
-contains the About window, whose version and author information come from the
-project metadata. Each saved change refreshes the generated launchers. The core
-package installs the PolicyKit action and system-bus helper.
+opens Settings, which includes the About window with version and author
+information from the project metadata. Changes to aliases and export defaults
+refresh the generated launchers; changing the scope preference affects future
+global default toggles. The core package installs the PolicyKit action and
+system-bus helper.
 
 ## Configuration and files
 
@@ -204,6 +206,17 @@ System configuration is stored at:
 /usr/lib/flatpak/aliases/
 ├── global
 └── <app_id>
+```
+
+Flatlink's global-default scope preference is stored in
+`${XDG_CONFIG_HOME:-$HOME/.config}/flatpak/settings`. It applies to the
+global-default button when toggled; `flatshell` commands that explicitly select
+a scope continue to affect that scope. If the preference is absent, Flatlink
+uses both user and system scopes.
+
+```ini
+[flatpak-command-exporter]
+global-default-scope = user
 ```
 
 The files use an INI/GKeyFile-style format. For example:
