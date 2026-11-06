@@ -34,6 +34,7 @@ from flatpak_command_exporter.gui.settings import (
 )
 from flatpak_command_exporter.gui.application import (
     _app_commands_enabled,
+    _group_app_aliases,
     _set_app_commands_enabled,
 )
 
@@ -45,8 +46,10 @@ class AliasDataTests(unittest.TestCase):
         system_records = [object()]
         calls = []
 
-        def get_exported_aliases(*, include_system=True, scope=None):
-            calls.append((include_system, scope))
+        def get_exported_aliases(
+            *, include_system=True, scope=None, current_only=False
+        ):
+            calls.append((include_system, scope, current_only))
             if scope == "system":
                 return system_records
             if scope == "user" and not include_system:
@@ -67,7 +70,128 @@ class AliasDataTests(unittest.TestCase):
         )
         self.assertEqual(
             calls,
-            [(True, None), (False, "user"), (True, "system")],
+            [
+                (True, None, True),
+                (False, "user", True),
+                (True, "system", True),
+            ],
+        )
+
+    def test_group_app_aliases_creates_one_row_with_scope_specific_commands(self):
+        user_record = SimpleNamespace(
+            app_id="org.example.App",
+            app_name="Example",
+            arch="x86_64",
+            branch="stable",
+            installation_scope="user",
+            alias="app-command",
+        )
+        system_record = SimpleNamespace(
+            app_id="org.example.App",
+            app_name="Example",
+            arch="x86_64",
+            branch="stable",
+            installation_scope="system",
+            alias="app-command",
+        )
+
+        groups = _group_app_aliases({
+            "all": [user_record],
+            "user": [user_record],
+            "system": [system_record],
+        })
+
+        self.assertEqual(list(groups), ["org.example.App"])
+        group = groups["org.example.App"]
+        self.assertIs(group["record"], user_record)
+        self.assertEqual(group["scopes"], {"all", "user", "system"})
+        self.assertEqual(
+            {
+                record.installation_scope: scopes
+                for _key, record, scopes in group["records"]
+            },
+            {
+                "user": {"all", "user"},
+                "system": {"system"},
+            },
+        )
+
+    def test_current_only_aliases_use_preferred_installation_and_current_ref(self):
+        class Ref:
+            def __init__(self, app_id, branch):
+                self.app_id = app_id
+                self.branch = branch
+
+            def get_name(self):
+                return self.app_id
+
+            def get_arch(self):
+                return "x86_64"
+
+            def get_branch(self):
+                return self.branch
+
+        user_stable = Ref("app.shared", "stable")
+        user_beta = Ref("app.shared", "beta")
+        system_stable = Ref("app.shared", "stable")
+        system_beta = Ref("app.shared", "beta")
+        system_only = Ref("app.system-only", "stable")
+        user_installation = SimpleNamespace(
+            get_current_installed_app=lambda _app_id, _cancellable: None,
+        )
+        system_installation = SimpleNamespace(
+            get_current_installed_app=lambda app_id, _cancellable: (
+                system_stable if app_id == "app.shared" else None
+            ),
+        )
+        installed_refs = [
+            _InstalledRef(user_stable, user_installation, "/user", "user"),
+            _InstalledRef(user_beta, user_installation, "/user", "user"),
+            _InstalledRef(system_stable, system_installation, "/system", "system"),
+            _InstalledRef(system_beta, system_installation, "/system", "system"),
+            _InstalledRef(system_only, system_installation, "/system", "system"),
+        ]
+
+        def load_manifest(path, app_id, _arch, branch):
+            return {
+                "x-export-commands": {
+                    f"{app_id}-{path}-{branch}": "command",
+                },
+            }
+
+        with tempfile.TemporaryDirectory() as data_home:
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "_get_installed_refs", return_value=installed_refs),
+                patch.object(core, "_read_manifest_or_empty", side_effect=load_manifest),
+                patch.object(core, "load_metainfo", return_value=None),
+            ):
+                merged_records = FlatpakCommandExporter().get_exported_aliases(
+                    current_only=True
+                )
+                system_records = FlatpakCommandExporter().get_exported_aliases(
+                    scope="system", current_only=True
+                )
+
+        self.assertEqual(
+            [
+                (record.app_id, record.branch, record.installation_scope)
+                for record in merged_records
+            ],
+            [
+                ("app.shared", "beta", "user"),
+                ("app.system-only", "stable", "system"),
+            ],
+        )
+        self.assertEqual(
+            [
+                (record.app_id, record.branch, record.installation_scope)
+                for record in system_records
+            ],
+            [
+                ("app.shared", "stable", "system"),
+                ("app.system-only", "stable", "system"),
+            ],
         )
 
     def test_app_switch_state_uses_all_command_states(self):

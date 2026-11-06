@@ -11,7 +11,7 @@ from .metadata import (
     manifest_exported_commands,
 )
 from .models import CommandGroup, ExportedAlias
-from .refs import _get_installed_refs
+from .refs import _get_installed_refs, _get_preferred_app_refs
 
 
 def get_exported_aliases(
@@ -20,8 +20,9 @@ def get_exported_aliases(
     include_system: bool = True,
     scope: str | None = None,
     system: bool = False,
+    current_only: bool = False,
 ) -> list[ExportedAlias]:
-    """Return aliases from current user and system app refs, preferring user refs."""
+    """Return aliases, optionally limited to each app's preferred current ref."""
     logging.info("Discovering exported Flatpak aliases")
     aliases: list[ExportedAlias] = []
     if config is None:
@@ -40,10 +41,17 @@ def get_exported_aliases(
     if scope_name != "system" and include_system:
         system_config = AliasConfig(scope="system")
 
-    for installed_ref in _get_installed_refs(
+    installed_refs = _get_installed_refs(
         scope=scope_name,
         include_system=include_system,
-    ):
+    )
+    if current_only:
+        installed_refs = [
+            refs[0]
+            for refs in _get_preferred_app_refs(installed_refs, scope_name).values()
+        ]
+
+    for installed_ref in installed_refs:
         ref = installed_ref.ref
         app_id = ref.get_name()
         installation_config = config if installed_ref.scope == "user" else system_config

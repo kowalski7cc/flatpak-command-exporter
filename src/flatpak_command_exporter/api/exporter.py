@@ -29,6 +29,7 @@ class FlatpakCommandExporter:
         *,
         include_system: bool = True,
         scope: str | None = None,
+        current_only: bool = False,
     ) -> list[ExportedAlias]:
         config = self.config
         if scope is not None and scope != getattr(config, "scope", "user"):
@@ -39,6 +40,7 @@ class FlatpakCommandExporter:
             config,
             include_system=include_system,
             scope=scope,
+            current_only=current_only,
         )
 
     def get_command_groups(

@@ -6,7 +6,7 @@ import shlex
 from ..config import AliasConfig
 from ..defaults import COMMAND_TEMPLATE
 from .metadata import _read_manifest_or_empty, manifest_exported_commands
-from .refs import _get_installed_refs, get_current_ref
+from .refs import _get_installed_refs, _get_preferred_app_refs
 
 
 def _launcher_path(alias, *, scope="user"):
@@ -88,11 +88,7 @@ def export_commands(
         scope=scope_name,
         include_system=include_system,
     )
-    refs_by_app_id: dict[str, dict[str, list[object]]] = {}
-    for installed_ref in installed_refs:
-        refs_by_app_id.setdefault(installed_ref.ref.get_name(), {}).setdefault(
-            installed_ref.scope, []
-        ).append(installed_ref)
+    refs_by_app_id = _get_preferred_app_refs(installed_refs, scope_name)
 
     launchers: dict[str, tuple[str, str, str, str]] = {}
     disabled_aliases: set[str] = set()
@@ -101,34 +97,11 @@ def export_commands(
         len(refs_by_app_id),
     )
 
-    for app_id, refs_by_scope in refs_by_app_id.items():
-        preferred_scope = (
-            "user"
-            if scope_name != "system" and refs_by_scope.get("user")
-            else "system"
-        )
-        preferred_refs = refs_by_scope[preferred_scope]
-        selected_installation_ref = preferred_refs[-1]
-        current_ref = get_current_ref(
-            selected_installation_ref.installation,
-            app_id,
-            selected_installation_ref.ref,
-        )
-        current_ref_key = (current_ref.get_arch(), current_ref.get_branch())
-        refs_to_export = [current_ref]
-        refs_to_export.extend(
-            installed_ref.ref
-            for installed_ref in preferred_refs
-            if (
-                installed_ref.ref.get_arch(),
-                installed_ref.ref.get_branch(),
-            )
-            != current_ref_key
-        )
-
-        for ref in refs_to_export:
+    for app_id, preferred_refs in refs_by_app_id.items():
+        for installed_ref in preferred_refs:
+            ref = installed_ref.ref
             manifest = _read_manifest_or_empty(
-                selected_installation_ref.installation_path,
+                installed_ref.installation_path,
                 ref.get_name(),
                 ref.get_arch(),
                 ref.get_branch(),

@@ -109,13 +109,15 @@ def get_app_ref_choices(exporter):
 
 
 def get_aliases_by_scope(exporter):
-	"""Return merged refs and refs filtered to each installation scope."""
+	"""Return current-ref aliases merged or filtered to each installation."""
 	return {
-		"all": exporter.get_exported_aliases(),
+		"all": exporter.get_exported_aliases(current_only=True),
 		"user": exporter.get_exported_aliases(
-			include_system=False, scope="user"
+			include_system=False, scope="user", current_only=True
 		),
-		"system": exporter.get_exported_aliases(scope="system"),
+		"system": exporter.get_exported_aliases(
+			scope="system", current_only=True
+		),
 	}
 
 

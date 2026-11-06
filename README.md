@@ -263,15 +263,16 @@ flatlink
 
 ![Flatlink window showing exported Flatpak commands](screenshots/flatlink.png)
 
-The window lists discovered apps in expandable rows, grouped by app and
-installation scope. Each app has a switch for its default setting; individual
-alias settings take precedence over the app and global defaults. Expand an app
-to see each alias, its command, and its enable/disable switch. Use the search
-field and the All/User/System filter to narrow the list. Alias switches store
-per-command user overrides. The app switch enables or disables all commands
-in that app together without changing its app-level override. These settings
-also apply to system-installed apps and refresh user launchers without
-requesting system authorization.
+The window lists one expandable row per app ID, showing the current ref's
+commands. The All filter prefers a user installation when available; the
+User/System filters show the current ref from that installation. Each app has
+a switch for its default setting; individual alias settings take precedence
+over the app and global defaults. Expand an app to see each alias, its command,
+and its enable/disable switch. Use the search field and the All/User/System
+filter to narrow the list. Alias switches store per-command user overrides.
+The app switch enables or disables all commands in that app together without
+changing its app-level override. These settings also apply to system-installed
+apps and refresh user launchers without requesting system authorization.
 
 The hamburger menu's **Settings** page controls the global default and lists
 enabled and disabled app overrides. Use the plus button to choose an installed

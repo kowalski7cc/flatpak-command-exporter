@@ -25,6 +25,47 @@ def _set_app_commands_enabled(config, records, enabled):
 	)
 
 
+def _group_app_aliases(aliases_by_scope):
+	rows_by_ref = {}
+	for filter_scope, scope_records in aliases_by_scope.items():
+		for record in scope_records:
+			key = (
+				record.installation_scope,
+				record.app_id,
+				record.arch,
+				record.branch,
+				record.alias,
+			)
+			row = rows_by_ref.setdefault(
+				key, {"record": record, "scopes": set()}
+			)
+			row["scopes"].add(filter_scope)
+
+	app_groups = {}
+	for key, row in sorted(
+		rows_by_ref.items(),
+		key=lambda item: (
+			item[1]["record"].app_name.casefold(),
+			item[1]["record"].app_id.casefold(),
+			item[1]["record"].branch.casefold(),
+			item[1]["record"].arch.casefold(),
+			item[1]["record"].alias.casefold(),
+			item[1]["record"].installation_scope,
+		),
+	):
+		record = row["record"]
+		group = app_groups.setdefault(
+			record.app_id,
+			{"record": None, "records": [], "scopes": set()},
+		)
+		group["records"].append((key, record, row["scopes"]))
+		group["scopes"].update(row["scopes"])
+		if "all" in row["scopes"]:
+			group["record"] = record
+
+	return app_groups
+
+
 def main():
 	logging.basicConfig(
 		level=os.environ.get("LOGLEVEL", "INFO").upper(),
@@ -72,30 +113,7 @@ def main():
 
 		def on_activate(self, _application):
 			aliases_by_scope = get_aliases_by_scope(exporter)
-			row_records = {}
-			row_scopes = {}
-			for filter_scope, scope_records in aliases_by_scope.items():
-				for record in scope_records:
-					key = (
-						record.installation_scope,
-						record.app_id,
-						record.arch,
-						record.branch,
-						record.alias,
-					)
-					row_records[key] = record
-					row_scopes.setdefault(key, set()).add(filter_scope)
-			records = sorted(
-				row_records.items(),
-				key=lambda item: (
-					item[1].app_name.casefold(),
-					item[1].app_id.casefold(),
-					item[1].branch.casefold(),
-					item[1].arch.casefold(),
-					item[1].alias.casefold(),
-					item[1].installation_scope,
-				),
-			)
+			app_groups = _group_app_aliases(aliases_by_scope)
 
 			display = Gdk.Display.get_default()
 			icon_theme = Gtk.IconTheme.get_for_display(display)
@@ -157,31 +175,16 @@ def main():
 			app_switches = []
 			app_switch_handlers = {}
 			app_saved_states = {}
-			app_groups = {}
 			app_commands = {}
-			for key, record in records:
-				app_commands.setdefault(record.app_id, {})[
-					record.alias
-				] = record
-				group_key = (
-					record.app_id,
-					record.installation_scope,
-					record.branch,
-					record.arch,
-				)
-				if group_key not in app_groups:
-					app_groups[group_key] = {
-						"record": record,
-						"records": [],
-						"scopes": set(),
-					}
-				app_groups[group_key]["records"].append((key, record))
-				app_groups[group_key]["scopes"].update(row_scopes[key])
+			for app_id, group in app_groups.items():
+				for _key, record, _scopes in group["records"]:
+					app_commands.setdefault(app_id, {})[record.alias] = record
 
 			for group in app_groups.values():
-				record = group["record"]
+				record = group["record"] or group["records"][0][1]
 				command_records = [
-					command_record for _key, command_record in group["records"]
+					command_record
+					for _key, command_record, _scopes in group["records"]
 				]
 				row = Gtk.ListBoxRow()
 				row.set_selectable(False)
@@ -247,7 +250,7 @@ def main():
 				)
 				command_list.set_margin_start(64)
 				row._command_rows = []
-				for _key, command_record in group["records"]:
+				for _key, command_record, command_scopes in group["records"]:
 					command_row = Gtk.Box(
 						orientation=Gtk.Orientation.HORIZONTAL, spacing=12
 					)
@@ -299,6 +302,7 @@ def main():
 							command_record.alias,
 							command_record.command,
 						)).casefold(),
+						command_scopes,
 					))
 
 				expander.set_child(command_list)
@@ -353,9 +357,13 @@ def main():
 					scope_visible = selected_scope in row._view_scopes
 					metadata_matches = not query or query in row._search_metadata
 					command_matches = []
-					for command_row, command_search_text in row._command_rows:
+					for (
+						command_row,
+						command_search_text,
+						command_scopes,
+					) in row._command_rows:
 						command_visible = (
-							scope_visible
+							selected_scope in command_scopes
 							and (
 								not query
 								or metadata_matches

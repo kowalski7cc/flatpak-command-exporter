@@ -105,3 +105,48 @@ def _get_installed_refs(*, scope="user", include_system=True):
                 )
             )
     return refs
+
+
+def _get_preferred_app_refs(installed_refs, scope):
+    """Order each app's preferred installation refs with its current ref first."""
+    refs_by_app_id = {}
+    for installed_ref in installed_refs:
+        refs_by_app_id.setdefault(
+            installed_ref.ref.get_name(), {}
+        ).setdefault(installed_ref.scope, []).append(installed_ref)
+
+    preferred_refs_by_app_id = {}
+    for app_id, refs_by_scope in refs_by_app_id.items():
+        preferred_scope = (
+            "user"
+            if scope != "system" and refs_by_scope.get("user")
+            else "system"
+        )
+        preferred_refs = refs_by_scope[preferred_scope]
+        selected_installation_ref = preferred_refs[-1]
+        current_ref = get_current_ref(
+            selected_installation_ref.installation,
+            app_id,
+            selected_installation_ref.ref,
+        )
+        current_ref_key = (current_ref.get_arch(), current_ref.get_branch())
+        current_installed_ref = _InstalledRef(
+            ref=current_ref,
+            installation=selected_installation_ref.installation,
+            installation_path=selected_installation_ref.installation_path,
+            scope=selected_installation_ref.scope,
+        )
+        preferred_refs_by_app_id[app_id] = [
+            current_installed_ref,
+            *(
+                installed_ref
+                for installed_ref in preferred_refs
+                if (
+                    installed_ref.ref.get_arch(),
+                    installed_ref.ref.get_branch(),
+                )
+                != current_ref_key
+            ),
+        ]
+
+    return preferred_refs_by_app_id
