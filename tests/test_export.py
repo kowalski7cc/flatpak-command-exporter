@@ -130,6 +130,34 @@ class ExportCommandsTests(unittest.TestCase):
             "app.test", "custom", "custom-command", "x86_64", "stable"
         )
 
+    def test_custom_alias_is_exported_without_a_manifest(self):
+        ref = self.Ref("app.test", "stable")
+        installation = SimpleNamespace(
+            get_path=lambda: SimpleNamespace(get_path=lambda: "/user"),
+            get_current_installed_app=lambda _app_id, _cancellable: None,
+        )
+        installed_ref = _InstalledRef(ref, installation, "/user", "user")
+        with tempfile.TemporaryDirectory() as data_home:
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "_get_installed_refs", return_value=[installed_ref]),
+                patch.object(core, "_read_manifest_or_empty", return_value=None),
+                patch.object(core, "create_launcher") as create_launcher,
+                patch.object(core, "remove_launcher"),
+            ):
+                config = core.AliasConfig()
+                config.set_default_policy("none")
+                config.set_custom_alias(
+                    "app.test", "custom", "custom-command"
+                )
+                config.set_alias_enabled("app.test", "custom", True)
+
+                core.export_commands(config)
+
+        create_launcher.assert_called_once_with(
+            "app.test", "custom", "custom-command", "x86_64", "stable"
+        )
+
     def test_disabled_alias_does_not_remove_another_apps_enabled_alias(self):
         create_launcher, remove_launcher = self.run_export(
             [

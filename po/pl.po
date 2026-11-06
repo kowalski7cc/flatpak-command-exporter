@@ -98,6 +98,36 @@ msgstr "Nie można otworzyć ustawień"
 msgid "Could not export user commands"
 msgstr "Nie można wyeksportować poleceń użytkownika"
 
+msgid "Add custom command"
+msgstr "Dodaj własne polecenie"
+
+msgid "Add custom command for %(app)s"
+msgstr "Dodaj własne polecenie dla %(app)s"
+
+msgid "Add"
+msgstr "Dodaj"
+
+msgid "Enter a command and the alias to export it as."
+msgstr "Wpisz polecenie i alias, pod którym ma być eksportowane."
+
+msgid "Command"
+msgstr "Polecenie"
+
+msgid "e.g. /app/bin/tool"
+msgstr "np. /app/bin/tool"
+
+msgid "External alias"
+msgstr "Alias zewnętrzny"
+
+msgid "e.g. tool"
+msgstr "np. narzędzie"
+
+msgid "Could not add custom command"
+msgstr "Nie udało się dodać własnego polecenia"
+
+msgid "Custom command saved, but export failed"
+msgstr "Zapisano własne polecenie, ale eksport się nie powiódł"
+
 msgid "Remove custom alias"
 msgstr "Usuń własny alias"
 

@@ -115,11 +115,14 @@ def export_commands(
                 ref.get_arch(),
                 ref.get_branch(),
             )
-            if manifest is None:
+            custom_aliases = config.custom_aliases(app_id)
+            if manifest is None and not custom_aliases:
                 continue
 
-            exported_commands = manifest_exported_commands(ref.get_name(), manifest)
-            exported_commands = {**exported_commands, **config.custom_aliases(app_id)}
+            exported_commands = manifest_exported_commands(
+                ref.get_name(), manifest or {}
+            )
+            exported_commands = {**exported_commands, **custom_aliases}
             for export, command in exported_commands.items():
                 if not config.is_alias_enabled(app_id, export):
                     logging.debug("Skipping disabled alias %s for %s", export, app_id)

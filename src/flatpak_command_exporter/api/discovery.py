@@ -62,6 +62,12 @@ def get_exported_aliases(
             installed_ref.installation_path, app_id, arch, branch
         )
         custom_aliases = installation_config.custom_aliases(app_id)
+        user_custom_aliases = (
+            config.custom_aliases(app_id)
+            if installed_ref.scope == "system" and scope_name != "system"
+            else {}
+        )
+        custom_aliases = {**custom_aliases, **user_custom_aliases}
         if manifest is None and not custom_aliases:
             continue
 
@@ -77,6 +83,9 @@ def get_exported_aliases(
             installed_ref.scope,
         )
         for alias, command in commands.items():
+            alias_config = (
+                config if alias in user_custom_aliases else installation_config
+            )
             aliases.append(
                 ExportedAlias(
                     alias=alias,
@@ -88,8 +97,11 @@ def get_exported_aliases(
                     installation_path=installed_ref.installation_path,
                     desktop_id=desktop_id,
                     installation_scope=installed_ref.scope,
-                    enabled=installation_config.is_alias_enabled(app_id, alias),
-                    configurable=installed_ref.scope == "user",
+                    enabled=alias_config.is_alias_enabled(app_id, alias),
+                    configurable=(
+                        installed_ref.scope == "user"
+                        or alias in user_custom_aliases
+                    ),
                     custom=alias in custom_aliases,
                 )
             )

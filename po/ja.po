@@ -98,6 +98,36 @@ msgstr "設定を開けませんでした"
 msgid "Could not export user commands"
 msgstr "ユーザーコマンドをエクスポートできませんでした"
 
+msgid "Add custom command"
+msgstr "カスタムコマンドを追加"
+
+msgid "Add custom command for %(app)s"
+msgstr "%(app)s にカスタムコマンドを追加"
+
+msgid "Add"
+msgstr "追加"
+
+msgid "Enter a command and the alias to export it as."
+msgstr "コマンドと、エクスポート時に使用するエイリアスを入力してください。"
+
+msgid "Command"
+msgstr "コマンド"
+
+msgid "e.g. /app/bin/tool"
+msgstr "例: /app/bin/tool"
+
+msgid "External alias"
+msgstr "外部エイリアス"
+
+msgid "e.g. tool"
+msgstr "例: tool"
+
+msgid "Could not add custom command"
+msgstr "カスタムコマンドを追加できませんでした"
+
+msgid "Custom command saved, but export failed"
+msgstr "カスタムコマンドを保存しましたが、エクスポートに失敗しました"
+
 msgid "Remove custom alias"
 msgstr "カスタムエイリアスを削除"
 

@@ -98,6 +98,36 @@ msgstr "Nelze otevřít nastavení"
 msgid "Could not export user commands"
 msgstr "Nelze exportovat uživatelské příkazy"
 
+msgid "Add custom command"
+msgstr "Přidat vlastní příkaz"
+
+msgid "Add custom command for %(app)s"
+msgstr "Přidat vlastní příkaz pro %(app)s"
+
+msgid "Add"
+msgstr "Přidat"
+
+msgid "Enter a command and the alias to export it as."
+msgstr "Zadejte příkaz a alias, pod kterým se bude exportovat."
+
+msgid "Command"
+msgstr "Příkaz"
+
+msgid "e.g. /app/bin/tool"
+msgstr "např. /app/bin/tool"
+
+msgid "External alias"
+msgstr "Externí alias"
+
+msgid "e.g. tool"
+msgstr "např. nástroj"
+
+msgid "Could not add custom command"
+msgstr "Nelze přidat vlastní příkaz"
+
+msgid "Custom command saved, but export failed"
+msgstr "Vlastní příkaz byl uložen, ale export se nezdařil"
+
 msgid "Remove custom alias"
 msgstr "Odebrat vlastní alias"
 

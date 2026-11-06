@@ -98,6 +98,36 @@ msgstr "Impossibile aprire le impostazioni"
 msgid "Could not export user commands"
 msgstr "Impossibile esportare i comandi utente"
 
+msgid "Add custom command"
+msgstr "Aggiungi comando personalizzato"
+
+msgid "Add custom command for %(app)s"
+msgstr "Aggiungi comando personalizzato per %(app)s"
+
+msgid "Add"
+msgstr "Aggiungi"
+
+msgid "Enter a command and the alias to export it as."
+msgstr "Inserisci un comando e l’alias con cui esportarlo."
+
+msgid "Command"
+msgstr "Comando"
+
+msgid "e.g. /app/bin/tool"
+msgstr "ad es. /app/bin/tool"
+
+msgid "External alias"
+msgstr "Alias esterno"
+
+msgid "e.g. tool"
+msgstr "ad es. strumento"
+
+msgid "Could not add custom command"
+msgstr "Impossibile aggiungere il comando personalizzato"
+
+msgid "Custom command saved, but export failed"
+msgstr "Comando personalizzato salvato, ma l’esportazione non è riuscita"
+
 msgid "Remove custom alias"
 msgstr "Rimuovi alias personalizzato"
 

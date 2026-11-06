@@ -98,6 +98,36 @@ msgstr "Einstellungen konnten nicht geöffnet werden"
 msgid "Could not export user commands"
 msgstr "Benutzerbefehle konnten nicht exportiert werden"
 
+msgid "Add custom command"
+msgstr "Benutzerdefinierten Befehl hinzufügen"
+
+msgid "Add custom command for %(app)s"
+msgstr "Benutzerdefinierten Befehl für %(app)s hinzufügen"
+
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgid "Enter a command and the alias to export it as."
+msgstr "Geben Sie einen Befehl und den Alias ein, unter dem er exportiert wird."
+
+msgid "Command"
+msgstr "Befehl"
+
+msgid "e.g. /app/bin/tool"
+msgstr "z. B. /app/bin/tool"
+
+msgid "External alias"
+msgstr "Externer Alias"
+
+msgid "e.g. tool"
+msgstr "z. B. tool"
+
+msgid "Could not add custom command"
+msgstr "Benutzerdefinierter Befehl konnte nicht hinzugefügt werden"
+
+msgid "Custom command saved, but export failed"
+msgstr "Benutzerdefinierter Befehl gespeichert, aber Export fehlgeschlagen"
+
 msgid "Remove custom alias"
 msgstr "Benutzerdefinierten Alias entfernen"
 

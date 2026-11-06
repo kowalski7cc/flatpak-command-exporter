@@ -36,7 +36,9 @@ from flatpak_command_exporter.gui.application import (
     _app_commands_enabled,
     _confirm_custom_alias_removal,
     _group_app_aliases,
+    _make_custom_alias_add_button,
     _make_custom_alias_remove_button,
+    _show_add_custom_alias_dialog,
     _set_app_commands_enabled,
 )
 
@@ -77,6 +79,53 @@ class AliasDataTests(unittest.TestCase):
         self.assertEqual(records[0].command, "custom app")
         self.assertTrue(records[0].custom)
 
+    def test_user_custom_aliases_are_discovered_for_system_apps(self):
+        class Ref:
+            def get_name(self):
+                return "org.example.SystemApp"
+
+            def get_arch(self):
+                return "x86_64"
+
+            def get_branch(self):
+                return "stable"
+
+        installed_ref = _InstalledRef(
+            Ref(), SimpleNamespace(), "/system/flatpak", "system"
+        )
+        with tempfile.TemporaryDirectory() as data_home:
+            user_config = core.AliasConfig(data_home)
+            system_config = core.AliasConfig(data_home, scope="system")
+            user_config.set_custom_alias(
+                "org.example.SystemApp", "user-command", "/app/bin/user"
+            )
+            config_factory = lambda scope="user": (
+                system_config if scope == "system" else user_config
+            )
+            with (
+                patch.object(core, "AliasConfig", side_effect=config_factory),
+                patch.object(
+                    core, "_get_installed_refs", return_value=[installed_ref]
+                ),
+                patch.object(
+                    core,
+                    "_read_manifest_or_empty",
+                    return_value={"x-export-commands": {"system-command": "system"}},
+                ),
+                patch.object(core, "load_metainfo", return_value=None),
+            ):
+                records = core.get_exported_aliases(
+                    user_config, include_system=True
+                )
+
+        user_record = next(
+            record for record in records if record.alias == "user-command"
+        )
+        self.assertEqual(user_record.command, "/app/bin/user")
+        self.assertEqual(user_record.installation_scope, "system")
+        self.assertTrue(user_record.custom)
+        self.assertTrue(user_record.configurable)
+
     def test_custom_alias_remove_button_uses_a_symbolic_icon(self):
         class Button:
             @classmethod
@@ -114,6 +163,182 @@ class AliasDataTests(unittest.TestCase):
                 SimpleNamespace(custom=True, configurable=False), gtk
             )
         )
+
+    def test_custom_alias_add_button_uses_the_adwaita_add_symbol(self):
+        class Button:
+            @classmethod
+            def new_from_icon_name(cls, icon_name):
+                button = cls()
+                button.icon_name = icon_name
+                return button
+
+            def set_tooltip_text(self, text):
+                self.tooltip = text
+
+            def set_valign(self, alignment):
+                self.alignment = alignment
+
+            def update_property(self, properties, values):
+                self.accessible_properties = (properties, values)
+
+        record = SimpleNamespace(app_name="Example")
+        gtk = SimpleNamespace(
+            Button=Button,
+            Align=SimpleNamespace(CENTER=object()),
+            AccessibleProperty=SimpleNamespace(LABEL=object()),
+        )
+
+        button = _make_custom_alias_add_button(record, gtk)
+
+        self.assertEqual(button.icon_name, "list-add-symbolic")
+        self.assertEqual(button.tooltip, "Add custom command")
+        self.assertEqual(
+            button.accessible_properties[1],
+            ["Add custom command for Example"],
+        )
+
+    def test_add_custom_alias_dialog_saves_command_and_external_alias(self):
+        class Button:
+            def __init__(self, label=None):
+                self.label = label
+                self.callbacks = {}
+
+            def add_css_class(self, css_class):
+                self.css_class = css_class
+
+            def connect(self, signal, callback):
+                self.callbacks[signal] = callback
+
+            def set_sensitive(self, sensitive):
+                self.sensitive = sensitive
+
+        class Entry:
+            def __init__(self):
+                self.callbacks = {}
+                self.text = ""
+
+            def set_placeholder_text(self, placeholder):
+                self.placeholder = placeholder
+
+            def set_hexpand(self, expand):
+                self.hexpand = expand
+
+            def connect(self, signal, callback):
+                self.callbacks[signal] = callback
+
+            def get_text(self):
+                return self.text
+
+        class Box:
+            def __init__(self, **kwargs):
+                self.children = []
+
+            def __getattr__(self, _name):
+                return lambda *_args: None
+
+            def append(self, child):
+                self.children.append(child)
+
+        class Label:
+            def __init__(self, label):
+                self.label = label
+
+            def __getattr__(self, _name):
+                return lambda *_args: None
+
+        class HeaderBar:
+            def set_title_widget(self, widget):
+                self.title_widget = widget
+
+            def pack_start(self, widget):
+                self.start = widget
+
+            def pack_end(self, widget):
+                self.end = widget
+
+        class Dialog:
+            instances = []
+
+            def __init__(self):
+                self.instances.append(self)
+
+            def close(self):
+                self.closed = True
+
+            def set_child(self, child):
+                self.child = child
+
+            def __getattr__(self, _name):
+                return lambda *_args: None
+
+        class ToolbarView:
+            def add_top_bar(self, header):
+                self.header = header
+
+            def set_content(self, content):
+                self.content = content
+
+            def __getattr__(self, _name):
+                return lambda *_args: None
+
+        class WindowTitle:
+            def __init__(self, **kwargs):
+                self.kwargs = kwargs
+
+        gtk = SimpleNamespace(
+            Button=Button,
+            Box=Box,
+            Label=Label,
+            Entry=Entry,
+            Orientation=SimpleNamespace(VERTICAL=object()),
+        )
+        adw = SimpleNamespace(
+            Dialog=Dialog,
+            ToolbarView=ToolbarView,
+            HeaderBar=HeaderBar,
+            WindowTitle=WindowTitle,
+        )
+        config = Mock()
+        custom_aliases = {}
+        config.custom_aliases.side_effect = lambda _app_id: custom_aliases.copy()
+        exporter = SimpleNamespace(config=config)
+
+        def add_custom_alias(app_id, alias, command):
+            custom_aliases[alias] = command
+
+        exporter.add_custom_alias = Mock(side_effect=add_custom_alias)
+        on_saved = Mock()
+        report_error = Mock()
+        record = SimpleNamespace(app_id="org.example.App", app_name="Example")
+
+        _show_add_custom_alias_dialog(
+            object(),
+            record,
+            exporter,
+            on_saved,
+            report_error,
+            adw,
+            gtk,
+            SimpleNamespace(Error=Exception),
+        )
+
+        dialog = Dialog.instances[-1]
+        form = dialog.child.content
+        command_entry, alias_entry = form.children[2], form.children[4]
+        command_entry.text = "/app/bin/example --option"
+        alias_entry.text = "example"
+        command_entry.callbacks["changed"](command_entry)
+        alias_entry.callbacks["changed"](alias_entry)
+        add_button = dialog.child.header.end
+        self.assertTrue(add_button.sensitive)
+        add_button.callbacks["clicked"](add_button)
+
+        exporter.add_custom_alias.assert_called_once_with(
+            "org.example.App", "example", "/app/bin/example --option"
+        )
+        self.assertTrue(dialog.closed)
+        on_saved.assert_called_once_with(None)
+        report_error.assert_not_called()
 
     def test_custom_alias_removal_requires_confirmation(self):
         class AlertDialog:

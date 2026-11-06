@@ -98,6 +98,36 @@ msgstr "A beállítások nem nyithatók meg"
 msgid "Could not export user commands"
 msgstr "A felhasználói parancsok nem exportálhatók"
 
+msgid "Add custom command"
+msgstr "Egyéni parancs hozzáadása"
+
+msgid "Add custom command for %(app)s"
+msgstr "Egyéni parancs hozzáadása ehhez: %(app)s"
+
+msgid "Add"
+msgstr "Hozzáadás"
+
+msgid "Enter a command and the alias to export it as."
+msgstr "Adja meg a parancsot és az exportáláshoz használt álnevet."
+
+msgid "Command"
+msgstr "Parancs"
+
+msgid "e.g. /app/bin/tool"
+msgstr "pl. /app/bin/tool"
+
+msgid "External alias"
+msgstr "Külső álnév"
+
+msgid "e.g. tool"
+msgstr "pl. eszköz"
+
+msgid "Could not add custom command"
+msgstr "Nem sikerült hozzáadni az egyéni parancsot"
+
+msgid "Custom command saved, but export failed"
+msgstr "Az egyéni parancs mentve, de az exportálás nem sikerült"
+
 msgid "Remove custom alias"
 msgstr "Egyéni álnév eltávolítása"
 

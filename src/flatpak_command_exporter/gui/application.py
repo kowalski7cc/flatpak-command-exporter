@@ -62,6 +62,123 @@ def _make_custom_alias_remove_button(record: _ExportedAlias, Gtk):
 	return button
 
 
+def _make_custom_alias_add_button(record: _ExportedAlias, Gtk):
+	button = Gtk.Button.new_from_icon_name("list-add-symbolic")
+	button.set_tooltip_text(_("Add custom command"))
+	button.set_valign(Gtk.Align.CENTER)
+	set_accessible_label(
+		button,
+		Gtk,
+		_("Add custom command for %(app)s") % {"app": record.app_name},
+	)
+	return button
+
+
+def _show_add_custom_alias_dialog(
+	parent,
+	record: _ExportedAlias,
+	exporter,
+	on_saved,
+	report_error,
+	Adw,
+	Gtk,
+	GLib,
+) -> None:
+	dialog = Adw.Dialog()
+	dialog.set_title(_("Add custom command"))
+	dialog.set_content_width(480)
+
+	toolbar = Adw.ToolbarView()
+	header = Adw.HeaderBar()
+	header.set_title_widget(
+		Adw.WindowTitle(title=_("Add custom command"), subtitle=record.app_name)
+	)
+	cancel_button = Gtk.Button(label=_("Cancel"))
+	cancel_button.connect("clicked", lambda _button: dialog.close())
+	header.pack_start(cancel_button)
+	add_button = Gtk.Button(label=_("Add"))
+	add_button.add_css_class("suggested-action")
+	header.pack_end(add_button)
+	toolbar.add_top_bar(header)
+
+	form = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+	form.set_margin_top(16)
+	form.set_margin_bottom(16)
+	form.set_margin_start(16)
+	form.set_margin_end(16)
+	instructions = Gtk.Label(
+		label=_("Enter a command and the alias to export it as.")
+	)
+	instructions.set_xalign(0)
+	instructions.set_wrap(True)
+	form.append(instructions)
+
+	command_label = Gtk.Label(label=_("Command"))
+	command_label.set_xalign(0)
+	form.append(command_label)
+	command_entry = Gtk.Entry()
+	command_entry.set_placeholder_text(_("e.g. /app/bin/tool"))
+	command_entry.set_hexpand(True)
+	form.append(command_entry)
+
+	alias_label = Gtk.Label(label=_("External alias"))
+	alias_label.set_xalign(0)
+	form.append(alias_label)
+	alias_entry = Gtk.Entry()
+	alias_entry.set_placeholder_text(_("e.g. tool"))
+	alias_entry.set_hexpand(True)
+	form.append(alias_entry)
+	error_label = Gtk.Label(label="")
+	error_label.set_xalign(0)
+	error_label.set_wrap(True)
+	error_label.add_css_class("error")
+	error_label.set_visible(False)
+	form.append(error_label)
+
+	def update_add_sensitivity(*_args: object) -> None:
+		add_button.set_sensitive(
+			bool(command_entry.get_text().strip())
+			and bool(alias_entry.get_text().strip())
+		)
+
+	command_entry.connect("changed", update_add_sensitivity)
+	alias_entry.connect("changed", update_add_sensitivity)
+	update_add_sensitivity()
+
+	def add_custom_alias(_button: object) -> None:
+		command = command_entry.get_text()
+		alias = alias_entry.get_text()
+		try:
+			exporter.add_custom_alias(record.app_id, alias, command)
+		except (OSError, ValueError, GLib.Error) as error:
+			try:
+				saved = (
+					exporter.config.custom_aliases(record.app_id).get(alias)
+					== command
+				)
+			except (OSError, ValueError) as config_error:
+				error_label.set_text(str(config_error))
+				error_label.set_visible(True)
+				report_error(_("Could not add custom command"), config_error)
+				return
+			if not saved:
+				error_label.set_text(str(error))
+				error_label.set_visible(True)
+				report_error(_("Could not add custom command"), error)
+				return
+			dialog.close()
+			on_saved(error)
+			return
+
+		dialog.close()
+		on_saved(None)
+
+	add_button.connect("clicked", add_custom_alias)
+	toolbar.set_content(form)
+	dialog.set_child(toolbar)
+	dialog.present(parent)
+
+
 def _confirm_custom_alias_removal(
     parent,
     record: _ExportedAlias,
@@ -318,12 +435,38 @@ def main() -> None:
 					Gtk,
 					_("Export commands for %(app)s") % {"app": record.app_name},
 				)
+				add_custom_alias_button = _make_custom_alias_add_button(
+					record, Gtk
+				)
+				header.append(add_custom_alias_button)
 				header.append(app_switch)
 				app_switches.append((
 					app_switch,
 					list(app_commands[record.app_id].values()),
 					record,
 				))
+
+				def open_add_custom_alias_dialog(
+					_button: object,
+					record: _ExportedAlias = record,
+				) -> None:
+					_show_add_custom_alias_dialog(
+						window,
+						record,
+						exporter,
+						lambda error: refresh_main_window(
+							error,
+							_("Custom command saved, but export failed"),
+						),
+						report_error,
+						Adw,
+						Gtk,
+						GLib,
+					)
+
+				add_custom_alias_button.connect(
+					"clicked", open_add_custom_alias_dialog
+				)
 				expander.set_label_widget(header)
 
 				command_list = Gtk.Box(
@@ -511,11 +654,14 @@ def main() -> None:
 				logging.error("%s: %s", message, error)
 				self.toast_overlay.add_toast(Adw.Toast.new(f"{message}: {error}"))
 
-			def refresh_main_window(error: Exception | None = None) -> None:
+			def refresh_main_window(
+				error: Exception | None = None,
+				error_message: str = _("Could not remove custom alias"),
+			) -> None:
 				window.close()
 				self.on_activate(self)
 				if error is not None:
-					report_error(_("Could not remove custom alias"), error)
+					report_error(error_message, error)
 
 			def update_user_control_widgets() -> None:
 				for alias_switch, record in alias_switches:

@@ -276,6 +276,9 @@ filter to narrow the list. Alias switches store per-command user overrides.
 The app switch enables or disables all commands in that app together without
 changing its app-level override. These settings also apply to system-installed
 apps and refresh user launchers without requesting system authorization.
+Use the plus button on an app row to add a custom command: enter the Flatpak
+command and the external alias to export it under. Custom aliases have a
+delete button beside their switch; removal requires confirmation.
 
 The hamburger menu's **Settings** page controls the global default and lists
 enabled and disabled app overrides. Use the plus button to choose an installed

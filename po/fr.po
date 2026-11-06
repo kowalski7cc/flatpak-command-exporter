@@ -98,6 +98,36 @@ msgstr "Impossible d’ouvrir les paramètres"
 msgid "Could not export user commands"
 msgstr "Impossible d’exporter les commandes utilisateur"
 
+msgid "Add custom command"
+msgstr "Ajouter une commande personnalisée"
+
+msgid "Add custom command for %(app)s"
+msgstr "Ajouter une commande personnalisée pour %(app)s"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "Enter a command and the alias to export it as."
+msgstr "Saisissez une commande et l’alias sous lequel l’exporter."
+
+msgid "Command"
+msgstr "Commande"
+
+msgid "e.g. /app/bin/tool"
+msgstr "ex. /app/bin/tool"
+
+msgid "External alias"
+msgstr "Alias externe"
+
+msgid "e.g. tool"
+msgstr "ex. outil"
+
+msgid "Could not add custom command"
+msgstr "Impossible d’ajouter la commande personnalisée"
+
+msgid "Custom command saved, but export failed"
+msgstr "Commande personnalisée enregistrée, mais l’export a échoué"
+
 msgid "Remove custom alias"
 msgstr "Supprimer l’alias personnalisé"
 
