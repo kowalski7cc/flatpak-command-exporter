@@ -22,7 +22,8 @@ aliases in a graphical interface.
 - Choose whether aliases are exported by default, then override that choice for
   individual apps or aliases.
 - Add your own aliases for commands inside user- or system-installed Flatpaks.
-- Search and toggle aliases in Flatlink.
+- Search and toggle apps and aliases in Flatlink.
+- Refresh user command exports from Flatlink after installing an app.
 - Keep generated launchers on your `PATH` using the included profile script.
 
 ## Quick start
@@ -172,12 +173,20 @@ Flatlink
 ```
 
 The window lists discovered apps in expandable rows, grouped by app and
-installation scope. Expand an app to see each exported alias, the command it
-runs, and its individual enable/disable switch. Use the search field and the
-All/User/System filter to narrow the list. Changing a system-installed alias
-requests PolicyKit authorization. The switch in the title bar sets the
-user-scope global default. Each saved change refreshes the generated
-launchers. The core package installs the PolicyKit action and system-bus helper.
+installation scope. Each app has a switch for its default setting; individual
+alias settings take precedence over the app and global defaults. Expand an app
+to see each alias, its command, and its enable/disable switch. Use the search
+field and the All/User/System filter to narrow the list. Changing a
+system-installed app or alias requests PolicyKit authorization.
+
+The global-default button controls whether new commands are exported by
+default. It applies the setting to user scope and attempts the system update
+through PolicyKit; if the system update is denied or unavailable, the user
+setting is still saved and the button indicates user-only mode. The refresh
+button exports all user commands, like `flatshell export`. The hamburger menu
+contains the About window, whose version and author information come from the
+project metadata. Each saved change refreshes the generated launchers. The core
+package installs the PolicyKit action and system-bus helper.
 
 ## Configuration and files
 
@@ -295,7 +304,8 @@ operations, and Flatpak alias discovery.
 - Added app and alias enable/disable settings, default export policies, and
   custom aliases.
 - Added the `flatshell` CLI configuration commands and Flatlink controls,
-  including the title-bar default-export switch.
+  including app-level defaults, a scope-aware global-default button, export
+  refresh, and About window.
 - Updated Debian packaging to install the renamed profile script
   automatically.
 - Kept the existing application ID prefix, `xyz.kowalski7cc`, and retained the

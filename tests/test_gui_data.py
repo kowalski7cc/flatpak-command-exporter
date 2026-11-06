@@ -1,4 +1,3 @@
-import tempfile
 import os
 import tempfile
 import unittest
@@ -10,6 +9,7 @@ from flatpak_command_exporter import FlatpakCommandExporter
 from flatpak_command_exporter import application as core
 from flatpak_command_exporter.gui import (
     get_exported_icon,
+    get_project_details,
 )
 
 
@@ -172,6 +172,22 @@ class DesktopIconTests(unittest.TestCase):
         )
 
         self.assertIsNone(get_exported_icon(record, []))
+
+
+class ProjectMetadataTests(unittest.TestCase):
+    def test_reads_version_and_authors_from_project_file(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            project_file = Path(temporary_directory) / "pyproject.toml"
+            project_file.write_text(
+                '[project]\nversion = "1.2.3"\nauthors = '
+                '[{name = "First Author"}, {name = "Second Author"}]\n',
+                encoding="utf-8",
+            )
+
+            self.assertEqual(
+                get_project_details(project_file),
+                ("1.2.3", ("First Author", "Second Author")),
+            )
 
 
 if __name__ == "__main__":

@@ -77,6 +77,21 @@ class AliasConfigTests(unittest.TestCase):
 
         self.assertEqual(config.directory, Path("/usr/lib/flatpak/aliases"))
 
+    def test_user_and_system_global_defaults_are_independent(self):
+        user_config = AliasConfig(Path(self.temporary_directory.name) / "user")
+        system_config = AliasConfig(
+            Path(self.temporary_directory.name) / "system",
+            scope="system",
+        )
+
+        user_config.set_default_policy("none")
+        system_config.set_default_policy("all")
+
+        self.assertEqual(user_config.default_policy(), "none")
+        self.assertEqual(system_config.default_policy(), "all")
+        self.assertFalse(user_config.is_alias_enabled("org.example.App", "command"))
+        self.assertTrue(system_config.is_alias_enabled("org.example.App", "command"))
+
 
 if __name__ == "__main__":
     unittest.main()
