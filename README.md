@@ -86,6 +86,15 @@ The spec derives its version from `pyproject.toml` and builds a core RPM plus
 an optional `flatpak-command-exporter-gui` RPM. `rpmbuild` writes the packages
 under `~/rpmbuild/RPMS/noarch/` by default.
 
+### Development containers
+
+The `.devcontainer/` directory includes configurations for Fedora 45 RPM in
+`.devcontainer/fedora/`, Arch Linux PKGBUILD/makepkg in `.devcontainer/arch/`,
+and Debian 13 (trixie) package development in `.devcontainer/debian-trixie/`.
+In VS Code, reopen the repository in a container and choose the desired
+configuration. The Debian container supports `make deb`; the Arch container
+includes `base-devel` and `namcap`.
+
 ### Requirements
 
 - Flatpak and Python 3.13 or newer.
