@@ -73,11 +73,11 @@ jobs:
             gtk4 \
             libadwaita \
             make \
+            nodejs \
             polkit \
             pyproject-rpm-macros \
             python3-devel \
             python3-gobject \
-            python3-packaging \
             python3-pip \
             python3-setuptools \
             rpm-build

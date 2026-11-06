@@ -76,7 +76,7 @@ directly from the source checkout:
 
 ```console
 sudo dnf install flatpak-devel gtk4 libadwaita make polkit \
-  pyproject-rpm-macros python3-devel python3-gobject python3-packaging \
+  pyproject-rpm-macros python3-devel python3-gobject \
   python3-pip python3-setuptools rpm-build
 make rpm
 ```
