@@ -161,7 +161,7 @@ class AliasDataTests(unittest.TestCase):
 
         button, choices = _make_scope_filter_controls(gtk, 1)
 
-        button.set_icon_name.assert_called_once_with("filter-symbolic")
+        button.set_icon_name.assert_called_once_with("view-reveal-symbolic")
         button.set_size_request.assert_called_once_with(40, 40)
         button.set_tooltip_text.assert_called_once_with(
             "Filter by Flatpak installation"
