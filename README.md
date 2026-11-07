@@ -408,6 +408,8 @@ launchers. `remove_custom_alias` removes the custom alias, disables it, and
 refreshes exports. A custom `AliasConfig` can be passed to the constructor to
 control the configuration location. The library requires Flatpak and
 PyGObject with Flatpak introspection bindings; GTK is only needed for Flatlink.
+See [DEVELOPERS.md](DEVELOPERS.md#python-api) for discovery filters, scope
+selection, result models, lower-level helpers, and additional examples.
 
 ## Development
 

@@ -55,7 +55,7 @@ exporter = FlatpakCommandExporter()
 
 # Includes aliases for user-installed and system-installed apps.
 for alias in exporter.get_exported_aliases():
-    scope = "user" if alias.configurable else "system"
+    scope = alias.installation_scope
     state = "enabled" if alias.enabled else "disabled"
     print(f"{alias.app_name}: {alias.alias} -> {alias.command} [{scope}, {state}]")
 
@@ -130,6 +130,195 @@ except (OSError, ValueError) as error:
     raise SystemExit(f"Could not update Flatpak command exports: {error}") from error
 ```
 
+### Full API reference and advanced usage
+
+The package root exports `FlatpakCommandExporter`, `ExportedAlias`, and
+`CommandGroup`. The functions below are available from
+`flatpak_command_exporter.api`:
+
+```python
+from flatpak_command_exporter.api import (
+    EXPORT_SCHEMA_NAMES,
+    create_launcher,
+    export_commands,
+    find_refs,
+    get_command_groups,
+    get_current_ref,
+    get_desktop_id_from_metainfo,
+    get_exported_aliases,
+    get_pretty_name_from_metainfo,
+    get_version_from_metainfo,
+    load_manifest,
+    load_metainfo,
+    manifest_exported_commands,
+    remove_launcher,
+)
+```
+
+#### Scope-aware discovery
+
+Use the module-level discovery functions when you want to call one operation
+without keeping an exporter object. They return the same frozen result models
+as the object methods:
+
+```python
+groups = get_command_groups(
+    app_id="org.gimp.GIMP",
+    include_system=False,
+    arch="x86_64",
+    branch="stable",
+)
+aliases = get_exported_aliases(current_only=True)
+```
+
+`get_command_groups()` accepts an optional app ID, `include_system`,
+`first_only`, `scope`, `system`, `arch`, and `branch`. By default it checks
+both installations and prefers user refs when the same app, architecture, and
+branch exist in both. `include_system=False` limits it to user refs;
+`scope="system"` (or `system=True`) limits it to the system installation.
+`scope="user"` preserves the default behavior, including system refs unless
+`include_system=False` is also passed. `first_only=True` returns the first
+matching group rather than all matches.
+
+`get_exported_aliases()` accepts `include_system`, `scope`, `system`, and
+`current_only`. By default it applies the current user's alias settings and
+includes system-installed apps. `scope="system"` returns system aliases using
+system configuration; `current_only=True` returns only each app's preferred
+current ref. Each `ExportedAlias` also reports the installation scope via
+`installation_scope`; `configurable` is a settings capability flag, not a
+scope identifier.
+
+#### Settings and configuration
+
+Construct `FlatpakCommandExporter(scope="system")` to use system configuration
+for settings and exports. Alternatively, pass an `AliasConfig` from
+`flatpak_command_exporter.config`. Its `data_home` parameter is useful for
+isolated user configuration and also sets the corresponding launcher
+directory:
+
+```python
+from flatpak_command_exporter import FlatpakCommandExporter
+from flatpak_command_exporter.config import AliasConfig
+
+config = AliasConfig(data_home="/tmp/flatpak-exporter-data")
+exporter = FlatpakCommandExporter(config=config)
+```
+
+`set_default_policy()` accepts only `"all"` or `"none"`. App-level overrides
+accept `True`, `False`, or `None` (`None` clears the override); alias-level
+overrides accept `True` or `False`. `add_custom_alias()` stores a non-empty
+single-line command and enables the alias. These exporter methods save their
+changes and refresh launchers. `remove_custom_alias()` returns whether the
+custom definition existed; it removes the definition, disables the alias, and
+refreshes. `export_commands()` refreshes launchers without changing settings.
+
+For applications that need to manage configuration separately from launcher
+refresh, `AliasConfig` is also usable directly. It exposes `default_policy()`,
+`set_default_policy()`, `app_enabled()`, `set_app_enabled()`,
+`alias_enabled()`, `set_alias_enabled()`, `set_aliases_enabled()`,
+`custom_aliases()`, `set_custom_alias()`, `remove_custom_alias()`, and
+`is_alias_enabled()`. Writes can raise `OSError` or `AliasConfigError`
+(`ValueError`); direct `AliasConfig` writes do not refresh launchers, so call
+`exporter.export_commands()` after changing settings.
+
+System-scope configuration and launcher writes generally require elevated
+filesystem permissions. A custom user `data_home` changes the user settings
+and launcher paths, but does not redirect Flatpak discovery to another
+installation.
+
+#### Manifest and metainfo helpers
+
+The examples below use a discovered command group. Check that discovery
+returned a result before selecting one:
+
+```python
+groups = get_command_groups("org.gimp.GIMP")
+if not groups:
+    raise RuntimeError("No command group found for org.gimp.GIMP")
+group = groups[0]
+```
+
+`load_manifest(base_path, app_id, arch, branch)` reads the installed ref's
+`manifest.json` and returns the decoded JSON value. It can raise
+`FileNotFoundError`, other `OSError`s, or `json.JSONDecodeError`; validate the
+decoded shape before passing it to `manifest_exported_commands()`:
+
+```python
+manifest = load_manifest(
+    group.installation_path, group.app_id, group.arch, group.branch
+)
+if not isinstance(manifest, dict):
+    raise ValueError("Flatpak manifest must contain a JSON object")
+commands = manifest_exported_commands(group.app_id, manifest)
+```
+
+`manifest_exported_commands(app_id, manifest)` returns the commands selected
+from the manifest and the application's built-in defaults. The recognized
+manifest keys are in `EXPORT_SCHEMA_NAMES`.
+
+`load_metainfo(base_path, app_id, arch, branch)` parses the installed XML
+metainfo and returns its root element, or `None` when the file is absent or
+cannot be parsed. The accessors accept that optional element:
+
+```python
+metainfo = load_metainfo(
+    group.installation_path, group.app_id, group.arch, group.branch
+)
+name = get_pretty_name_from_metainfo(metainfo) or group.app_id
+desktop_id = get_desktop_id_from_metainfo(metainfo, group.app_id)
+version = get_version_from_metainfo(metainfo)
+```
+
+The display-name and version accessors return `str | None`. The desktop-ID
+accessor returns the metainfo launchable desktop ID when present, otherwise
+`<app_id>.desktop`.
+
+#### Launcher and Flatpak ref helpers
+
+`create_launcher(app_id, export, command, arch, branch, *, scope="user")`
+creates an executable launcher; `remove_launcher(export, *, scope="user")`
+removes it. These operate directly on launcher files and do not update
+configuration. Use `export_commands(config, ...)` for the normal operation
+that applies configured policies and refreshes the selected scope:
+
+```python
+exporter.export_commands()
+# Direct launcher operations are available when deliberately managing a file:
+create_launcher("org.gimp.GIMP", "my-gimp", "gimp", "x86_64", "stable")
+remove_launcher("my-gimp")
+```
+
+Both launcher functions accept `scope="system"` to target system launchers.
+Creating a system launcher requires appropriate permissions. Quote and validate
+values through the launcher helper rather than constructing shell scripts
+yourself: it validates alias names and safely quotes the command arguments.
+Only use custom commands you trust.
+
+`find_refs(installation)` and `get_current_ref(installation, app_id,
+fallback_ref)` are lower-level helpers for callers already working with a
+Flatpak installation object. They require the Flatpak introspection bindings:
+
+```python
+import gi
+
+gi.require_version("Flatpak", "1.0")
+from gi.repository import Flatpak
+
+installation = Flatpak.Installation.new_user()
+if installation is None:
+    raise RuntimeError("Could not open the user Flatpak installation")
+refs = list(find_refs(installation))
+if refs:
+    current_ref = get_current_ref(
+        installation, refs[0].get_name(), refs[0]
+    )
+```
+
+`find_refs()` yields installed application refs, and `get_current_ref()`
+returns the current installed ref for an app or the supplied fallback. Most
+integrations should prefer `get_command_groups()` or
+`get_exported_aliases()` instead.
+
 In Flatlink, the main-window app switch enables or disables all discovered
 commands for that app together by writing per-alias settings. It does not
 change the app-level override. The Settings factory reset restores the default
@@ -150,8 +339,8 @@ directly to its configuration and launcher paths, so run them with elevated
 filesystem permissions. Use `--user` to limit CLI changes to the current user;
 Flatlink always stores changes in user configuration.
 
-For configuration-only tests or tools that need a separate settings directory,
-pass an `AliasConfig`:
+For tests or tools that need a separate user configuration and launcher
+directory, pass an `AliasConfig`:
 
 ```python
 from flatpak_command_exporter import FlatpakCommandExporter
@@ -164,10 +353,10 @@ system_config = AliasConfig(scope="system")
 exporter_for_system = FlatpakCommandExporter(config=system_config)
 ```
 
-Changing the configuration location does not change the launcher's location:
-user launchers still use `XDG_DATA_HOME` (or the default user data directory),
-while system launchers use the system export path. Set `XDG_DATA_HOME` if a
-custom user data directory should be used.
+`AliasConfig(data_home=...)` changes both user configuration and launcher
+locations. Without a custom `data_home`, the user paths use
+`${XDG_DATA_HOME:-$HOME/.local/share}`. System-scope paths are derived from the
+default system Flatpak installation.
 
 ### Automatic Flatpak export refresh
 
