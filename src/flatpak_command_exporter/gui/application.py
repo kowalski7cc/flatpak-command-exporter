@@ -370,7 +370,7 @@ def main() -> None:
 
 		gi.require_version("Gtk", "4.0")
 		gi.require_version("Adw", "1")
-		from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango
+		from gi.repository import Adw, Gdk, Gio, GLib, Gtk, Pango # pyright: ignore[reportAttributeAccessIssue]
 	except (ImportError, ValueError) as error:
 		raise SystemExit(
 			_("The GUI requires PyGObject, GTK 4, and libadwaita with introspection data installed.")
@@ -746,7 +746,7 @@ def main() -> None:
 			search_entry.connect("search-changed", update_search)
 			for index, choice in enumerate(scope_choices):
 				def update_scope(
-					button: object,
+					button: Gtk.CheckButton,
 					_scope_index: int = index,
 				) -> None:
 					if button.get_active():
