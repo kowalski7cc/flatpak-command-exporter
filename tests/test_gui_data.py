@@ -31,6 +31,7 @@ from flatpak_command_exporter.gui.settings import (
     _make_icon_button,
     _make_app_override_row,
     _reset_factory_preferences,
+    _update_app_selection,
 )
 from flatpak_command_exporter.gui.application import (
     _app_commands_enabled,
@@ -848,7 +849,7 @@ class AliasDataTests(unittest.TestCase):
         )
         self.assertTrue(all(button.alignment is center for button in buttons))
 
-    def test_selecting_app_ref_saves_override_once_and_closes_chooser(self):
+    def test_app_selection_updates_marker_without_saving_override(self):
         class SelectionMark:
             def set_visible(self, visible):
                 self.visible = visible
@@ -857,17 +858,28 @@ class AliasDataTests(unittest.TestCase):
         other_row = object()
         selected_mark = SelectionMark()
         other_mark = SelectionMark()
-        record = SimpleNamespace(app_id="org.example.App")
+        save_override = Mock(return_value=True)
+
+        _update_app_selection(
+            selected_row,
+            {
+                selected_row: selected_mark,
+                other_row: other_mark,
+            },
+        )
+
+        save_override.assert_not_called()
+        self.assertTrue(selected_mark.visible)
+        self.assertFalse(other_mark.visible)
+
+    def test_activating_app_ref_saves_override_once_and_closes_chooser(self):
+        selected_row = object()
         save_override = Mock(return_value=True)
         close_chooser = Mock()
 
         _handle_app_selection(
             selected_row,
-            {selected_row: record},
-            {
-                selected_row: selected_mark,
-                other_row: other_mark,
-            },
+            {selected_row: SimpleNamespace(app_id="org.example.App")},
             False,
             save_override,
             close_chooser,
@@ -875,8 +887,6 @@ class AliasDataTests(unittest.TestCase):
 
         save_override.assert_called_once_with("org.example.App", False)
         close_chooser.assert_called_once_with()
-        self.assertTrue(selected_mark.visible)
-        self.assertFalse(other_mark.visible)
 
     def test_failed_app_override_save_keeps_chooser_open(self):
         selected_row = object()
@@ -886,7 +896,6 @@ class AliasDataTests(unittest.TestCase):
         _handle_app_selection(
             selected_row,
             {selected_row: SimpleNamespace(app_id="org.example.App")},
-            {selected_row: SimpleNamespace(set_visible=lambda _visible: None)},
             True,
             save_override,
             close_chooser,

@@ -45,18 +45,25 @@ def _reset_factory_preferences(config: _AliasConfig) -> str:
 	return default_policy
 
 
+def _update_app_selection(
+	row: object | None,
+	selection_marks,
+) -> None:
+	if row is None:
+		return
+	for choice_row, selected_mark in selection_marks.items():
+		selected_mark.set_visible(choice_row is row)
+
+
 def _handle_app_selection(
 	row: object | None,
 	records_by_row: Mapping[object, _ExportedAlias],
-	selection_marks,
 	enabled: bool,
 	save_app_override: Callable[[str, bool], bool],
 	close_chooser: Callable[[], None],
 ) -> None:
 	if row is None:
 		return
-	for choice_row, selected_mark in selection_marks.items():
-		selected_mark.set_visible(choice_row is row)
 	record = records_by_row[row]
 	if save_app_override(record.app_id, enabled):
 		close_chooser()
@@ -86,6 +93,9 @@ def show_settings(
 		title=_("Export new commands by default"),
 		subtitle=_("Applies to user commands, including commands from system apps."),
 	)
+	set_accessible_label(
+		default_row, Gtk, _("Export new commands by default")
+	)
 	default_row.set_active(exporter.config.default_policy() == "all")
 	default_group.add(default_row)
 	page.add(default_group)
@@ -96,6 +106,7 @@ def show_settings(
 	)
 	reset_button = Gtk.Button(label=_("Reset"))
 	reset_button.set_valign(Gtk.Align.CENTER)
+	set_accessible_label(reset_button, Gtk, _("Reset to factory defaults"))
 	reset_row.add_suffix(reset_button)
 	default_group.add(reset_row)
 
@@ -138,7 +149,9 @@ def show_settings(
 			set_decorative(app_icon, Gtk)
 			app_icon.set_pixel_size(32)
 			reset_button = _make_icon_button(
-				Gtk, "list-remove-symbolic", _("Remove app override")
+				Gtk,
+				"list-remove-symbolic",
+				f"{_('Remove app override')}: {app_name}",
 			)
 			row = _make_app_override_row(
 				Adw, app_id, app_name, app_icon, reset_button
@@ -197,7 +210,9 @@ def show_settings(
 
 		list_box = Gtk.ListBox()
 		list_box.set_selection_mode(Gtk.SelectionMode.SINGLE)
+		list_box.set_activate_on_single_click(True)
 		list_box.add_css_class("boxed-list")
+		set_accessible_label(list_box, Gtk, _("Select an installed app"))
 		list_box.set_margin_top(12)
 		list_box.set_margin_bottom(12)
 		list_box.set_margin_start(12)
@@ -207,6 +222,7 @@ def show_settings(
 		records_by_row = {}
 		for label, record in choices:
 			row = Gtk.ListBoxRow()
+			row.set_selectable(True)
 			row.set_activatable(True)
 			set_accessible_label(row, Gtk, label)
 			row_content = Gtk.Box(
@@ -250,22 +266,26 @@ def show_settings(
 			records_by_row[row] = record
 
 		def selected_ref(_list_box: object, row: object) -> None:
+			_update_app_selection(row, selection_marks)
+
+		def activate_ref(_list_box: object, row: object) -> None:
 			_handle_app_selection(
 				row,
 				records_by_row,
-				selection_marks,
 				enabled,
 				save_app_override,
 				dialog.close,
 			)
 
 		list_box.connect("row-selected", selected_ref)
+		list_box.connect("row-activated", activate_ref)
 
 		scroller = Gtk.ScrolledWindow()
 		scroller.set_child(list_box)
 		scroller.set_vexpand(True)
 		toolbar.set_content(scroller)
 		dialog.set_child(toolbar)
+		dialog.connect("map", lambda _dialog: cancel_button.grab_focus())
 		dialog.present(preferences_window)
 
 	for enabled, group in override_groups.items():

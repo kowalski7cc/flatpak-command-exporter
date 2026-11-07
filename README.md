@@ -282,8 +282,10 @@ delete button beside their switch; removal requires confirmation.
 
 The hamburger menu's **Settings** page controls the global default and lists
 enabled and disabled app overrides. Use the plus button to choose an installed
-app from a list showing one entry per app with its name and ID; selecting it
-applies the override to every ref of that app.
+app from a list showing one entry per app with its name and ID. Use the arrow
+keys to navigate the list and Enter to apply the selected app; Tab moves from
+Cancel into the list. Clicking an entry applies it too. The override applies
+to every ref of that app.
 The remove button clears the app override and returns to the global default.
 Use **Reset to factory defaults** to restore the default export policy and
 clear app and command-level enable/disable overrides. Custom alias definitions
