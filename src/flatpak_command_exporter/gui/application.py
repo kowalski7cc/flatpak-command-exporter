@@ -51,6 +51,102 @@ def _set_app_commands_enabled(
 	)
 
 
+def _make_search_controls(Gtk, search_text: str, search_visible: bool):
+	search_entry = Gtk.SearchEntry()
+	search_entry.set_placeholder_text(_("Search apps and commands"))
+	set_accessible_label(
+		search_entry, Gtk, _("Search apps and commands")
+	)
+	search_entry.set_hexpand(True)
+	search_entry.set_size_request(-1, 40)
+	search_entry.set_text(search_text)
+
+	search_button = Gtk.Button.new_from_icon_name(
+		"system-search-symbolic"
+	)
+	search_button.set_tooltip_text(_("Search apps and commands"))
+	set_accessible_label(
+		search_button, Gtk, _("Search apps and commands")
+	)
+	search_button.set_size_request(40, 40)
+	search_revealer = Gtk.Revealer()
+	search_revealer.set_transition_type(
+		Gtk.RevealerTransitionType.SLIDE_DOWN
+	)
+	search_revealer.set_transition_duration(180)
+	search_revealer.set_reveal_child(search_visible)
+	search_revealer.set_hexpand(True)
+	search_revealer.set_child(search_entry)
+
+	def toggle_search(_button: object) -> None:
+		show_search = not search_revealer.get_reveal_child()
+		search_revealer.set_reveal_child(show_search)
+		if show_search:
+			search_entry.grab_focus()
+		else:
+			search_button.grab_focus()
+
+	search_button.connect("clicked", toggle_search)
+	return search_entry, search_button, search_revealer
+
+
+def _make_scope_filter_controls(Gtk, selected_scope: int):
+	scope_button = Gtk.MenuButton()
+	scope_button.set_icon_name("view-reveal-symbolic")
+	scope_button.set_size_request(40, 40)
+	scope_button.set_tooltip_text(_("Filter by Flatpak installation"))
+	set_accessible_label(
+		scope_button, Gtk, _("Filter by Flatpak installation")
+	)
+	scope_choices_box = Gtk.Box(
+		orientation=Gtk.Orientation.VERTICAL, spacing=4
+	)
+	scope_choices_box.set_margin_top(8)
+	scope_choices_box.set_margin_bottom(8)
+	scope_choices_box.set_margin_start(8)
+	scope_choices_box.set_margin_end(8)
+	scope_choices = []
+	for index, label in enumerate(
+		[_("All apps"), _("User apps"), _("System apps")]
+	):
+		choice = Gtk.CheckButton(label=label)
+		if scope_choices:
+			choice.set_group(scope_choices[0])
+		choice.set_active(index == selected_scope)
+		scope_choices_box.append(choice)
+		scope_choices.append(choice)
+	scope_popover = Gtk.Popover()
+	scope_popover.set_child(scope_choices_box)
+	scope_button.set_popover(scope_popover)
+	return scope_button, scope_choices
+
+
+def _make_header_controls(
+	Gtk,
+	search_button,
+	scope_button,
+	menu_button,
+):
+	controls = Gtk.Box(
+		orientation=Gtk.Orientation.HORIZONTAL, spacing=0
+	)
+	for control in (search_button, scope_button, menu_button):
+		controls.append(control)
+	return controls
+
+
+def _make_list_content(Gtk, search_revealer, stack):
+	content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+	search_revealer.set_margin_top(12)
+	search_revealer.set_margin_bottom(4)
+	search_revealer.set_margin_start(12)
+	search_revealer.set_margin_end(12)
+	search_revealer.set_hexpand(True)
+	content.append(search_revealer)
+	content.append(stack)
+	return content
+
+
 def _make_custom_alias_remove_button(record: _ExportedAlias, Gtk):
 	if not record.custom or not record.configurable:
 		return None
@@ -319,9 +415,14 @@ def main() -> None:
 				else ""
 			)
 			selected_scope = (
-				self.scope_filter.get_selected()
-				if hasattr(self, "scope_filter")
+				self.selected_scope
+				if hasattr(self, "selected_scope")
 				else 0
+			)
+			search_visible = (
+				self.search_revealer.get_reveal_child()
+				if hasattr(self, "search_revealer")
+				else False
 			)
 
 			display = Gdk.Display.get_default()
@@ -353,26 +454,24 @@ def main() -> None:
 			menu_button.set_tooltip_text(_("Main Menu"))
 			set_accessible_label(menu_button, Gtk, _("Main Menu"))
 			header.pack_start(export_button)
-			header.pack_end(menu_button)
-			search_entry = Gtk.SearchEntry()
-			search_entry.set_placeholder_text(_("Search apps and commands"))
-			set_accessible_label(
-				search_entry, Gtk, _("Search apps and commands")
+			search_entry, search_button, search_revealer = (
+				_make_search_controls(Gtk, search_text, search_visible)
 			)
-			search_entry.set_hexpand(True)
-			search_entry.set_size_request(-1, 40)
-			search_entry.set_text(search_text)
 			self.search_entry = search_entry
-			scope_filter = Gtk.DropDown.new_from_strings(
-				[_("All apps"), _("User apps"), _("System apps")]
+			self.search_revealer = search_revealer
+
+			scope_button, scope_choices = _make_scope_filter_controls(
+				Gtk, selected_scope
 			)
-			scope_filter.set_selected(selected_scope)
-			self.scope_filter = scope_filter
-			scope_filter.set_size_request(-1, 40)
-			scope_filter.set_tooltip_text(_("Filter by Flatpak installation"))
-			set_accessible_label(
-				scope_filter, Gtk, _("Filter by Flatpak installation")
+			header.pack_end(
+				_make_header_controls(
+					Gtk,
+					search_button,
+					scope_button,
+					menu_button,
+				)
 			)
+			self.selected_scope = selected_scope
 			toolbar.add_top_bar(header)
 
 			list_box = Gtk.ListBox()
@@ -596,27 +695,13 @@ def main() -> None:
 			stack = Gtk.Stack()
 			stack.add_named(scroller, "list")
 			stack.add_named(empty_page, "empty")
-			content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-			search_entry.set_margin_top(12)
-			search_entry.set_margin_start(12)
-			search_entry.set_margin_end(12)
-			search_entry.set_margin_bottom(4)
-			filter_row = Gtk.Box(
-				orientation=Gtk.Orientation.HORIZONTAL, spacing=8
-			)
-			filter_row.set_margin_start(12)
-			filter_row.set_margin_end(12)
-			filter_row.set_margin_bottom(4)
-			filter_row.append(search_entry)
-			filter_row.append(scope_filter)
-			content.append(filter_row)
-			content.append(stack)
+			content = _make_list_content(Gtk, search_revealer, stack)
 			toolbar.set_content(content)
 
 			def update_search(*_args: object) -> None:
 				query = search_entry.get_text().strip().casefold()
 				selected_scope = ("all", "user", "system")[
-					scope_filter.get_selected()
+					self.selected_scope
 				]
 				visible_count = 0
 				for row in rows:
@@ -659,7 +744,17 @@ def main() -> None:
 					stack.set_visible_child_name("empty")
 
 			search_entry.connect("search-changed", update_search)
-			scope_filter.connect("notify::selected", update_search)
+			for index, choice in enumerate(scope_choices):
+				def update_scope(
+					button: object,
+					_scope_index: int = index,
+				) -> None:
+					if button.get_active():
+						self.selected_scope = _scope_index
+						update_search()
+
+				choice.connect("toggled", update_scope)
+
 			update_search(search_entry)
 
 			toast_overlay = Adw.ToastOverlay()

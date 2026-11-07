@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 from flatpak_command_exporter import FlatpakCommandExporter
 from flatpak_command_exporter.api import discovery as core
@@ -39,12 +39,169 @@ from flatpak_command_exporter.gui.application import (
     _group_app_aliases,
     _make_custom_alias_add_button,
     _make_custom_alias_remove_button,
+    _make_header_controls,
+    _make_list_content,
+    _make_scope_filter_controls,
+    _make_search_controls,
     _show_add_custom_alias_dialog,
     _set_app_commands_enabled,
 )
 
 
 class AliasDataTests(unittest.TestCase):
+    def test_search_control_reveals_animated_entry_and_preserves_query(self):
+        entry = Mock()
+        button = Mock()
+        revealer = Mock()
+        revealed = [False]
+        revealer.get_reveal_child.side_effect = lambda: revealed[0]
+        revealer.set_reveal_child.side_effect = (
+            lambda value: revealed.__setitem__(0, value)
+        )
+        slide_down = object()
+        accessible_label = object()
+        gtk = SimpleNamespace(
+            SearchEntry=Mock(return_value=entry),
+            Button=SimpleNamespace(
+                new_from_icon_name=Mock(return_value=button)
+            ),
+            Revealer=Mock(return_value=revealer),
+            RevealerTransitionType=SimpleNamespace(
+                SLIDE_DOWN=slide_down
+            ),
+            AccessibleProperty=SimpleNamespace(LABEL=accessible_label),
+        )
+
+        entry, button, revealer = _make_search_controls(
+            gtk, "keep this query", False
+        )
+
+        gtk.Button.new_from_icon_name.assert_called_once_with(
+            "system-search-symbolic"
+        )
+        button.set_tooltip_text.assert_called_once_with(
+            "Search apps and commands"
+        )
+        button.update_property.assert_called_once_with(
+            [accessible_label], ["Search apps and commands"]
+        )
+        entry.update_property.assert_called_once_with(
+            [accessible_label], ["Search apps and commands"]
+        )
+        self.assertFalse(revealer.get_reveal_child())
+        revealer.set_child.assert_called_once_with(entry)
+        revealer.set_transition_type.assert_called_once_with(
+            slide_down
+        )
+        revealer.set_transition_duration.assert_called_once_with(180)
+        entry.set_text.assert_called_once_with("keep this query")
+
+        toggle_search = button.connect.call_args.args[1]
+        toggle_search(button)
+        self.assertTrue(revealer.get_reveal_child())
+        entry.grab_focus.assert_called_once_with()
+        toggle_search(button)
+        self.assertFalse(revealer.get_reveal_child())
+        button.grab_focus.assert_called_once_with()
+        entry.set_text.assert_called_once_with("keep this query")
+
+    def test_scope_filter_uses_accessible_grouped_radio_choices(self):
+        button = Mock()
+        choices = []
+        choice_labels = ["All apps", "User apps", "System apps"]
+
+        def make_choice(label):
+            choice = Mock()
+            choice.label = label
+            choice.active = False
+            choice.set_active.side_effect = (
+                lambda active: setattr(choice, "active", active)
+            )
+            choices.append(choice)
+            return choice
+
+        box = Mock()
+        popover = Mock()
+        accessible_label = object()
+        gtk = SimpleNamespace(
+            MenuButton=Mock(return_value=button),
+            Box=Mock(return_value=box),
+            CheckButton=Mock(side_effect=make_choice),
+            Popover=Mock(return_value=popover),
+            Orientation=SimpleNamespace(VERTICAL=object()),
+            AccessibleProperty=SimpleNamespace(LABEL=accessible_label),
+        )
+
+        button, choices = _make_scope_filter_controls(gtk, 1)
+
+        button.set_icon_name.assert_called_once_with("filter-symbolic")
+        button.set_size_request.assert_called_once_with(40, 40)
+        button.set_tooltip_text.assert_called_once_with(
+            "Filter by Flatpak installation"
+        )
+        button.update_property.assert_called_once_with(
+            [accessible_label], ["Filter by Flatpak installation"]
+        )
+        self.assertEqual(
+            [choice.label for choice in choices],
+            choice_labels,
+        )
+        self.assertEqual(
+            [choice.active for choice in choices], [False, True, False]
+        )
+        for choice in choices[1:]:
+            choice.set_group.assert_called_once_with(choices[0])
+        box.append.assert_has_calls([call(choice) for choice in choices])
+        popover.set_child.assert_called_once_with(box)
+        button.set_popover.assert_called_once_with(popover)
+
+    def test_header_controls_are_ordered_search_filter_hamburger(self):
+        controls = Mock()
+        gtk = SimpleNamespace(
+            Box=Mock(return_value=controls),
+            Orientation=SimpleNamespace(HORIZONTAL=object()),
+        )
+        search_button = object()
+        filter_button = object()
+        hamburger_button = object()
+
+        result = _make_header_controls(
+            gtk,
+            search_button,
+            filter_button,
+            hamburger_button,
+        )
+
+        self.assertIs(result, controls)
+        controls.append.assert_has_calls([
+            call(search_button),
+            call(filter_button),
+            call(hamburger_button),
+        ])
+
+    def test_search_revealer_spans_content_above_app_list(self):
+        content = Mock()
+        search_revealer = Mock()
+        stack = Mock()
+        gtk = SimpleNamespace(
+            Box=Mock(return_value=content),
+            Orientation=SimpleNamespace(VERTICAL=object()),
+        )
+
+        result = _make_list_content(gtk, search_revealer, stack)
+
+        self.assertIs(result, content)
+        search_revealer.set_margin_top.assert_called_once_with(12)
+        search_revealer.set_margin_bottom.assert_called_once_with(4)
+        search_revealer.set_margin_start.assert_called_once_with(12)
+        search_revealer.set_margin_end.assert_called_once_with(12)
+        search_revealer.set_hexpand.assert_called_once_with(True)
+        content.append.assert_has_calls([
+            call(search_revealer),
+            call(stack),
+        ])
+
+
     def test_custom_aliases_are_discovered_without_a_manifest(self):
         class Ref:
             def get_name(self):

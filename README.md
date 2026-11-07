@@ -271,8 +271,10 @@ commands. The All filter prefers a user installation when available; the
 User/System filters show the current ref from that installation. Each app has
 a switch for its default setting; individual alias settings take precedence
 over the app and global defaults. Expand an app to see each alias, its command,
-and its enable/disable switch. Use the search field and the All/User/System
-filter to narrow the list. Alias switches store per-command user overrides.
+and its enable/disable switch. In the header bar, use the search button to
+reveal a full-width search field above the app list, then the filter menu to
+choose All, User, or System apps; the hamburger menu follows them. Alias
+switches store per-command user overrides.
 The app switch enables or disables all commands in that app together without
 changing its app-level override. These settings also apply to system-installed
 apps and refresh user launchers without requesting system authorization.

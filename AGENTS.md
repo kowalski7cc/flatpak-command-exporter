@@ -59,7 +59,9 @@ intentional, and update this guide when the project conventions change.
   forwarding and safely handle values that could alter shell syntax.
 - GUI-only imports should remain lazy so CLI and library use does not require
   GTK at import time. Follow the existing GTK 4/libadwaita patterns and surface
-  save/export failures in the interface.
+  save/export failures in the interface. Give icon-only controls accessible
+  names, preserve keyboard and focus behavior, and add regression coverage for
+  new GUI interactions.
 - Keep library operations independent of terminal formatting; the CLI should
   format data returned by the library API.
 - Keep Debian install manifests, Python entry points, desktop metadata, icons,
@@ -81,6 +83,9 @@ intentional, and update this guide when the project conventions change.
 - Add or update tests for behavior changes, especially config precedence,
   persistence, CLI parsing, launcher creation/removal, and user-versus-system
   scope.
+- Treat accessibility and behavior-focused test coverage as priorities for GUI
+  changes; update README.md and both contributor guides when user workflows or
+  development conventions change.
 - Prefer isolated tests with temporary directories and mocks for Flatpak,
   filesystem, and GUI dependencies. Do not rely on installed apps or mutate
   the developer's real user configuration.

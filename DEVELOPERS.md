@@ -268,6 +268,11 @@ Flatpak contracts.
 
 ## Development checks
 
+For GUI changes, provide accessible names for icon-only controls, preserve
+keyboard and focus behavior, and add regression tests for interactions when
+possible. Keep README.md and both contributor guides aligned with changes to
+user workflows or development conventions.
+
 Run the unit tests and whitespace validation from the repository root:
 
 ```console
