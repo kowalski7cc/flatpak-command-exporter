@@ -35,6 +35,7 @@ from flatpak_command_exporter.gui.settings import (
 )
 from flatpak_command_exporter.gui.application import (
     _app_commands_enabled,
+    _configure_ellipsized_label,
     _confirm_custom_alias_removal,
     _group_app_aliases,
     _make_custom_alias_add_button,
@@ -918,6 +919,61 @@ class AliasDataTests(unittest.TestCase):
         self.assertTrue(label.hexpand)
         self.assertTrue(label.wrap)
         self.assertIs(label.wrap_mode, word_char)
+
+    def test_ellipsized_label_shows_full_text_only_when_clipped(self):
+        class Layout:
+            def __init__(self):
+                self.ellipsized = False
+
+            def is_ellipsized(self):
+                return self.ellipsized
+
+        class Label:
+            def __init__(self):
+                self.layout = Layout()
+                self.callbacks = {}
+
+            def set_xalign(self, alignment):
+                self.xalign = alignment
+
+            def set_hexpand(self, expand):
+                self.hexpand = expand
+
+            def set_ellipsize(self, mode):
+                self.ellipsize = mode
+
+            def set_has_tooltip(self, has_tooltip):
+                self.has_tooltip = has_tooltip
+
+            def connect(self, signal, callback):
+                self.callbacks[signal] = callback
+
+            def get_layout(self):
+                return self.layout
+
+        end = object()
+        label = Label()
+        full_text = "A very long application name"
+
+        _configure_ellipsized_label(
+            label,
+            full_text,
+            SimpleNamespace(EllipsizeMode=SimpleNamespace(END=end)),
+        )
+
+        self.assertEqual(label.xalign, 0)
+        self.assertTrue(label.hexpand)
+        self.assertIs(label.ellipsize, end)
+        self.assertTrue(label.has_tooltip)
+
+        tooltip = Mock()
+        query_tooltip = label.callbacks["query-tooltip"]
+        self.assertFalse(query_tooltip(label, 0, 0, False, tooltip))
+        tooltip.set_text.assert_not_called()
+
+        label.layout.ellipsized = True
+        self.assertTrue(query_tooltip(label, 0, 0, False, tooltip))
+        tooltip.set_text.assert_called_once_with(full_text)
 
     def test_accessible_label_sets_the_gtk_label_property(self):
         class Widget:

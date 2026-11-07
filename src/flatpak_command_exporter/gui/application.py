@@ -51,6 +51,23 @@ def _set_app_commands_enabled(
 	)
 
 
+def _configure_ellipsized_label(label, text: str, Pango) -> None:
+	label.set_xalign(0)
+	label.set_hexpand(True)
+	label.set_ellipsize(Pango.EllipsizeMode.END)
+	label.set_has_tooltip(True)
+
+	def show_full_text(
+		_widget, _x: int, _y: int, _keyboard_tooltip: bool, tooltip
+	) -> bool:
+		if not label.get_layout().is_ellipsized():
+			return False
+		tooltip.set_text(text)
+		return True
+
+	label.connect("query-tooltip", show_full_text)
+
+
 def _make_search_controls(Gtk, search_text: str, search_visible: bool):
 	search_entry = Gtk.SearchEntry()
 	search_entry.set_placeholder_text(_("Search apps and commands"))
@@ -519,10 +536,10 @@ def main() -> None:
 				labels.set_valign(Gtk.Align.CENTER)
 				labels.set_hexpand(True)
 				title = Gtk.Label(label=record.app_name)
-				title.set_xalign(0)
+				_configure_ellipsized_label(title, record.app_name, Pango)
 				title.add_css_class("heading")
 				subtitle = Gtk.Label(label=record.app_id)
-				subtitle.set_xalign(0)
+				_configure_ellipsized_label(subtitle, record.app_id, Pango)
 				subtitle.add_css_class("dim-label")
 				labels.append(title)
 				labels.append(subtitle)
