@@ -164,38 +164,32 @@ class AliasConfig:
                 f"Invalid app enabled value for {app_id}: {error}"
             ) from error
 
-    def app_overrides(self) -> dict[str, bool]:
+    def _app_config_paths(self) -> list[Path]:
         try:
             config_paths = list(self.directory.iterdir())
         except FileNotFoundError:
-            return {}
+            return []
 
-        overrides = {}
-        for path in config_paths:
+        return [
+            path
+            for path in config_paths
             if (
-                not path.is_file()
-                or path.name == "global"
-                or path.name.startswith(".")
-            ):
-                continue
+                path.is_file()
+                and path.name != "global"
+                and not path.name.startswith(".")
+            )
+        ]
+
+    def app_overrides(self) -> dict[str, bool]:
+        overrides = {}
+        for path in self._app_config_paths():
             enabled = self.app_enabled(path.name)
             if enabled is not None:
                 overrides[path.name] = enabled
         return overrides
 
     def clear_overrides(self) -> None:
-        try:
-            config_paths = list(self.directory.iterdir())
-        except FileNotFoundError:
-            return
-
-        for path in config_paths:
-            if (
-                not path.is_file()
-                or path.name == "global"
-                or path.name.startswith(".")
-            ):
-                continue
+        for path in self._app_config_paths():
             parser = self._read(path)
             changed = (
                 parser.remove_option("app", "enabled")

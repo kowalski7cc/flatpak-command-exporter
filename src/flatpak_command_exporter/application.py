@@ -5,8 +5,6 @@ The package root and this module retain their historical import paths.
 
 from typing import Final
 
-import gi
-
 from .api import (
     CommandGroup,
     ExportedAlias,

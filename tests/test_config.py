@@ -49,6 +49,26 @@ class AliasConfigTests(unittest.TestCase):
             },
         )
 
+    def test_app_overrides_ignore_hidden_files_and_directories(self):
+        self.config.set_app_enabled("org.example.Enabled", True)
+        (self.config.directory / ".temporary").write_text(
+            "[app]\nenabled = false\n",
+            encoding="utf-8",
+        )
+        (self.config.directory / "not-an-app").mkdir()
+
+        self.assertEqual(
+            self.config.app_overrides(),
+            {"org.example.Enabled": True},
+        )
+
+    def test_app_override_operations_handle_a_missing_directory(self):
+        self.assertEqual(self.config.app_overrides(), {})
+
+        self.config.clear_overrides()
+
+        self.assertFalse(self.config.directory.exists())
+
     def test_app_override_can_be_reset_for_a_system_installed_app(self):
         self.config.set_app_enabled("org.example.SystemApp", False)
 

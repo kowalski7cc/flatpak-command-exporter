@@ -89,9 +89,10 @@ def get_app_ref_choices(
 	exporter: _FlatpakCommandExporter,
 ) -> list[tuple[str, _ExportedAlias]]:
 	"""Return one representative installed ref per app ID."""
-	records_by_app_id = {}
+	records_by_app_id: dict[
+		str, tuple[tuple[str, ...], _ExportedAlias]
+	] = {}
 	for record in exporter.get_exported_aliases():
-		current = records_by_app_id.get(record.app_id)
 		record_key = (
 			record.app_name.casefold(),
 			record.app_id.casefold(),
@@ -100,25 +101,14 @@ def get_app_ref_choices(
 			record.alias.casefold(),
 			record.installation_scope,
 		)
-		if current is None:
-			records_by_app_id[record.app_id] = record
-			continue
-
-		current_key = (
-			current.app_name.casefold(),
-			current.app_id.casefold(),
-			current.branch.casefold(),
-			current.arch.casefold(),
-			current.alias.casefold(),
-			current.installation_scope,
-		)
-		if record_key < current_key:
-			records_by_app_id[record.app_id] = record
+		current = records_by_app_id.get(record.app_id)
+		if current is None or record_key < current[0]:
+			records_by_app_id[record.app_id] = (record_key, record)
 
 	return sorted(
 		[
 			(f"{record.app_name} ({record.app_id})", record)
-			for record in records_by_app_id.values()
+			for _record_key, record in records_by_app_id.values()
 		],
 		key=lambda choice: choice[0].casefold(),
 	)

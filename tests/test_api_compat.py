@@ -3,6 +3,8 @@ import unittest
 from flatpak_command_exporter import CommandGroup, ExportedAlias, FlatpakCommandExporter
 from flatpak_command_exporter import application
 from flatpak_command_exporter import api
+from flatpak_command_exporter import __main__ as cli_module
+from flatpak_command_exporter import cli
 from flatpak_command_exporter.api import discovery, exporter, launchers, metadata, models
 
 
@@ -28,6 +30,9 @@ class ApiCompatibilityTests(unittest.TestCase):
         self.assertTrue(callable(exporter.FlatpakCommandExporter))
         self.assertTrue(callable(launchers.create_launcher))
         self.assertTrue(callable(metadata.load_manifest))
+
+    def test_cli_module_entrypoint_reexports_cli_main(self):
+        self.assertIs(cli_module.main, cli.main)
 
 
 if __name__ == "__main__":
