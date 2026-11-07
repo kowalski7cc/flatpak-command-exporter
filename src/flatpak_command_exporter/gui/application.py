@@ -94,13 +94,17 @@ def _make_search_controls(Gtk, search_text: str, search_visible: bool):
 	search_revealer.set_reveal_child(search_visible)
 	search_revealer.set_hexpand(True)
 	search_revealer.set_child(search_entry)
+	if search_visible:
+		search_button.set_state_flags(Gtk.StateFlags.CHECKED, True)
 
 	def toggle_search(_button: object) -> None:
 		show_search = not search_revealer.get_reveal_child()
 		search_revealer.set_reveal_child(show_search)
 		if show_search:
+			search_button.set_state_flags(Gtk.StateFlags.CHECKED, True)
 			search_entry.grab_focus()
 		else:
+			search_button.unset_state_flags(Gtk.StateFlags.CHECKED)
 			search_button.grab_focus()
 
 	search_button.connect("clicked", toggle_search)

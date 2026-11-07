@@ -71,7 +71,9 @@ class AliasDataTests(unittest.TestCase):
                 SLIDE_DOWN=slide_down
             ),
             AccessibleProperty=SimpleNamespace(LABEL=accessible_label),
+            StateFlags=SimpleNamespace(CHECKED=object()),
         )
+        checked_state = gtk.StateFlags.CHECKED
 
         entry, button, revealer = _make_search_controls(
             gtk, "keep this query", False
@@ -90,6 +92,8 @@ class AliasDataTests(unittest.TestCase):
             [accessible_label], ["Search apps and commands"]
         )
         self.assertFalse(revealer.get_reveal_child())
+        button.set_state_flags.assert_not_called()
+        button.unset_state_flags.assert_not_called()
         revealer.set_child.assert_called_once_with(entry)
         revealer.set_transition_type.assert_called_once_with(
             slide_down
@@ -100,11 +104,33 @@ class AliasDataTests(unittest.TestCase):
         toggle_search = button.connect.call_args.args[1]
         toggle_search(button)
         self.assertTrue(revealer.get_reveal_child())
+        button.set_state_flags.assert_called_once_with(checked_state, True)
         entry.grab_focus.assert_called_once_with()
         toggle_search(button)
         self.assertFalse(revealer.get_reveal_child())
+        button.unset_state_flags.assert_called_once_with(checked_state)
         button.grab_focus.assert_called_once_with()
         entry.set_text.assert_called_once_with("keep this query")
+
+    def test_open_search_starts_with_pressed_search_button(self):
+        button = Mock()
+        gtk = SimpleNamespace(
+            SearchEntry=Mock(return_value=Mock()),
+            Button=SimpleNamespace(
+                new_from_icon_name=Mock(return_value=button)
+            ),
+            Revealer=Mock(return_value=Mock()),
+            RevealerTransitionType=SimpleNamespace(SLIDE_DOWN=object()),
+            AccessibleProperty=SimpleNamespace(LABEL=object()),
+            StateFlags=SimpleNamespace(CHECKED=object()),
+        )
+
+        _make_search_controls(gtk, "", True)
+
+        button.set_state_flags.assert_called_once_with(
+            gtk.StateFlags.CHECKED, True
+        )
+        button.unset_state_flags.assert_not_called()
 
     def test_scope_filter_uses_accessible_grouped_radio_choices(self):
         button = Mock()
