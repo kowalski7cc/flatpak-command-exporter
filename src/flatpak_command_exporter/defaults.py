@@ -420,6 +420,10 @@ DEFAULT_EXPORT_COMMANDS: Final[dict[str, dict[str, str]]] = {
     "org.kde.umbrello": {"umbrello6": "umbrello6"},
     "org.kde.vvave": {"vvave": "vvave"},
     "org.kde.yakuake": {"yakuake": "yakuake"},
+    "cc.spek.Spek": {"spek": "spek"},
+    "org.nmap.Zenmap": {"zenmap": "zenmap", "nmap": "nmap"},
+    "org.inkscape.Inkscape": {"inkscape": "inkscape"},
+    "de.hohnstaedt.xca": {"xca": "xca"},
 }
 
 COMMAND_TEMPLATE: Final[str] = textwrap.dedent("""\
