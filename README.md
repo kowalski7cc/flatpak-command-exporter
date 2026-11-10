@@ -140,13 +140,17 @@ includes `base-devel`, `namcap`, and `python-shtab` for `make apk`.
 
 ### Automatic export refresh
 
-The Debian and RPM packages install and enable separate systemd timers for the
-default system and per-user Flatpak installations. Each timer first runs 15
-minutes after boot and then once per day. The system service runs the direct
-system-scope export as root; each user's service runs `flatshell export --user`
-in that user's session. Each service refreshes only its own scope. Arch
-packages install the same timer units and presets; enable the timers manually
-as described in the Arch Linux installation section.
+The Debian, RPM, and Arch packages install separate systemd timers for the
+default system and per-user Flatpak installations; neither timer is enabled by
+default. Each timer first runs 15 minutes after boot and then once per day. The
+system service runs the direct system-scope export as root; each user's service
+runs `flatshell export --user` in that user's session. Each service refreshes
+only its own scope. Enable the timers for the scopes you want:
+
+```console
+sudo systemctl enable --now flatpak-command-exporter-system.timer
+systemctl --user enable --now flatpak-command-exporter-user.timer
+```
 
 The timers refresh periodically rather than reacting to individual Flatpak
 changes, so a newly installed app may not be exported until the next scheduled
@@ -156,18 +160,10 @@ refresh. To disable the system timer:
 sudo systemctl disable --now flatpak-command-exporter-system.timer
 ```
 
-To disable the per-user timer (the package enables it by default for user
-sessions):
+To disable the per-user timer:
 
 ```console
-systemctl --user mask --now flatpak-command-exporter-user.timer
-```
-
-Undo the user mask and start the timer again with:
-
-```console
-systemctl --user unmask flatpak-command-exporter-user.timer
-systemctl --user start flatpak-command-exporter-user.timer
+systemctl --user disable --now flatpak-command-exporter-user.timer
 ```
 
 ## CLI

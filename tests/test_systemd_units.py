@@ -48,7 +48,7 @@ class SystemdUnitTests(unittest.TestCase):
         )
         self.assertNotIn("--system", service_unit)
 
-    def test_scope_timers_are_enabled_by_package_presets(self):
+    def test_scope_timers_are_disabled_by_package_presets(self):
         system_preset = (
             RESOURCES / "flatpak-command-exporter-system.preset"
         ).read_text(encoding="utf-8")
@@ -58,11 +58,22 @@ class SystemdUnitTests(unittest.TestCase):
 
         self.assertEqual(
             system_preset.strip(),
-            "enable flatpak-command-exporter-system.timer",
+            "disable flatpak-command-exporter-system.timer",
         )
         self.assertEqual(
             user_preset.strip(),
-            "enable flatpak-command-exporter-user.timer",
+            "disable flatpak-command-exporter-user.timer",
+        )
+
+    def test_debian_package_does_not_enable_or_start_system_timer(self):
+        debian_rules = (RESOURCES.parent / "debian" / "rules").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "dh_installsystemd --no-enable --no-start "
+            "-pflatpak-command-exporter flatpak-command-exporter-system.timer",
+            debian_rules,
         )
 
     def test_system_service_entrypoint_exports_only_system_scope(self):

@@ -371,10 +371,11 @@ the default Flatpak installations:
   runs `flatshell export --user` in that user's session and refreshes only that
   user's launchers.
 
-Both timers are enabled by default by Debian/RPM packaging. Keep the timer and
-service files, Debian and RPM install/enablement rules, and scope regression
-tests synchronized when changing this integration. The system export service
-must use the direct system-scope API rather than the interactive CLI.
+Both timers are disabled by default by package presets; Debian packaging must
+also avoid enabling or starting the system timer. Keep the timer and service
+files, Debian and RPM install/enablement rules, and scope regression tests
+synchronized when changing this integration. The system export service must
+use the direct system-scope API rather than the interactive CLI.
 
 ## Shell CLI
 
