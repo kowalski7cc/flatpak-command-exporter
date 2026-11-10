@@ -91,6 +91,10 @@
     <control>pointing</control>
     <control>touch</control>
   </supports>
+  <kudos>
+    <kudo>HiDpiIcon</kudo>
+    <kudo>ModernToolkit</kudo>
+  </kudos>
   <content_rating type="oars-1.1"/>
   <releases>
     <release version="0.16.2" date="2026-11-10">
