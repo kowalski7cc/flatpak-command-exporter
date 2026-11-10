@@ -19,8 +19,9 @@ intentional, and update this guide when the project conventions change.
   launcher. Export public library types from `__init__.py`.
 - CLI and GUI entry points are declared in `pyproject.toml`. Debian package
   contents are controlled by files in `debian/`; RPM contents are controlled
-  by `flatpak-command-exporter.spec`. Profile integration and systemd refresh
-  timer/service units live in `resources/`.
+  by `flatpak-command-exporter.spec`. Profile integration lives in `resources/`;
+  Flatpak change-monitor code lives in
+  `src/flatpak_command_exporter/service/` and systemd units live in `service/`.
 - The established application ID and icon prefix is
   `xyz.kowalski7cc`. Preserve it for application identity and installed
   resource names.
@@ -71,12 +72,11 @@ intentional, and update this guide when the project conventions change.
   `make completion`; keep `shtab` as a build-time dependency only. Debian and
   RPM packages install the generated file under
   `/usr/share/bash-completion/completions/`.
-- Keep system and user Flatpak refresh timers strictly scoped: the system
+- Keep system and user Flatpak change watchers strictly scoped: the system
   service must refresh system exports only, and the user service must refresh
-  that user's exports only. The system service runs as root through the direct
-  `system_export` entry point.
-- Keep timer schedules, unit files, package manifests, documentation, and
-  `tests/test_systemd_units.py` synchronized when changing refresh behavior.
+  that user's exports only. The system service runs as root.
+- Keep watcher code, unit files, package manifests, documentation, and
+  service regression tests synchronized when changing automatic refresh.
 
 ## Tests and verification
 
@@ -105,8 +105,8 @@ intentional, and update this guide when the project conventions change.
   Packaging declares the platform build dependency; local builds can install
   the Python `shtab` package before running `make completion`.
 
-- Validate systemd unit files with `systemd-analyze verify` when changing the
-  timer or service units. RPM packaging uses systemd RPM macros and presets;
+- Validate systemd unit files with `systemd-analyze verify` when changing
+  service units. RPM packaging uses systemd RPM macros and presets;
   build it with `make rpm` where `rpmbuild` is available.
 
 - Run `git diff --check` before finishing. Mention any validation that could

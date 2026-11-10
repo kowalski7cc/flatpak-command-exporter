@@ -17,6 +17,7 @@ build() {
 }
 
 package_flatpak-command-exporter() {
+    install=service/flatpak-command-exporter.install
     cd "$srcdir/flatpak-command-exporter-$pkgver"
 
     local site_packages
@@ -38,17 +39,13 @@ EOF
         "$pkgdir/usr/share/bash-completion/completions/flatshell"
     install -Dm644 src/flatpak_command_exporter/flatpak-exported-commands.sh \
         "$pkgdir/etc/profile.d/flatpak-exported-commands.sh"
-    install -Dm644 resources/flatpak-command-exporter-system.timer \
-        "$pkgdir/usr/lib/systemd/system/flatpak-command-exporter-system.timer"
-    install -Dm644 resources/flatpak-command-exporter-system.service \
+    install -Dm644 service/flatpak-command-exporter-system.service \
         "$pkgdir/usr/lib/systemd/system/flatpak-command-exporter-system.service"
-    install -Dm644 resources/flatpak-command-exporter-user.timer \
-        "$pkgdir/usr/lib/systemd/user/flatpak-command-exporter-user.timer"
-    install -Dm644 resources/flatpak-command-exporter-user.service \
+    install -Dm644 service/flatpak-command-exporter-user.service \
         "$pkgdir/usr/lib/systemd/user/flatpak-command-exporter-user.service"
-    install -Dm644 resources/flatpak-command-exporter-system.preset \
+    install -Dm644 service/flatpak-command-exporter-system.preset \
         "$pkgdir/usr/lib/systemd/system-preset/80-flatpak-command-exporter.preset"
-    install -Dm644 resources/flatpak-command-exporter-user.preset \
+    install -Dm644 service/flatpak-command-exporter-user.preset \
         "$pkgdir/usr/lib/systemd/user-preset/80-flatpak-command-exporter.preset"
     install -Dm644 LICENSE \
         "$pkgdir/usr/share/licenses/flatpak-command-exporter/LICENSE"

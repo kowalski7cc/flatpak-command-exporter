@@ -1,0 +1,19 @@
+_enable_export_watchers() {
+    systemctl enable --now flatpak-command-exporter-system.service
+    systemctl --global enable flatpak-command-exporter-user.service
+}
+
+post_install() {
+    systemctl daemon-reload
+    _enable_export_watchers
+}
+
+post_upgrade() {
+    systemctl daemon-reload
+    systemctl try-restart flatpak-command-exporter-system.service
+}
+
+pre_remove() {
+    systemctl disable --now flatpak-command-exporter-system.service
+    systemctl --global disable flatpak-command-exporter-user.service
+}

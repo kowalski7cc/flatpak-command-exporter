@@ -16,4 +16,4 @@ override_dh_auto_build:
 	dh_auto_build
 
 override_dh_installsystemd:
-	dh_installsystemd --no-enable --no-start -pflatpak-command-exporter flatpak-command-exporter-system.timer
+	dh_installsystemd -pflatpak-command-exporter flatpak-command-exporter-system.service

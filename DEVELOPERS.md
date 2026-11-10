@@ -114,8 +114,8 @@ was_custom_alias_removed = exporter.remove_custom_alias(
 
 `remove_custom_alias()` returns whether the custom alias existed. To refresh
 all launchers after installing or updating a Flatpak, call `export_commands()`.
-Pass an app ID to refresh only that app's enabled launchers while leaving
-unrelated launchers untouched:
+Pass an app ID to reconcile that app's launchers, including stale aliases left
+by updates or removal, while leaving unrelated launchers untouched:
 
 ```python
 exporter.export_commands()
@@ -365,22 +365,22 @@ default system Flatpak installation.
 
 ### Automatic Flatpak export refresh
 
-The Debian and RPM packages install separate systemd timer/service pairs for
-the default Flatpak installations:
+Debian, RPM, and Arch packages install system and user systemd watcher services.
+The watcher code lives in `src/flatpak_command_exporter/service/`; unit sources
+live in the top-level `service/` directory. Package manifests install the
+system watcher to run as root and the user watcher in each user's session.
+They monitor Flatpak app, architecture, and branch directories and debounce
+deployment events before exporting the affected app ID through the Python API.
+The system service writes system-scope exports only. The user service writes
+that user's exports and also watches system deployments so user overrides for
+system-installed apps stay current. App-scoped export reconciliation removes
+stale aliases after updates and removals while preserving aliases supplied by
+other apps.
 
-- `flatpak-command-exporter-system.timer` starts its service 15 minutes after
-  boot and once per day thereafter. The service runs the direct
-  `flatpak_command_exporter.system_export` entry point as root and exports
-  system-installed apps only.
-- `flatpak-command-exporter-user.timer` uses the same schedule. Its service
-  runs `flatshell export --user` in that user's session and refreshes only that
-  user's launchers.
-
-Both timers are disabled by default by package presets; Debian packaging must
-also avoid enabling or starting the system timer. Keep the timer and service
-files, Debian and RPM install/enablement rules, and scope regression tests
-synchronized when changing this integration. The system export service must
-use the direct system-scope API rather than the interactive CLI.
+Service presets enable both watchers by default. Do not reintroduce the old
+periodic timer units. Keep watcher code, unit files, package manifests,
+documentation, and service regression tests synchronized when changing this
+integration.
 
 ## Shell CLI
 

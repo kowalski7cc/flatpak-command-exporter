@@ -13,9 +13,9 @@ usr/lib/python3.*/dist-packages/flatpak_command_exporter/profile.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/flatpak-exported-commands.sh
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/system_export.py
 usr/lib/python3.*/dist-packages/flatpak_command_exporter-*.dist-info
+usr/lib/python3.*/dist-packages/flatpak_command_exporter/service/
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/flatpak-exported-commands.sh etc/profile.d/
-resources/flatpak-command-exporter-system.timer usr/lib/systemd/system/
-resources/flatpak-command-exporter-system.service usr/lib/systemd/system/
-resources/flatpak-command-exporter-user.timer usr/lib/systemd/user/
-resources/flatpak-command-exporter-user.service usr/lib/systemd/user/
-resources/flatpak-command-exporter-user.preset usr/lib/systemd/user-preset/
+service/flatpak-command-exporter-system.service usr/lib/systemd/system/
+service/flatpak-command-exporter-user.service usr/lib/systemd/user/
+service/flatpak-command-exporter-system.preset usr/lib/systemd/system-preset/
+service/flatpak-command-exporter-user.preset usr/lib/systemd/user-preset/

@@ -32,7 +32,7 @@ aliases in a graphical interface.
 - Add your own aliases for commands inside user- or system-installed Flatpaks.
 - Search and toggle apps and aliases in Flatlink.
 - Refresh user command exports from Flatlink after installing an app.
-- Periodically refresh user and system exports with scope-specific systemd timers.
+- Automatically refresh exports when Flatpak apps are installed, updated, or removed.
 - Keep generated launchers on your `PATH` using the included profile script.
 
 ## Quick start
@@ -111,12 +111,12 @@ make apk
 
 The resulting `.pkg.tar.zst` packages are written to the repository root.
 Install the core package and, if desired, the GUI package with `pacman -U`.
-The PKGBUILD installs the system and user systemd timer units and their
-presets. Enable the timers for the scopes you want:
+The PKGBUILD installs and enables the system and user change-monitor services.
+Check their status with:
 
 ```console
-sudo systemctl enable --now flatpak-command-exporter-system.timer
-systemctl --user enable --now flatpak-command-exporter-user.timer
+sudo systemctl status flatpak-command-exporter-system.service
+systemctl --user status flatpak-command-exporter-user.service
 ```
 
 ### Development containers
@@ -133,37 +133,32 @@ includes `base-devel`, `namcap`, and `python-shtab` for `make apk`.
 - Flatpak and Python 3.13 or newer.
 - PyGObject and the Flatpak GObject introspection bindings for the CLI and
   exporter.
-- systemd for periodic export refresh.
+- systemd and Gio file monitoring for event-driven export refresh.
 - System-scope CLI operations require elevated filesystem permissions. Debian,
-  Fedora, and Arch packages install separate system and user refresh timers.
+  Fedora, and Arch packages install separate system and user watcher services.
 - GTK 4, libadwaita, and their introspection data to run Flatlink.
 
 ### Automatic export refresh
 
-The Debian, RPM, and Arch packages install separate systemd timers for the
-default system and per-user Flatpak installations; neither timer is enabled by
-default. Each timer first runs 15 minutes after boot and then once per day. The
-system service runs the direct system-scope export as root; each user's service
-runs `flatshell export --user` in that user's session. Each service refreshes
-only its own scope. Enable the timers for the scopes you want:
+The watcher implementation lives in
+`src/flatpak_command_exporter/service/`. The Debian, RPM, and Arch packages
+install system and per-user watcher services
+that refresh exports after Flatpak apps are installed, updated, or removed.
+They monitor deployment directories and debounce related file events before
+refreshing. The system service runs as root and writes only system launchers.
+Each user's service refreshes that user's launchers, monitoring that user's
+Flatpak installation and the system installation so user overrides stay
+current for system-installed apps. App-scoped refreshes clean up stale aliases
+and preserve aliases still provided by other installed apps.
+
+The package presets enable both services by default. To inspect or disable
+either service:
 
 ```console
-sudo systemctl enable --now flatpak-command-exporter-system.timer
-systemctl --user enable --now flatpak-command-exporter-user.timer
-```
-
-The timers refresh periodically rather than reacting to individual Flatpak
-changes, so a newly installed app may not be exported until the next scheduled
-refresh. To disable the system timer:
-
-```console
-sudo systemctl disable --now flatpak-command-exporter-system.timer
-```
-
-To disable the per-user timer:
-
-```console
-systemctl --user disable --now flatpak-command-exporter-user.timer
+sudo systemctl status flatpak-command-exporter-system.service
+systemctl --user status flatpak-command-exporter-user.service
+sudo systemctl disable --now flatpak-command-exporter-system.service
+systemctl --user disable --now flatpak-command-exporter-user.service
 ```
 
 ## CLI
@@ -196,9 +191,9 @@ flatshell export org.gimp.GIMP --user
 sudo flatshell export
 ```
 
-An app-scoped export updates that app's enabled launchers without removing
-launchers for unrelated apps. Omit the app ID to refresh the selected scope as
-a whole.
+An app-scoped export reconciles that app's launchers, removes stale aliases,
+and restores aliases still provided by another app without disturbing
+unrelated launchers. Omit the app ID to refresh the selected scope as a whole.
 
 ### Configure defaults and apps
 

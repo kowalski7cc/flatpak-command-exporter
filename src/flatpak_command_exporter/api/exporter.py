@@ -73,6 +73,7 @@ class FlatpakCommandExporter:
         )
 
     def export_commands(self, app_id: str | None = None) -> None:
+        """Refresh all launchers or reconcile launchers for one app ID."""
         if app_id is None:
             return export_commands(self.config)
         return export_commands(self.config, app_id=app_id)

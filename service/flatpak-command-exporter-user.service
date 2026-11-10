@@ -1,0 +1,11 @@
+[Unit]
+Description=Export commands when Flatpak apps change for this user
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -m flatpak_command_exporter.service.watcher --scope user
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

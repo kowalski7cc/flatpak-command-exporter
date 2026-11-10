@@ -246,6 +246,127 @@ class ExportCommandsTests(unittest.TestCase):
         create_launcher.assert_not_called()
         remove_launcher.assert_not_called()
 
+    def test_app_export_removes_stale_launcher_after_app_removal(self):
+        with tempfile.TemporaryDirectory() as data_home:
+            with patch.dict(os.environ, {"XDG_DATA_HOME": data_home}):
+                config = core.AliasConfig()
+                core.create_launcher(
+                    "app.removed", "old-alias", "old-command", "x86_64", "stable"
+                )
+                with (
+                    patch.object(core, "_get_installed_refs", return_value=[]),
+                    patch.object(
+                        core, "remove_launcher", wraps=core.remove_launcher
+                    ) as remove,
+                ):
+                    core.export_commands(config, app_id="app.removed")
+
+                remove.assert_called_once_with("old-alias")
+                self.assertFalse((config.export_directory / "old-alias").exists())
+
+    def test_removed_app_launcher_falls_back_to_system_alias(self):
+        with tempfile.TemporaryDirectory() as data_home:
+            with patch.dict(os.environ, {"XDG_DATA_HOME": data_home}):
+                config = core.AliasConfig()
+                core.create_launcher(
+                    "app.removed", "old-alias", "old-command", "x86_64", "stable"
+                )
+                system_export_directory = Path(data_home) / "system-commands"
+                system_export_directory.mkdir()
+                (system_export_directory / "old-alias").write_text(
+                    "# system launcher\n", encoding="utf-8"
+                )
+                real_config = core.AliasConfig
+
+                def config_factory(data_home=None, *, scope="user"):
+                    if scope == "system":
+                        return SimpleNamespace(export_directory=system_export_directory)
+                    return real_config(data_home, scope=scope)
+
+                with (
+                    patch.object(core, "AliasConfig", side_effect=config_factory),
+                    patch.object(core, "_get_installed_refs", return_value=[]),
+                    patch.object(core, "_create_disabled_launcher") as create_mask,
+                ):
+                    core.export_commands(config, app_id="app.removed")
+
+                create_mask.assert_not_called()
+                self.assertFalse((config.export_directory / "old-alias").exists())
+
+    def test_app_export_replaces_alias_removed_from_updated_manifest(self):
+        ref = self.Ref("app.updated", "stable")
+        installation = SimpleNamespace(
+            get_current_installed_app=lambda _app_id, _cancellable: ref,
+        )
+        with tempfile.TemporaryDirectory() as data_home:
+            with patch.dict(os.environ, {"XDG_DATA_HOME": data_home}):
+                config = core.AliasConfig()
+                config.set_default_policy("all")
+                core.create_launcher(
+                    "app.updated", "old-alias", "old-command", "x86_64", "stable"
+                )
+                with (
+                    patch.object(
+                        core,
+                        "_get_installed_refs",
+                        return_value=[
+                            _InstalledRef(ref, installation, "/system", "system")
+                        ],
+                    ),
+                    patch.object(
+                        core,
+                        "_read_manifest_or_empty",
+                        return_value={
+                            "x-export-commands": {"new-alias": "new-command"}
+                        },
+                    ),
+                ):
+                    core.export_commands(config, app_id="app.updated")
+
+                self.assertFalse((config.export_directory / "old-alias").exists())
+                new_launcher = (config.export_directory / "new-alias").read_text(
+                    encoding="utf-8"
+                )
+                self.assertIn("new-command", new_launcher)
+
+    def test_app_removal_reassigns_alias_to_another_installed_app(self):
+        remaining_ref = self.Ref("app.remaining", "stable")
+        installation = SimpleNamespace(
+            get_current_installed_app=lambda _app_id, _cancellable: remaining_ref,
+        )
+        with tempfile.TemporaryDirectory() as data_home:
+            with patch.dict(os.environ, {"XDG_DATA_HOME": data_home}):
+                config = core.AliasConfig()
+                config.set_default_policy("all")
+                core.create_launcher(
+                    "app.removed", "shared-alias", "old-command", "x86_64", "stable"
+                )
+                with (
+                    patch.object(
+                        core,
+                        "_get_installed_refs",
+                        return_value=[
+                            _InstalledRef(
+                                remaining_ref, installation, "/system", "system"
+                            )
+                        ],
+                    ),
+                    patch.object(
+                        core,
+                        "_read_manifest_or_empty",
+                        return_value={
+                            "x-export-commands": {"shared-alias": "remaining-command"}
+                        },
+                    ),
+                ):
+                    core.export_commands(config, app_id="app.removed")
+
+                launcher = (config.export_directory / "shared-alias").read_text(
+                    encoding="utf-8"
+                )
+                self.assertIn("remaining-command", launcher)
+                self.assertIn("app.remaining", launcher)
+
     def test_disabled_system_alias_removes_system_launcher(self):
         ref = self.Ref("app.test", "stable")
         installation = SimpleNamespace(

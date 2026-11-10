@@ -4,77 +4,69 @@ from unittest.mock import patch
 
 from flatpak_command_exporter import system_export
 
-RESOURCES = Path(__file__).parents[1] / "resources"
+ROOT = Path(__file__).parents[1]
+SERVICE_DIR = ROOT / "service"
 
 
 class SystemdUnitTests(unittest.TestCase):
-    def test_system_timer_runs_after_boot_and_daily(self):
-        timer_unit = (
-            RESOURCES / "flatpak-command-exporter-system.timer"
-        ).read_text(encoding="utf-8")
+    def test_system_watcher_runs_system_scope_and_is_enabled_by_default(self):
         service_unit = (
-            RESOURCES / "flatpak-command-exporter-system.service"
+            SERVICE_DIR / "flatpak-command-exporter-system.service"
+        ).read_text(encoding="utf-8")
+        preset = (
+            SERVICE_DIR / "flatpak-command-exporter-system.preset"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("OnBootSec=15min", timer_unit)
-        self.assertIn("OnUnitActiveSec=1d", timer_unit)
         self.assertIn(
-            "Unit=flatpak-command-exporter-system.service",
-            timer_unit,
-        )
-        self.assertIn("WantedBy=timers.target", timer_unit)
-        self.assertIn(
-            "ExecStart=/usr/bin/python3 -m flatpak_command_exporter.system_export",
+            "ExecStart=/usr/bin/python3 -m "
+            "flatpak_command_exporter.service.watcher --scope system",
             service_unit,
         )
-        self.assertNotIn("ExecStart=/usr/bin/flatshell export", service_unit)
-        self.assertNotIn("--user", service_unit)
+        self.assertIn("WantedBy=multi-user.target", service_unit)
+        self.assertIn("Restart=on-failure", service_unit)
+        self.assertEqual(preset.strip(), "enable flatpak-command-exporter-system.service")
 
-    def test_user_timer_runs_after_boot_and_daily_for_user_exports(self):
-        timer_unit = (
-            RESOURCES / "flatpak-command-exporter-user.timer"
-        ).read_text(encoding="utf-8")
+    def test_user_watcher_runs_user_scope_and_is_enabled_by_default(self):
         service_unit = (
-            RESOURCES / "flatpak-command-exporter-user.service"
+            SERVICE_DIR / "flatpak-command-exporter-user.service"
+        ).read_text(encoding="utf-8")
+        preset = (
+            SERVICE_DIR / "flatpak-command-exporter-user.preset"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("OnBootSec=15min", timer_unit)
-        self.assertIn("OnUnitActiveSec=1d", timer_unit)
-        self.assertIn("Unit=flatpak-command-exporter-user.service", timer_unit)
-        self.assertIn("WantedBy=timers.target", timer_unit)
         self.assertIn(
-            "ExecStart=/usr/bin/flatshell export --user\n",
+            "ExecStart=/usr/bin/python3 -m "
+            "flatpak_command_exporter.service.watcher --scope user",
             service_unit,
         )
-        self.assertNotIn("--system", service_unit)
+        self.assertIn("WantedBy=default.target", service_unit)
+        self.assertEqual(preset.strip(), "enable flatpak-command-exporter-user.service")
 
-    def test_scope_timers_are_disabled_by_package_presets(self):
-        system_preset = (
-            RESOURCES / "flatpak-command-exporter-system.preset"
+    def test_packages_install_watcher_and_no_longer_install_periodic_timers(self):
+        debian_install = (
+            ROOT / "debian" / "flatpak-command-exporter.install"
         ).read_text(encoding="utf-8")
-        user_preset = (
-            RESOURCES / "flatpak-command-exporter-user.preset"
-        ).read_text(encoding="utf-8")
-
-        self.assertEqual(
-            system_preset.strip(),
-            "disable flatpak-command-exporter-system.timer",
-        )
-        self.assertEqual(
-            user_preset.strip(),
-            "disable flatpak-command-exporter-user.timer",
-        )
-
-    def test_debian_package_does_not_enable_or_start_system_timer(self):
-        debian_rules = (RESOURCES.parent / "debian" / "rules").read_text(
+        rpm_spec = (ROOT / "flatpak-command-exporter.spec").read_text(
             encoding="utf-8"
         )
+        arch_build = (ROOT / "PKGBUILD").read_text(encoding="utf-8")
+        debian_rules = (ROOT / "debian" / "rules").read_text(encoding="utf-8")
 
         self.assertIn(
-            "dh_installsystemd --no-enable --no-start "
-            "-pflatpak-command-exporter flatpak-command-exporter-system.timer",
+            "flatpak_command_exporter/service/", debian_install
+        )
+        self.assertIn("flatpak_command_exporter", rpm_spec)
+        self.assertIn("service/flatpak-command-exporter.install", arch_build)
+        self.assertIn(
+            "dh_installsystemd -pflatpak-command-exporter "
+            "flatpak-command-exporter-system.service",
             debian_rules,
         )
+        for package_file in (debian_install, rpm_spec, arch_build):
+            self.assertNotIn(".timer", package_file)
+
+        for path in SERVICE_DIR.glob("*.timer"):
+            self.fail(f"Unexpected timer unit: {path}")
 
     def test_system_service_entrypoint_exports_only_system_scope(self):
         with patch.object(system_export, "FlatpakCommandExporter") as exporter_class:

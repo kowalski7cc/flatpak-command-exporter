@@ -1,6 +1,0 @@
-[Unit]
-Description=Refresh command exports for user Flatpak apps
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/flatshell export --user

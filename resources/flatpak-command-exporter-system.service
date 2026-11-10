@@ -1,6 +1,0 @@
-[Unit]
-Description=Refresh command exports for system Flatpak apps
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/python3 -m flatpak_command_exporter.system_export
