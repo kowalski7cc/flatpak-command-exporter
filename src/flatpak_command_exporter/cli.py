@@ -51,7 +51,10 @@ def main() -> None:
         logging.debug("Using %s scope for command execution", scope)
         exporter = FlatpakCommandExporter(scope=scope)
         if args.command == "export":
-            exporter.export_commands()
+            if args.app_id is None:
+                exporter.export_commands()
+            else:
+                exporter.export_commands(args.app_id)
         elif args.command == "list":
             if args.app_id is None and not args.all:
                 list_parser.error("app_id is required unless --all is specified")

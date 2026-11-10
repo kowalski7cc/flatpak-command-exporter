@@ -61,6 +61,28 @@ class LauncherTests(unittest.TestCase):
 
             self.assertIn("--command='tool\"; touch /tmp/unexpected; echo \"'", path.read_text())
 
+    def test_create_launcher_does_not_rewrite_unchanged_content(self):
+        with tempfile.TemporaryDirectory() as data_home:
+            path = Path(data_home) / "flatpak-commands" / "example"
+            with patch.dict(os.environ, {"XDG_DATA_HOME": data_home}):
+                create_launcher(
+                    "org.example.App", "example", "command", "x86_64", "stable"
+                )
+                with patch.object(Path, "write_text") as write_text:
+                    create_launcher(
+                        "org.example.App", "example", "command", "x86_64", "stable"
+                    )
+                create_launcher(
+                    "org.example.App", "example", "updated-command", "x86_64", "stable"
+                )
+
+            write_text.assert_not_called()
+            self.assertTrue(path.stat().st_mode & stat.S_IXUSR)
+            self.assertIn(
+                "--command=updated-command",
+                path.read_text(encoding="utf-8"),
+            )
+
     def test_disabled_user_alias_masks_existing_system_launcher(self):
         with tempfile.TemporaryDirectory() as data_home:
             path = Path(data_home) / "flatpak-commands" / "example"

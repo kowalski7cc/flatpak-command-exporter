@@ -41,6 +41,12 @@ def create_launcher(
 ) -> None:
     path = _launcher_path(export, scope=scope)
     path.parent.mkdir(parents=True, exist_ok=True)
+    content = COMMAND_TEMPLATE.format(
+        BRANCH=shlex.quote(branch),
+        ARCH=shlex.quote(arch),
+        COMMAND=shlex.quote(command),
+        APP_ID=shlex.quote(app_id),
+    )
     logging.debug(
         "Creating launcher for %s alias %s at %s (arch: %s, branch: %s)",
         app_id,
@@ -49,17 +55,16 @@ def create_launcher(
         arch,
         branch,
     )
-    path.write_text(
-        COMMAND_TEMPLATE.format(
-            BRANCH=shlex.quote(branch),
-            ARCH=shlex.quote(arch),
-            COMMAND=shlex.quote(command),
-            APP_ID=shlex.quote(app_id),
-        ),
-        encoding="utf-8",
-    )
+    _write_launcher(path, content)
+
+
+def _write_launcher(path: Path, content: str) -> None:
+    if path.is_file() and path.read_text(encoding="utf-8") == content:
+        logging.debug("Launcher at %s is already up to date", path)
+    else:
+        path.write_text(content, encoding="utf-8")
+        logging.info("Wrote launcher at %s", path)
     path.chmod(0o755)
-    logging.info("Created launcher for alias %s at %s", export, path)
 
 
 def remove_launcher(export: str, *, scope: str = "user") -> None:
@@ -79,22 +84,19 @@ def _create_disabled_launcher(alias: str) -> None:
     message = shlex.quote(
         f"Flatpak command {alias!r} is disabled by the user configuration."
     )
-    path.write_text(
-        f"#!/bin/sh\nprintf '%s\\n' {message} >&2\nexit 127\n",
-        encoding="utf-8",
-    )
-    path.chmod(0o755)
+    _write_launcher(path, f"#!/bin/sh\nprintf '%s\\n' {message} >&2\nexit 127\n")
     logging.info("Created user mask for disabled system alias %s at %s", alias, path)
 
 
 def export_commands(
     config: AliasConfig | None = None,
     *,
+    app_id: str | None = None,
     include_system: bool = True,
     scope: str | None = None,
     system: bool = False,
 ) -> None:
-    """Export commands for the current ref of each installed Flatpak app."""
+    """Export commands for installed apps, optionally limited to one app ID."""
     if config is None:
         config = AliasConfig(
             scope="system" if system or scope == "system" else "user"
@@ -114,13 +116,15 @@ def export_commands(
     refs_by_app_id = _get_preferred_app_refs(installed_refs, scope_name)
 
     launchers: dict[str, tuple[str, str, str, str]] = {}
+    app_launchers: dict[str, tuple[str, str, str, str]] = {}
     disabled_aliases: set[str] = set()
+    app_disabled_aliases: set[str] = set()
     logging.info(
         "Preparing launchers for %d installed applications",
         len(refs_by_app_id),
     )
 
-    for app_id, preferred_refs in refs_by_app_id.items():
+    for current_app_id, preferred_refs in refs_by_app_id.items():
         for installed_ref in preferred_refs:
             ref = installed_ref.ref
             manifest = _read_manifest_or_empty(
@@ -129,7 +133,7 @@ def export_commands(
                 ref.get_arch(),
                 ref.get_branch(),
             )
-            custom_aliases = config.custom_aliases(app_id)
+            custom_aliases = config.custom_aliases(current_app_id)
             if manifest is None and not custom_aliases:
                 continue
 
@@ -138,28 +142,40 @@ def export_commands(
             )
             exported_commands = {**exported_commands, **custom_aliases}
             for export, command in exported_commands.items():
-                if not config.is_alias_enabled(app_id, export):
-                    logging.debug("Skipping disabled alias %s for %s", export, app_id)
+                if not config.is_alias_enabled(current_app_id, export):
+                    logging.debug(
+                        "Skipping disabled alias %s for %s", export, current_app_id
+                    )
                     disabled_aliases.add(export)
+                    if current_app_id == app_id:
+                        app_disabled_aliases.add(export)
                     continue
-                logging.debug("Scheduling launcher for alias %s from %s", export, app_id)
-                launchers.setdefault(
-                    export,
-                    (
-                        ref.get_name(),
-                        command,
-                        ref.get_arch(),
-                        ref.get_branch(),
-                    ),
+                launcher = (
+                    current_app_id,
+                    command,
+                    ref.get_arch(),
+                    ref.get_branch(),
                 )
+                logging.debug(
+                    "Scheduling launcher for alias %s from %s", export, current_app_id
+                )
+                launchers.setdefault(export, launcher)
+                if current_app_id == app_id:
+                    app_launchers.setdefault(export, launcher)
 
     removed_count = 0
+    aliases_to_remove = (
+        disabled_aliases - launchers.keys()
+        if app_id is None
+        else app_disabled_aliases - launchers.keys()
+    )
+    launchers_to_create = launchers if app_id is None else app_launchers
     system_export_directory = (
         AliasConfig(scope="system").export_directory
-        if scope_name == "user" and disabled_aliases
+        if scope_name == "user" and aliases_to_remove
         else None
     )
-    for export in disabled_aliases - launchers.keys():
+    for export in aliases_to_remove:
         AliasConfig._validate_alias(export)
         if (
             scope_name == "user"
@@ -172,14 +188,16 @@ def export_commands(
         else:
             remove_launcher(export, scope=scope_name)
         removed_count += 1
-    for export, (app_id, command, arch, branch) in launchers.items():
+    for export, (launcher_app_id, command, arch, branch) in launchers_to_create.items():
         if scope_name == "user":
-            create_launcher(app_id, export, command, arch, branch)
+            create_launcher(launcher_app_id, export, command, arch, branch)
         else:
-            create_launcher(app_id, export, command, arch, branch, scope=scope_name)
+            create_launcher(
+                launcher_app_id, export, command, arch, branch, scope=scope_name
+            )
     logging.info(
         "Exported %d launchers and processed %d disabled aliases for %s scope",
-        len(launchers),
+        len(launchers_to_create),
         removed_count,
         scope_name,
     )

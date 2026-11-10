@@ -72,8 +72,10 @@ class FlatpakCommandExporter:
             branch=branch,
         )
 
-    def export_commands(self) -> None:
-        return export_commands(self.config)
+    def export_commands(self, app_id: str | None = None) -> None:
+        if app_id is None:
+            return export_commands(self.config)
+        return export_commands(self.config, app_id=app_id)
 
     def set_default_policy(self, policy: str) -> None:
         logging.info(

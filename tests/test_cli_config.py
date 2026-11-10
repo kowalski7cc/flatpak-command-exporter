@@ -64,6 +64,21 @@ class ConfigurationCliTests(unittest.TestCase):
         self.assertIn("Running export command for user scope", logs.output[0])
         self.assertIn("Completed export command for user scope", logs.output[-1])
 
+    def test_export_command_accepts_an_app_id(self):
+        with (
+            patch.object(
+                sys,
+                "argv",
+                ["flatshell", "export", "org.example.App", "--user"],
+            ),
+            patch.object(cli, "FlatpakCommandExporter") as exporter_factory,
+        ):
+            cli.main()
+
+        exporter_factory.return_value.export_commands.assert_called_once_with(
+            "org.example.App"
+        )
+
     def test_config_command_updates_global_default_and_exports(self):
         self.run_cli("config", "default-export", "none", "--user")
 
@@ -97,6 +112,15 @@ class ConfigurationCliTests(unittest.TestCase):
 
         self.assertEqual(config.default_policy(), "none")
         api_exporter.export_commands.assert_called_once_with(config)
+
+    def test_library_api_filters_export_by_app_id(self):
+        exporter = FlatpakCommandExporter(AliasConfig(self.temporary_directory.name))
+
+        exporter.export_commands("org.example.App")
+
+        api_exporter.export_commands.assert_called_once_with(
+            exporter.config, app_id="org.example.App"
+        )
 
     def test_system_add_runs_directly_in_system_scope(self):
         with (

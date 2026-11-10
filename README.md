@@ -189,9 +189,16 @@ flatshell list --all --complete
 # Generate or refresh enabled user launchers for user and system refs
 flatshell export --user
 
+# Refresh enabled launchers for one app only
+flatshell export org.gimp.GIMP --user
+
 # Generate or refresh system launchers (system scope is the default)
 sudo flatshell export
 ```
+
+An app-scoped export updates that app's enabled launchers without removing
+launchers for unrelated apps. Omit the app ID to refresh the selected scope as
+a whole.
 
 ### Configure defaults and apps
 
@@ -392,6 +399,7 @@ from flatpak_command_exporter import FlatpakCommandExporter
 exporter = FlatpakCommandExporter()
 aliases = exporter.get_exported_aliases()
 groups = exporter.get_command_groups(include_system=True)
+exporter.export_commands("org.gimp.GIMP")
 exporter.set_alias_enabled("org.gimp.GIMP", "gimp", True)
 ```
 

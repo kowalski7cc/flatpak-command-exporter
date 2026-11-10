@@ -27,7 +27,7 @@ class ExportCommandsTests(unittest.TestCase):
         def get_branch(self):
             return self.branch
 
-    def run_export(self, refs, current_ref, configure=None):
+    def run_export(self, refs, current_ref, configure=None, app_id=None):
         installation = SimpleNamespace(
             get_path=lambda: SimpleNamespace(get_path=lambda: "/user"),
             get_current_installed_app=current_ref,
@@ -49,7 +49,7 @@ class ExportCommandsTests(unittest.TestCase):
             ):
                 if configure is not None:
                     configure(core.AliasConfig())
-                core.export_commands()
+                core.export_commands(app_id=app_id)
         return create_launcher, remove_launcher
 
     def test_exports_current_ref_when_app_has_multiple_branches(self):
@@ -173,6 +173,77 @@ class ExportCommandsTests(unittest.TestCase):
         create_launcher.assert_called_once_with(
             "app.enabled", "alias", "command", "x86_64", "stable"
         )
+        remove_launcher.assert_not_called()
+
+    def test_app_export_only_updates_that_apps_launchers(self):
+        refs = [
+            self.Ref("app.target", "stable"),
+            self.Ref("app.other", "stable"),
+        ]
+        manifests = {
+            "app.target": {"x-export-commands": {"target-alias": "target-command"}},
+            "app.other": {"x-export-commands": {"other-alias": "other-command"}},
+        }
+
+        with tempfile.TemporaryDirectory() as data_home:
+            installation = SimpleNamespace(
+                get_path=lambda: SimpleNamespace(get_path=lambda: "/user"),
+                get_current_installed_app=lambda _app_id, _cancellable: None,
+            )
+            installed_refs = [
+                _InstalledRef(ref, installation, "/user", "user") for ref in refs
+            ]
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "_get_installed_refs", return_value=installed_refs),
+                patch.object(
+                    core,
+                    "_read_manifest_or_empty",
+                    side_effect=lambda _path, app_id, _arch, _branch: manifests[app_id],
+                ),
+                patch.object(core, "create_launcher") as create_launcher,
+                patch.object(core, "remove_launcher") as remove_launcher,
+            ):
+                config = core.AliasConfig()
+                config.set_alias_enabled("app.other", "other-alias", False)
+                core.export_commands(config, app_id="app.target")
+
+        create_launcher.assert_called_once_with(
+            "app.target", "target-alias", "target-command", "x86_64", "stable"
+        )
+        remove_launcher.assert_not_called()
+
+    def test_app_export_preserves_active_alias_from_another_app(self):
+        refs = [
+            self.Ref("app.target", "stable"),
+            self.Ref("app.other", "stable"),
+        ]
+        installation = SimpleNamespace(
+            get_path=lambda: SimpleNamespace(get_path=lambda: "/user"),
+            get_current_installed_app=lambda _app_id, _cancellable: None,
+        )
+        installed_refs = [
+            _InstalledRef(ref, installation, "/user", "user") for ref in refs
+        ]
+        with tempfile.TemporaryDirectory() as data_home:
+            with (
+                patch.dict(os.environ, {"XDG_DATA_HOME": data_home}),
+                patch.object(core, "_get_installed_refs", return_value=installed_refs),
+                patch.object(
+                    core,
+                    "_read_manifest_or_empty",
+                    side_effect=lambda _path, app_id, _arch, _branch: {
+                        "x-export-commands": {"shared-alias": "command"}
+                    },
+                ),
+                patch.object(core, "create_launcher") as create_launcher,
+                patch.object(core, "remove_launcher") as remove_launcher,
+            ):
+                config = core.AliasConfig()
+                config.set_alias_enabled("app.target", "shared-alias", False)
+                core.export_commands(config, app_id="app.target")
+
+        create_launcher.assert_not_called()
         remove_launcher.assert_not_called()
 
     def test_disabled_system_alias_removes_system_launcher(self):

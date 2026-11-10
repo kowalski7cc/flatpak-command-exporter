@@ -15,6 +15,11 @@ def build_parsers() -> tuple[argparse.ArgumentParser, argparse.ArgumentParser]:
         "export",
         help="Export commands for the selected Flatpak installation.",
     )
+    export_parser.add_argument(
+        "app_id",
+        nargs="?",
+        help="Export commands for this app only.",
+    )
     export_scope = export_parser.add_mutually_exclusive_group()
     export_scope.add_argument(
         "--system",

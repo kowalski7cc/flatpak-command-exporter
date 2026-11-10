@@ -113,10 +113,13 @@ was_custom_alias_removed = exporter.remove_custom_alias(
 ```
 
 `remove_custom_alias()` returns whether the custom alias existed. To refresh
-launchers after installing or updating a Flatpak, call:
+all launchers after installing or updating a Flatpak, call `export_commands()`.
+Pass an app ID to refresh only that app's enabled launchers while leaving
+unrelated launchers untouched:
 
 ```python
 exporter.export_commands()
+exporter.export_commands("org.gimp.GIMP")
 ```
 
 The convenience methods can raise `OSError` or `ValueError` for filesystem or
@@ -283,6 +286,8 @@ that applies configured policies and refreshes the selected scope:
 
 ```python
 exporter.export_commands()
+exporter.export_commands("org.gimp.GIMP")
+export_commands(app_id="org.gimp.GIMP")
 # Direct launcher operations are available when deliberately managing a file:
 create_launcher("org.gimp.GIMP", "my-gimp", "gimp", "x86_64", "stable")
 remove_launcher("my-gimp")
