@@ -2,12 +2,26 @@
 
 import logging
 import shlex
+import textwrap
 from pathlib import Path
+from typing import Final
 
 from ..config import AliasConfig
-from ..defaults import COMMAND_TEMPLATE
 from .metadata import _read_manifest_or_empty, manifest_exported_commands
 from .refs import _get_installed_refs, _get_preferred_app_refs
+
+
+COMMAND_TEMPLATE: Final[str] = textwrap.dedent("""\
+    #!/bin/sh
+    for arg do shift
+        if [ -e "$arg" ]; then
+            set -- "$@" "@@" "$(readlink -f "$arg")" "@@"
+        else
+            set -- "$@" "$arg"
+        fi
+    done
+    exec /usr/bin/flatpak run --branch={BRANCH} --arch={ARCH} --command={COMMAND} --file-forwarding {APP_ID} "$@"
+    """)
 
 
 def _launcher_path(alias: str, *, scope: str = "user") -> Path:

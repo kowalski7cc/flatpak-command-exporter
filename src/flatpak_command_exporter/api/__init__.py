@@ -5,6 +5,7 @@ from typing import Final
 from .discovery import get_command_groups, get_exported_aliases
 from .exporter import FlatpakCommandExporter
 from .launchers import (
+    COMMAND_TEMPLATE,
     _launcher_path,
     create_launcher,
     export_commands,
@@ -27,6 +28,7 @@ __all__: Final[list[str]] = [
     "CommandGroup",
     "ExportedAlias",
     "FlatpakCommandExporter",
+    "COMMAND_TEMPLATE",
     "get_command_groups",
     "get_exported_aliases",
     "export_commands",

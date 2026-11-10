@@ -1,4 +1,3 @@
-import textwrap
 from typing import Final
 
 DEFAULT_EXPORT_COMMANDS: Final[dict[str, dict[str, str]]] = {
@@ -425,15 +424,3 @@ DEFAULT_EXPORT_COMMANDS: Final[dict[str, dict[str, str]]] = {
     "org.inkscape.Inkscape": {"inkscape": "inkscape"},
     "de.hohnstaedt.xca": {"xca": "xca"},
 }
-
-COMMAND_TEMPLATE: Final[str] = textwrap.dedent("""\
-    #!/bin/sh
-    for arg do shift
-        if [ -e "$arg" ]; then
-            set -- "$@" "@@" "$(readlink -f "$arg")" "@@"
-        else
-            set -- "$@" "$arg"
-        fi
-    done
-    exec /usr/bin/flatpak run --branch={BRANCH} --arch={ARCH} --command={COMMAND} --file-forwarding {APP_ID} "$@"
-    """)

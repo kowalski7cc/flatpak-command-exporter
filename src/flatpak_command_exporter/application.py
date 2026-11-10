@@ -7,6 +7,7 @@ from typing import Final
 
 from .api import (
     CommandGroup,
+    COMMAND_TEMPLATE,
     ExportedAlias,
     FlatpakCommandExporter,
     _launcher_path,
@@ -28,7 +29,7 @@ from .api import (
 from .api.metadata import EXPORT_SCHEMA_NAMES, _find_metainfo_child
 from .api.refs import Flatpak, GLib
 from .config import AliasConfig
-from .defaults import COMMAND_TEMPLATE, DEFAULT_EXPORT_COMMANDS
+from .defaults import DEFAULT_EXPORT_COMMANDS
 
 __all__: Final[list[str]] = [
     "CommandGroup",

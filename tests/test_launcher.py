@@ -11,10 +11,14 @@ from flatpak_command_exporter.application import (
     create_launcher,
     remove_launcher,
 )
+from flatpak_command_exporter.api import COMMAND_TEMPLATE as API_COMMAND_TEMPLATE
 from flatpak_command_exporter.api import launchers as launcher_api
 
 
 class LauncherTests(unittest.TestCase):
+    def test_api_exposes_launcher_script_template(self):
+        self.assertEqual(API_COMMAND_TEMPLATE, COMMAND_TEMPLATE)
+
     def test_create_and_remove_launcher(self):
         with tempfile.TemporaryDirectory() as data_home:
             path = Path(data_home) / "flatpak-commands" / "example"
