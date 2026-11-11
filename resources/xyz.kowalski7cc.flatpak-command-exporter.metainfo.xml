@@ -97,6 +97,9 @@
   </kudos>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.18.0" date="2026-11-11">
+      <description><p>Release 0.18.0.</p></description>
+    </release>
     <release version="0.17.0" date="2026-11-10">
       <description><p>Release 0.17.0.</p></description>
     </release>
