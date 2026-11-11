@@ -1,4 +1,5 @@
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/__init__.py usr/lib/python3/dist-packages/flatpak_command_exporter/
+usr/lib/python3.*/dist-packages/flatpak_command_exporter/_flatpak_gi.py usr/lib/python3/dist-packages/flatpak_command_exporter/
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/application.py usr/lib/python3/dist-packages/flatpak_command_exporter/
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/config.py usr/lib/python3/dist-packages/flatpak_command_exporter/
 usr/lib/python3.*/dist-packages/flatpak_command_exporter/defaults.py usr/lib/python3/dist-packages/flatpak_command_exporter/

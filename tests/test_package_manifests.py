@@ -66,6 +66,11 @@ class PackageManifestTests(unittest.TestCase):
             "usr/lib/python3/dist-packages/flatpak_command_exporter/",
             core_files,
         )
+        self.assertIn(
+            "usr/lib/python3.*/dist-packages/flatpak_command_exporter/_flatpak_gi.py "
+            "usr/lib/python3/dist-packages/flatpak_command_exporter/",
+            core_files,
+        )
         self.assertIn("usr/bin/flatshell", cli_files)
         self.assertIn(
             "usr/lib/python3.*/dist-packages/flatpak_command_exporter/__main__.py "
@@ -129,6 +134,11 @@ class PackageManifestTests(unittest.TestCase):
         self.assertIn("'flatpak-command-exporter-cli'", meta)
         self.assertIn("'flatpak-command-exporter-gui'", meta)
         self.assertIn("'flatpak-command-exporter-service'", meta)
+        self.assertIn("makedepends=('flatpak' 'gettext' 'python-gobject'", build)
+        core = _arch_package_function(build, "flatpak-command-exporter-core")
+        self.assertIn(
+            "src/flatpak_command_exporter/_flatpak_gi.py", core
+        )
         self.assertIn("flatpak-command-exporter-system.service", service)
         self.assertIn("flatpak-command-exporter-user.service", service)
 

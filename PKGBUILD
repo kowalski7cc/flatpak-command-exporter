@@ -12,7 +12,7 @@ pkgdesc='Export commands provided by installed Flatpak applications'
 arch=('any')
 url='https://github.com/kowalski7cc/flatpak-command-exporter'
 license=('MIT')
-makedepends=('gettext' 'python-shtab')
+makedepends=('flatpak' 'gettext' 'python-gobject' 'python-shtab')
 source=(".flatpak-command-exporter-$pkgver.tar.gz")
 sha256sums=('SKIP')
 
@@ -44,6 +44,7 @@ package_flatpak-command-exporter-core() {
     install -d "$package_dir"
     cp -a src/flatpak_command_exporter/api "$package_dir/"
     install -Dm644 src/flatpak_command_exporter/__init__.py "$package_dir/__init__.py"
+    install -Dm644 src/flatpak_command_exporter/_flatpak_gi.py "$package_dir/_flatpak_gi.py"
     install -Dm644 src/flatpak_command_exporter/application.py "$package_dir/application.py"
     install -Dm644 src/flatpak_command_exporter/config.py "$package_dir/config.py"
     install -Dm644 src/flatpak_command_exporter/defaults.py "$package_dir/defaults.py"
