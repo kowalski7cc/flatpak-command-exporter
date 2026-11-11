@@ -19,22 +19,49 @@ Package: flatpak-command-exporter
 Architecture: all
 Depends:
  ${misc:Depends},
+ flatpak-command-exporter-cli (= ${binary:Version}),
+ flatpak-command-exporter-gui (= ${binary:Version}),
+ flatpak-command-exporter-service (= ${binary:Version})
+Description: Flatpak command exporter (metapackage)
+ Install the CLI, GTK interface, and automatic export service.
+
+Package: flatpak-command-exporter-core
+Architecture: all
+Depends:
+ ${misc:Depends},
  ${python3:Depends},
  python3 (>= 3.13),
  python3-gi,
  flatpak,
  gir1.2-flatpak-1.0
-Description: Export commands provided by installed Flatpak applications
- Discover command aliases exported by installed Flatpak applications and
- generate launchers for them.
+Description: Flatpak command exporter Python API
+ Shared API and runtime for discovering and exporting commands from installed
+ Flatpak applications.
+
+Package: flatpak-command-exporter-cli
+Architecture: all
+Depends:
+ ${misc:Depends},
+ flatpak-command-exporter-core (= ${binary:Version})
+Description: Command-line interface for Flatpak Command Exporter
+ Command-line tools for inspecting and configuring exported Flatpak commands.
 
 Package: flatpak-command-exporter-gui
 Architecture: all
 Depends:
  ${misc:Depends},
- ${python3:Depends},
- flatpak-command-exporter (= ${binary:Version}),
+ flatpak-command-exporter-core (= ${binary:Version}),
  gir1.2-gtk-4.0,
  gir1.2-adw-1
 Description: Graphical interface for Flatpak Command Exporter
  GTK 4 and libadwaita interface for inspecting exported Flatpak commands.
+
+Package: flatpak-command-exporter-service
+Architecture: all
+Depends:
+ ${misc:Depends},
+ flatpak-command-exporter-core (= ${binary:Version}),
+ systemd
+Description: Automatic Flatpak command export service
+ System and per-user services that refresh exported commands when Flatpak
+ applications change.

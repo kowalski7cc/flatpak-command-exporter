@@ -44,7 +44,7 @@ class SystemdUnitTests(unittest.TestCase):
 
     def test_packages_install_watcher_and_no_longer_install_periodic_timers(self):
         debian_install = (
-            ROOT / "debian" / "flatpak-command-exporter.install"
+            ROOT / "debian" / "flatpak-command-exporter-service.install"
         ).read_text(encoding="utf-8")
         rpm_spec = (ROOT / "flatpak-command-exporter.spec").read_text(
             encoding="utf-8"
@@ -55,10 +55,10 @@ class SystemdUnitTests(unittest.TestCase):
         self.assertIn(
             "flatpak_command_exporter/service/", debian_install
         )
-        self.assertIn("flatpak_command_exporter", rpm_spec)
+        self.assertIn("%files service", rpm_spec)
         self.assertIn("service/flatpak-command-exporter.install", arch_build)
         self.assertIn(
-            "dh_installsystemd -pflatpak-command-exporter "
+            "dh_installsystemd -pflatpak-command-exporter-service "
             "flatpak-command-exporter-system.service",
             debian_rules,
         )

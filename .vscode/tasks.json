@@ -1,0 +1,25 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build DEB package",
+            "type": "shell",
+            "command": "make deb",
+            "group": "build"
+        },
+        {
+            "label": "Build RPM package",
+            "type": "shell",
+            "command": "make rpm",
+            "group": "build"
+        },
+        {
+            "label": "Build PKGBUILD package",
+            "type": "shell",
+            "command": "make pkgbuild",
+            "group": "build"
+        }
+    ]
+}

@@ -16,17 +16,36 @@ BuildRequires:  python3-devel
 BuildRequires:  python3-shtab
 BuildRequires:  gettext
 
-Requires:       flatpak
-%systemd_requires
+Requires:       %{name}-cli = %{version}-%{release}
+Requires:       %{name}-gui = %{version}-%{release}
+Requires:       %{name}-service = %{version}-%{release}
 
 %description
-Flatpak Command Exporter discovers commands declared by installed Flatpak
-applications and creates launchers for them. This package provides the Python
-library, command-line interface, and system integration.
+Metapackage installing the command-line interface, graphical interface, and
+automatic service for Flatpak Command Exporter.
+
+%package core
+Summary:        Shared Python API for Flatpak Command Exporter
+Requires:       flatpak
+Requires:       flatpak-libs
+Requires:       python3
+Requires:       python3-gobject
+
+%description core
+Shared Python API and runtime for discovering and exporting commands from
+installed Flatpak applications.
+
+%package cli
+Summary:        Command-line tools for Flatpak Command Exporter
+Requires:       %{name}-core = %{version}-%{release}
+
+%description cli
+Command-line tools for inspecting and configuring exported Flatpak commands.
 
 %package gui
 Summary:        Graphical interface for Flatpak Command Exporter
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-core = %{version}-%{release}
+Requires:       hicolor-icon-theme
 Requires:       gtk4
 # The GUI loads GTK and Adw through GObject introspection rather than ELF links.
 Requires:       libadwaita
@@ -34,6 +53,15 @@ Requires:       libadwaita
 %description gui
 Flatlink is the graphical interface for inspecting and configuring Flatpak
 command exports.
+
+%package service
+Summary:        Automatic Flatpak command export service
+Requires:       %{name}-core = %{version}-%{release}
+%systemd_requires
+
+%description service
+System and per-user services that refresh exported commands when Flatpak
+applications change.
 
 %generate_buildrequires
 %pyproject_buildrequires
@@ -66,30 +94,54 @@ install -Dpm 0644 service/flatpak-command-exporter-user.preset \
 %check
 PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 
-%post
+%post service
 %systemd_post flatpak-command-exporter-system.service
 %systemd_user_post flatpak-command-exporter-user.service
 
-%preun
+%preun service
 %systemd_preun flatpak-command-exporter-system.service
 %systemd_user_preun flatpak-command-exporter-user.service
 
-%postun
+%postun service
 %systemd_postun flatpak-command-exporter-system.service
 %systemd_user_postun flatpak-command-exporter-user.service
 
-%files -f %{pyproject_files}
+%files
 %doc README.md
 %license LICENSE
-%{_bindir}/flatshell
-%{_datadir}/bash-completion/completions/flatshell
-%exclude %{python3_sitelib}/flatpak_command_exporter/gui/*.py
-%exclude %{python3_sitelib}/flatpak_command_exporter/gui/__pycache__/*.pyc
+
+%files core -f %{pyproject_files}
+%license LICENSE
+%exclude %{python3_sitelib}/flatpak_command_exporter/__main__.py
+%exclude %{python3_sitelib}/flatpak_command_exporter/cli.py
+%exclude %{python3_sitelib}/flatpak_command_exporter/cli_parser.py
+%exclude %{python3_sitelib}/flatpak_command_exporter/profile.py
+%exclude %{python3_sitelib}/flatpak_command_exporter/system_export.py
+%exclude %{python3_sitelib}/flatpak_command_exporter/service/
+%exclude %{python3_sitelib}/flatpak_command_exporter/gui/
+%exclude %{python3_sitelib}/flatpak_command_exporter/flatpak-exported-commands.sh
+%exclude %{_bindir}/flatshell
 %exclude %{_bindir}/flatlink
+%exclude %{_datadir}/bash-completion/completions/flatshell
 %exclude %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop
 %exclude %{_datadir}/metainfo/xyz.kowalski7cc.flatpak-command-exporter.metainfo.xml
 %exclude %{_datadir}/icons/hicolor/scalable/apps/xyz.kowalski7cc.flatpak-command-exporter.svg
 %exclude %{_datadir}/icons/hicolor/symbolic/apps/xyz.kowalski7cc.flatpak-command-exporter-symbolic.svg
+
+%files cli
+%license LICENSE
+%{python3_sitelib}/flatpak_command_exporter/__main__.py
+%{python3_sitelib}/flatpak_command_exporter/cli.py
+%{python3_sitelib}/flatpak_command_exporter/cli_parser.py
+%{python3_sitelib}/flatpak_command_exporter/profile.py
+%{python3_sitelib}/flatpak_command_exporter/flatpak-exported-commands.sh
+%{_bindir}/flatshell
+%{_datadir}/bash-completion/completions/flatshell
+
+%files service
+%license LICENSE
+%{python3_sitelib}/flatpak_command_exporter/system_export.py
+%{python3_sitelib}/flatpak_command_exporter/service/
 %config(noreplace) %{_sysconfdir}/profile.d/flatpak-exported-commands.sh
 %{_unitdir}/flatpak-command-exporter-system.service
 %{_prefix}/lib/systemd/system-preset/80-flatpak-command-exporter.preset
@@ -97,6 +149,7 @@ PYTHONPATH=src %{python3} -m unittest discover -s tests -v
 %{_prefix}/lib/systemd/user-preset/80-flatpak-command-exporter.preset
 
 %files gui
+%license LICENSE
 %{python3_sitelib}/flatpak_command_exporter/gui/
 %{_bindir}/flatlink
 %{_datadir}/applications/xyz.kowalski7cc.flatpak-command-exporter.desktop

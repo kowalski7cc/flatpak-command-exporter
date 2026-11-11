@@ -7,9 +7,9 @@ from pathlib import Path
 import signal
 from typing import Final
 
-import gi
+from flatpak_command_exporter._flatpak_gi import require_flatpak_namespace
 
-gi.require_version("Flatpak", "1.0")
+require_flatpak_namespace()
 from gi.repository import Flatpak, Gio, GLib
 
 from flatpak_command_exporter import FlatpakCommandExporter

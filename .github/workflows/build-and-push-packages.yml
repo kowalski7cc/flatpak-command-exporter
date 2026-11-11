@@ -43,7 +43,7 @@ jobs:
         run: |
           : "${REGISTRY_TOKEN:?Set the REGISTRY_TOKEN repository or organization secret}"
           for release in trixie forky; do
-            for package in ../flatpak-command-exporter_*.deb ../flatpak-command-exporter-gui_*.deb; do
+            for package in ../flatpak-command-exporter*.deb; do
               [ -f "$package" ] || {
                 echo "No Debian package found at $package" >&2
                 exit 1

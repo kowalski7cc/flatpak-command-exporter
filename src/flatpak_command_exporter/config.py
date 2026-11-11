@@ -9,9 +9,9 @@ LEGACY_SYSTEM_ALIAS_DIRECTORY: Final[Path] = Path("/usr/lib/flatpak/aliases")
 
 
 def _get_system_installation_path() -> Path:
-    import gi
+    from ._flatpak_gi import require_flatpak_namespace
 
-    gi.require_version("Flatpak", "1.0")
+    require_flatpak_namespace()
     from gi.repository import Flatpak
 
     installation = Flatpak.Installation.new_system()

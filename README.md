@@ -61,21 +61,27 @@ refreshed. The Debian, RPM, and Arch packages also install Bash completion for
 
 ### Debian package
 
-The project builds two Debian packages: `flatpak-command-exporter` for the
-library, CLI, and profile integration, and `flatpak-command-exporter-gui` for
-Flatlink. To build both from a source checkout, install the build dependencies
-listed in `debian/control`, then run:
+The project builds five Debian packages: `flatpak-command-exporter-core` for
+the Python API, `flatpak-command-exporter-cli` for `flatshell`,
+`flatpak-command-exporter-gui` for Flatlink,
+`flatpak-command-exporter-service` for automatic refresh and shell
+integration, and `flatpak-command-exporter` as a metapackage that installs the
+CLI, GUI, and service. The CLI, GUI, and service each depend on core; the
+service does not require either interface package. To build all packages from
+a source checkout, install the build dependencies listed in `debian/control`,
+then run:
 
 ```console
 make deb
 ```
 
-The resulting `.deb` files are written to the parent directory. Install the
-core package and, if desired, the GUI package with your package manager. The
-core package installs `flatpak-exported-commands.sh` into `/etc/profile.d/`;
-start a new login session after installation for the `PATH` change to take
-effect. Non-Debian installations can run `flatshell install-profile --user` to
-set up shell integration for the current user, or
+The resulting `.deb` files are written to the parent directory. Install
+`flatpak-command-exporter` for the default complete setup, or install individual
+packages as needed. The service package installs `flatpak-exported-commands.sh`
+into `/etc/profile.d/`; start a new login session after installation for the
+`PATH` change to take effect. Non-Debian installations can run
+`flatshell install-profile --user` to set up shell integration for the current
+user, or
 `sudo flatshell install-profile --system` to install it in `/etc/profile.d/`.
 The user installation updates
 `~/.profile` and applies to login shells that read that file.
@@ -93,25 +99,26 @@ sudo dnf install flatpak-devel gtk4 libadwaita make \
 make rpm
 ```
 
-The spec derives its version from `pyproject.toml` and builds a core RPM plus
-an optional `flatpak-command-exporter-gui` RPM. `rpmbuild` writes the packages
-under `~/rpmbuild/RPMS/noarch/` by default.
+The spec derives its version from `pyproject.toml` and builds core, CLI, GUI,
+service, and metapackage RPMs. CLI, GUI, and service depend on core; the
+service does not require the CLI or GUI. `rpmbuild` writes the packages under
+`~/rpmbuild/RPMS/noarch/` by default.
 
 ### Arch Linux
 
-On Arch Linux, install the packaging tools and dependencies used by both
-packages, then build the core package and optional GUI package from a source
-checkout:
+On Arch Linux, install the packaging tools and build dependencies, then build
+the core, CLI, GUI, service, and metapackage packages from a source checkout:
 
 ```console
-sudo pacman -S --needed base-devel flatpak git gtk4 hicolor-icon-theme \
-  libadwaita python python-gobject python-shtab
+sudo pacman -S --needed base-devel gettext git python python-shtab
 make apk
 ```
 
 The resulting `.pkg.tar.zst` packages are written to the repository root.
-Install the core package and, if desired, the GUI package with `pacman -U`.
-The PKGBUILD installs and enables the system and user change-monitor services.
+Install `flatpak-command-exporter` for the default complete setup, or install
+individual packages with `pacman -U`. The metapackage installs the CLI, GUI,
+and service. The service package installs and enables the system and user
+change-monitor services.
 Check their status with:
 
 ```console
@@ -130,19 +137,19 @@ includes `base-devel`, `namcap`, and `python-shtab` for `make apk`.
 
 ### Requirements
 
-- Flatpak and Python 3.13 or newer.
-- PyGObject and the Flatpak GObject introspection bindings for the CLI and
-  exporter.
+- Flatpak and Python 3.13 or newer for the core API and command-line tools.
+- PyGObject and the Flatpak GObject introspection bindings for core.
 - systemd and Gio file monitoring for event-driven export refresh.
 - System-scope CLI operations require elevated filesystem permissions. Debian,
   Fedora, and Arch packages install separate system and user watcher services.
-- GTK 4, libadwaita, and their introspection data to run Flatlink.
+- GTK 4, libadwaita, and their introspection data to run Flatlink; these are
+  only needed by the GUI package.
 
 ### Automatic export refresh
 
 The watcher implementation lives in
-`src/flatpak_command_exporter/service/`. The Debian, RPM, and Arch packages
-install system and per-user watcher services
+`src/flatpak_command_exporter/service/`. The Debian, RPM, and Arch service
+packages install system and per-user watcher services
 that refresh exports after Flatpak apps are installed, updated, or removed.
 They monitor deployment directories and debounce related file events before
 refreshing. The system service runs as root and writes only system launchers.

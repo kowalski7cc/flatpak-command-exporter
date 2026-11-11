@@ -5,9 +5,9 @@ from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Protocol
 
-import gi
+from .._flatpak_gi import require_flatpak_namespace
 
-gi.require_version("Flatpak", "1.0")
+require_flatpak_namespace()
 from gi.repository import Flatpak, GLib
 
 
