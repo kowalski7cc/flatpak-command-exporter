@@ -149,6 +149,21 @@ msgstr "カスタムエイリアスを削除できませんでした"
 msgid "User commands exported"
 msgstr "ユーザーコマンドをエクスポートしました"
 
+msgid "Automatic export refresh"
+msgstr "エクスポートの自動更新"
+
+msgid "Enable automatic export refresh"
+msgstr "エクスポートの自動更新を有効にする"
+
+msgid "Run the user service when Flatpak apps change."
+msgstr "Flatpak アプリが変更されたときにユーザーサービスを実行します。"
+
+msgid "Could not check user service status"
+msgstr "ユーザーサービスの状態を確認できませんでした"
+
+msgid "Could not update user service"
+msgstr "ユーザーサービスを更新できませんでした"
+
 msgid "Settings"
 msgstr "設定"
 

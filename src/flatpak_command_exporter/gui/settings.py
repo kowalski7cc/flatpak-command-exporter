@@ -6,6 +6,11 @@ from ..config import AliasConfig as _AliasConfig
 from .accessibility import set_accessible_label, set_decorative
 from .data import _make_app_icon, get_app_ref_choices
 from .i18n import _
+from .systemd import (
+	get_user_service_state,
+	set_user_service_enabled,
+	user_service_is_enabled,
+)
 
 
 def _make_icon_button(
@@ -69,6 +74,70 @@ def _handle_app_selection(
 		close_chooser()
 
 
+def _add_user_service_group(
+	page: object,
+	Adw,
+	Gtk,
+	Gio,
+	GLib,
+	report_error: Callable[[str, Exception], None],
+) -> object | None:
+	try:
+		user_service_state = get_user_service_state(Gio, GLib)
+	except GLib.Error as error:
+		report_error(_("Could not check user service status"), error)
+		return None
+	if user_service_state == "not-found":
+		return None
+
+	user_service_group = Adw.PreferencesGroup(
+		title=_("Automatic export refresh")
+	)
+	user_service_row = Adw.SwitchRow(
+		title=_("Enable automatic export refresh"),
+		subtitle=_("Run the user service when Flatpak apps change."),
+	)
+	set_accessible_label(
+		user_service_row, Gtk, _("Enable automatic export refresh")
+	)
+	saved_state = [user_service_is_enabled(user_service_state)]
+	user_service_row.set_active(saved_state[0])
+	user_service_group.add(user_service_row)
+	page.add(user_service_group)
+	user_service_handler = [None]
+
+	def update_user_service(row, _property: object) -> None:
+		requested_state = row.get_active()
+		try:
+			set_user_service_enabled(Gio, GLib, requested_state)
+		except GLib.Error as error:
+			try:
+				current_state = get_user_service_state(Gio, GLib)
+			except GLib.Error as status_error:
+				row.handler_block(user_service_handler[0])
+				row.set_active(saved_state[0])
+				row.handler_unblock(user_service_handler[0])
+				row.set_sensitive(False)
+				report_error(
+					_("Could not check user service status"), status_error
+				)
+			else:
+				saved_state[0] = user_service_is_enabled(current_state)
+				row.handler_block(user_service_handler[0])
+				row.set_active(saved_state[0])
+				row.handler_unblock(user_service_handler[0])
+				if current_state == "not-found":
+					row.set_sensitive(False)
+			report_error(_("Could not update user service"), error)
+		else:
+			saved_state[0] = requested_state
+
+	user_service_handler[0] = user_service_row.connect(
+		"notify::active", update_user_service
+	)
+	return user_service_row
+
+
 def show_settings(
 	window: object,
 	exporter: _FlatpakCommandExporter,
@@ -78,6 +147,7 @@ def show_settings(
 	Gtk,
 	Gdk,
 	Pango,
+	Gio,
 	GLib,
 	icon_theme: object,
 ) -> None:
@@ -99,6 +169,8 @@ def show_settings(
 	default_row.set_active(exporter.config.default_policy() == "all")
 	default_group.add(default_row)
 	page.add(default_group)
+
+	_add_user_service_group(page, Adw, Gtk, Gio, GLib, report_error)
 
 	reset_row = Adw.ActionRow(
 		title=_("Reset to factory defaults"),

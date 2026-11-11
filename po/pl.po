@@ -149,6 +149,21 @@ msgstr "Nie udało się usunąć własnego aliasu"
 msgid "User commands exported"
 msgstr "Wyeksportowano polecenia użytkownika"
 
+msgid "Automatic export refresh"
+msgstr "Automatyczne odświeżanie eksportów"
+
+msgid "Enable automatic export refresh"
+msgstr "Włącz automatyczne odświeżanie eksportów"
+
+msgid "Run the user service when Flatpak apps change."
+msgstr "Uruchamiaj usługę użytkownika po zmianie aplikacji Flatpak."
+
+msgid "Could not check user service status"
+msgstr "Nie można sprawdzić stanu usługi użytkownika"
+
+msgid "Could not update user service"
+msgstr "Nie można zaktualizować usługi użytkownika"
+
 msgid "Settings"
 msgstr "Ustawienia"
 

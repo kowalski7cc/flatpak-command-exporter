@@ -149,6 +149,21 @@ msgstr "Impossible de supprimer l’alias personnalisé"
 msgid "User commands exported"
 msgstr "Commandes utilisateur exportées"
 
+msgid "Automatic export refresh"
+msgstr "Actualisation automatique des exports"
+
+msgid "Enable automatic export refresh"
+msgstr "Activer l’actualisation automatique des exports"
+
+msgid "Run the user service when Flatpak apps change."
+msgstr "Exécute le service utilisateur lorsque les applications Flatpak changent."
+
+msgid "Could not check user service status"
+msgstr "Impossible de vérifier l’état du service utilisateur"
+
+msgid "Could not update user service"
+msgstr "Impossible de mettre à jour le service utilisateur"
+
 msgid "Settings"
 msgstr "Paramètres"
 

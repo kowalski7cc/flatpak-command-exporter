@@ -149,6 +149,21 @@ msgstr "Nelze odebrat vlastní alias"
 msgid "User commands exported"
 msgstr "Uživatelské příkazy byly exportovány"
 
+msgid "Automatic export refresh"
+msgstr "Automatické obnovování exportů"
+
+msgid "Enable automatic export refresh"
+msgstr "Povolit automatické obnovování exportů"
+
+msgid "Run the user service when Flatpak apps change."
+msgstr "Spustit uživatelskou službu při změně aplikací Flatpak."
+
+msgid "Could not check user service status"
+msgstr "Nelze zjistit stav uživatelské služby"
+
+msgid "Could not update user service"
+msgstr "Nelze aktualizovat uživatelskou službu"
+
 msgid "Settings"
 msgstr "Nastavení"
 

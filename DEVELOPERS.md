@@ -382,6 +382,12 @@ periodic timer units. Keep watcher code, unit files, package manifests,
 documentation, and service regression tests synchronized when changing this
 integration.
 
+Flatlink Settings exposes a switch for the user watcher when the systemd user
+manager reports its unit as installed. It uses Gio D-Bus to manage the unit
+for the current user: enabling removes any per-user mask, enables, and starts
+the service; disabling masks and stops it, including when a global enablement
+would otherwise restart it. Do not use subprocesses to manage systemd.
+
 ## Shell CLI
 
 Commands that update settings also regenerate launchers for the selected scope:

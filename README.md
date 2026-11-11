@@ -168,6 +168,13 @@ sudo systemctl disable --now flatpak-command-exporter-system.service
 systemctl --user disable --now flatpak-command-exporter-user.service
 ```
 
+Flatlink's Settings page provides an **Enable automatic export refresh**
+switch when the systemd user manager recognizes the user service unit. Changing
+the switch applies immediately through systemd's D-Bus API. Turning it off
+masks the unit for the current user as well as stopping it, so a unit enabled
+globally will not restart automatically for that user. Turning it back on
+removes the per-user mask, enables the unit, and starts it.
+
 ## CLI
 
 The supported commands are `flatshell` for the CLI and `flatlink` for the GUI.

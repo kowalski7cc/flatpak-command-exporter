@@ -149,6 +149,21 @@ msgstr "Benutzerdefinierter Alias konnte nicht entfernt werden"
 msgid "User commands exported"
 msgstr "Benutzerbefehle exportiert"
 
+msgid "Automatic export refresh"
+msgstr "Automatische Exportaktualisierung"
+
+msgid "Enable automatic export refresh"
+msgstr "Automatische Exportaktualisierung aktivieren"
+
+msgid "Run the user service when Flatpak apps change."
+msgstr "Den Benutzerdienst ausführen, wenn sich Flatpak-Apps ändern."
+
+msgid "Could not check user service status"
+msgstr "Status des Benutzerdienstes konnte nicht überprüft werden"
+
+msgid "Could not update user service"
+msgstr "Benutzerdienst konnte nicht aktualisiert werden"
+
 msgid "Settings"
 msgstr "Einstellungen"
 

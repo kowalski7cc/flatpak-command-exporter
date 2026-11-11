@@ -77,6 +77,9 @@ intentional, and update this guide when the project conventions change.
   that user's exports only. The system service runs as root.
 - Keep watcher code, unit files, package manifests, documentation, and
   service regression tests synchronized when changing automatic refresh.
+- Manage the Flatlink user-watcher setting through the systemd user manager's
+  D-Bus API, using a per-user mask to override global enablement when disabled;
+  do not use subprocesses to control systemd.
 
 ## Tests and verification
 

@@ -149,6 +149,21 @@ msgstr "Nem sikerült eltávolítani az egyéni álnevet"
 msgid "User commands exported"
 msgstr "Felhasználói parancsok exportálva"
 
+msgid "Automatic export refresh"
+msgstr "Automatikus exportfrissítés"
+
+msgid "Enable automatic export refresh"
+msgstr "Automatikus exportfrissítés engedélyezése"
+
+msgid "Run the user service when Flatpak apps change."
+msgstr "A felhasználói szolgáltatás futtatása a Flatpak-alkalmazások változásakor."
+
+msgid "Could not check user service status"
+msgstr "Nem sikerült ellenőrizni a felhasználói szolgáltatás állapotát"
+
+msgid "Could not update user service"
+msgstr "Nem sikerült frissíteni a felhasználói szolgáltatást"
+
 msgid "Settings"
 msgstr "Beállítások"
 

@@ -971,6 +971,7 @@ def main() -> None:
 						Gtk,
 						Gdk,
 						Pango,
+						Gio,
 						GLib,
 						icon_theme,
 					)

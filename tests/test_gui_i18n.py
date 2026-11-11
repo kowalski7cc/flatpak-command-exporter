@@ -11,7 +11,7 @@ LOCALE_DIR = (
     / "locale"
 )
 LANGUAGES = ("it", "fr", "de", "es", "ja", "hu", "pl", "cs")
-MESSAGE_COUNT = 77
+MESSAGE_COUNT = 82
 
 
 class GuiLocalizationTests(unittest.TestCase):
