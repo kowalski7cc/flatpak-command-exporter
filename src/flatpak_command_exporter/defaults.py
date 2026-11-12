@@ -63,7 +63,7 @@ DEFAULT_EXPORT_COMMANDS: Final[dict[str, dict[str, str]]] = {
     "de.wwwtech.gitte": {"gitte": "gitte"},
     "org.audacityteam.Audacity": {"audacity": "audacity"},
     "org.milkytracker.MilkyTracker": {"milkytracker": "milkytracker"},
-    "org.videolan.VLC": {"vlc": "vlc"},
+    "org.videolan.VLC": {"vlc": "vlc", "cvlc": "cvlc"},
     "org.getzola.zola": {"zola": "zola"},
     "org.gnome.Builder": {"builder": "builder"},
     "org.flatpak.Builder": {"flatpak-builder": "flatpak-builder"},
