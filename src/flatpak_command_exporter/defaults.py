@@ -423,4 +423,9 @@ DEFAULT_EXPORT_COMMANDS: Final[dict[str, dict[str, str]]] = {
     "org.nmap.Zenmap": {"zenmap": "zenmap", "nmap": "nmap"},
     "org.inkscape.Inkscape": {"inkscape": "inkscape"},
     "de.hohnstaedt.xca": {"xca": "xca"},
+    "com.freerdp.FreeRDP": {
+        "freerdp-shadow-cli": "freerdp-shadow-cli",
+        "freerdp-proxy": "freerdp-proxy",
+        "xfreerdp": "xfreerdp",
+    },
 }
